@@ -1,0 +1,18 @@
+# Xcode
+DerivedData/
+*.xcuserstate
+*.xcscmblueprint
+xcuserdata/
+
+# macOS
+.DS_Store
+
+# Swift Package Manager
+.build/
+Packages/
+Package.pins
+Package.resolved
+
+# Secrets / local config
+Tomcrest/Config/Secrets.xcconfig
+*.local.xcconfig
