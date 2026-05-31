@@ -2,21 +2,34 @@ import SwiftUI
 
 struct ResearchView: View {
     @Environment(AuthSession.self) private var auth
+    @Environment(ResearchSymbolBookmarks.self) private var bookmarks
     @State private var viewModel: ResearchViewModel?
     @State private var selectedSymbol: TickerSymbolItem?
 
     private let exampleSymbols = ["NVDA", "SPY", "AAPL", "SCHD"]
 
+    private var researchOnboardingComplete: Bool {
+        !bookmarks.recentSymbols.isEmpty
+            && !bookmarks.watchlist.isEmpty
+            && ResearchSymbolStorage.hasUsedResearchChat()
+    }
+
     var body: some View {
         NavigationStack {
             AppScrollScreen {
                 if let viewModel {
-                    if !OnboardingStorage.isResearchOnboardingDismissed() {
+                    if !OnboardingStorage.isResearchOnboardingDismissed(),
+                       !researchOnboardingComplete {
                         ResearchOnboardingCard(
-                            openedSymbol: selectedSymbol != nil,
-                            usedChat: false,
+                            hasOpenedSymbol: !bookmarks.recentSymbols.isEmpty,
+                            hasWatchlist: !bookmarks.watchlist.isEmpty,
+                            usedChat: ResearchSymbolStorage.hasUsedResearchChat(),
                             onDismiss: { OnboardingStorage.dismissResearchOnboarding() }
                         )
+                    }
+
+                    StrategyPlaybookQuickLinksSection { symbol in
+                        openSymbol(symbol)
                     }
 
                     AppSearchField(
@@ -28,14 +41,18 @@ struct ResearchView: View {
                         isLoading: viewModel.isSearching,
                         onSubmit: {
                             if let first = viewModel.results.first {
-                                selectedSymbol = first
+                                openSymbolItem(first)
                             }
                         }
                     )
 
+                    if viewModel.query.isEmpty {
+                        quickAccessSection
+                    }
+
                     searchResults(viewModel)
 
-                    if viewModel.query.isEmpty {
+                    if viewModel.query.isEmpty, !bookmarks.hasQuickAccess {
                         examplesSection
                     }
                 } else {
@@ -59,6 +76,23 @@ struct ResearchView: View {
     }
 
     @ViewBuilder
+    private var quickAccessSection: some View {
+        if !bookmarks.watchlist.isEmpty {
+            ResearchWatchlistSection(symbols: bookmarks.watchlist) { symbol in
+                openSymbol(symbol)
+            }
+        }
+
+        if !bookmarks.recentWithoutWatchlist.isEmpty {
+            ResearchRecentSymbolsSection(
+                symbols: bookmarks.recentWithoutWatchlist,
+                onClear: { bookmarks.clearRecent() },
+                onSelect: { openSymbol($0) }
+            )
+        }
+    }
+
+    @ViewBuilder
     private func searchResults(_ viewModel: ResearchViewModel) -> some View {
         if let error = viewModel.searchError {
             AppInlineBanner(message: error, tone: .error)
@@ -72,12 +106,17 @@ struct ResearchView: View {
         } else if !viewModel.results.isEmpty {
             AppGroupedList {
                 ForEach(Array(viewModel.results.prefix(12).enumerated()), id: \.element.id) { index, item in
-                    Button {
-                        selectedSymbol = item
-                    } label: {
-                        SymbolSearchRow(item: item)
+                    HStack(spacing: 0) {
+                        Button {
+                            openSymbolItem(item)
+                        } label: {
+                            SymbolSearchRowContent(item: item)
+                        }
+                        .buttonStyle(.plain)
+
+                        WatchlistToggleButton(symbol: item.symbol)
+                            .padding(.trailing, 8)
                     }
-                    .buttonStyle(.plain)
 
                     if index < min(viewModel.results.count, 12) - 1 {
                         AppGroupedDivider()
@@ -88,26 +127,36 @@ struct ResearchView: View {
     }
 
     private var examplesSection: some View {
-        AppScreenSection(title: "Examples") {
+        AppScreenSection(title: "Try an example") {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(exampleSymbols, id: \.self) { symbol in
                         AppChip(title: symbol) {
-                            selectedSymbol = TickerSymbolItem(
-                                symbol: symbol,
-                                title: nil,
-                                assetType: nil,
-                                logoURL: nil
-                            )
+                            openSymbol(symbol)
                         }
                     }
                 }
             }
         }
     }
+
+    private func openSymbolItem(_ item: TickerSymbolItem) {
+        bookmarks.recordRecent(item.symbol)
+        selectedSymbol = item
+    }
+
+    private func openSymbol(_ symbol: String) {
+        bookmarks.recordRecent(symbol)
+        selectedSymbol = TickerSymbolItem(
+            symbol: symbol.uppercased(),
+            title: nil,
+            assetType: nil,
+            logoURL: nil
+        )
+    }
 }
 
-private struct SymbolSearchRow: View {
+private struct SymbolSearchRowContent: View {
     let item: TickerSymbolItem
 
     var body: some View {
@@ -155,5 +204,6 @@ private struct SymbolSearchRow: View {
         ResearchView()
             .environment(AuthSession())
             .environment(AccountContext())
+            .environment(ResearchSymbolBookmarks())
     }
 }

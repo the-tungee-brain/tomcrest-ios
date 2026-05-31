@@ -15,6 +15,7 @@ final class SymbolPositionViewModel {
     private(set) var loadError: String?
     private(set) var recentOrdersError: String?
     private(set) var schwabConnected: Bool?
+    private(set) var assignmentRiskSummary: AssignmentRiskSummary?
     private(set) var symbolAnalysisLoading = false
     private(set) var symbolAnalysisStatus: String?
     private(set) var symbolAnalysisError: String?
@@ -86,6 +87,7 @@ final class SymbolPositionViewModel {
             positions = result.response.flattenedPositions
                 .filter { $0.displaySymbol.uppercased() == symbol }
                 .sorted { $0.marketValue > $1.marketValue }
+            assignmentRiskSummary = result.response.assignmentRiskSummary
             proactiveAlerts = result.response.proactiveAlerts ?? []
             portfolioBrief = result.response.portfolioBrief
             loaded = true

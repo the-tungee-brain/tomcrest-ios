@@ -1,7 +1,29 @@
 import Foundation
 
+struct WheelBacktestCycle: Decodable, Identifiable {
+    var id: Int { cycle }
+    let cycle: Int
+    let putStrike: Double?
+    let stockEntryDate: String?
+    let callStrike: Double?
+    let stockExitDate: String?
+    let stockRoundTripPlUsd: Double?
+    let completed: Bool?
+}
+
+struct WheelBacktestAnnualRow: Decodable, Identifiable {
+    var id: Int { year }
+    let year: Int
+    let startEquityUsd: Double?
+    let endEquityUsd: Double?
+    let plUsd: Double?
+    let returnPct: Double?
+    let premiumUsd: Double?
+    let feesUsd: Double?
+}
+
 struct WheelBacktestTrade: Decodable, Identifiable {
-    var id: String { "\(date)-\(action)-\(strike ?? 0)" }
+    var id: String { "\(date)-\(action)-\(strike ?? 0)-\(wheelCycle ?? 0)" }
     let date: String
     let action: String
     let label: String?
@@ -10,6 +32,8 @@ struct WheelBacktestTrade: Decodable, Identifiable {
     let premiumUsd: Double?
     let feesUsd: Double?
     let wheelCycle: Int?
+    let cycleMonth: String?
+    let cashFlowUsd: Double?
     let note: String?
 }
 
@@ -19,6 +43,29 @@ struct WheelBacktestEquityPoint: Decodable, Identifiable {
     let equityUsd: Double
     let cashUsd: Double?
     let sharesHeld: Double?
+    let phase: String?
+    let stockCloseUsd: Double?
+    let buyAndHoldEquityUsd: Double?
+
+    enum CodingKeys: String, CodingKey {
+        case date, equityUsd, cashUsd, phase, stockCloseUsd, buyAndHoldEquityUsd
+        case sharesHeld = "shares"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        date = try container.decode(String.self, forKey: .date)
+        equityUsd = try container.decode(Double.self, forKey: .equityUsd)
+        cashUsd = try container.decodeIfPresent(Double.self, forKey: .cashUsd)
+        phase = try container.decodeIfPresent(String.self, forKey: .phase)
+        stockCloseUsd = try container.decodeIfPresent(Double.self, forKey: .stockCloseUsd)
+        buyAndHoldEquityUsd = try container.decodeIfPresent(Double.self, forKey: .buyAndHoldEquityUsd)
+        if let shares = try? container.decodeIfPresent(Int.self, forKey: .sharesHeld) {
+            sharesHeld = Double(shares)
+        } else {
+            sharesHeld = try container.decodeIfPresent(Double.self, forKey: .sharesHeld)
+        }
+    }
 }
 
 struct WheelBacktestResult: Decodable {
@@ -28,7 +75,7 @@ struct WheelBacktestResult: Decodable {
     let endDate: String
     let totalPlUsd: Double
     let totalReturnPct: Double
-    let cagrPct: Double
+    let cagrPct: Double?
     let buyAndHoldReturnPct: Double
     let totalPremiumCollectedUsd: Double
     let putAssignments: Int
@@ -36,6 +83,11 @@ struct WheelBacktestResult: Decodable {
     let completedWheelCycles: Int
     let trades: [WheelBacktestTrade]
     let equityCurve: [WheelBacktestEquityPoint]
+    let wheelCycles: [WheelBacktestCycle]?
+    let annualSummary: [WheelBacktestAnnualRow]?
+    let assumptions: [String]?
+    let startingCashUsd: Double?
+    let endingEquityUsd: Double?
 }
 
 struct WheelBacktestQuery {
@@ -59,5 +111,12 @@ struct WheelBacktestQuery {
             "maintainOneLot": maintainOneLot ? "true" : "false",
             "callStrikeMode": callStrikeMode,
         ]
+    }
+}
+
+enum WheelBacktestGrouping {
+    static func tradesByCycle(_ trades: [WheelBacktestTrade]) -> [(cycle: Int, trades: [WheelBacktestTrade])] {
+        let grouped = Dictionary(grouping: trades) { $0.wheelCycle ?? 0 }
+        return grouped.keys.sorted().map { ($0, grouped[$0] ?? []) }
     }
 }

@@ -4,8 +4,11 @@ import Charts
 // MARK: - Overview tab (quote, performance, signals, chat)
 
 struct SymbolOverviewTab: View {
+    @Environment(AccountContext.self) private var account
     @Bindable var viewModel: SymbolOverviewViewModel
+    @Bindable var positionViewModel: SymbolPositionViewModel
     let bundle: ResearchOverviewBundle?
+    var onQuickAction: (String) -> Void = { _ in }
     @State private var signalsExpanded = false
 
     var body: some View {
@@ -20,31 +23,73 @@ struct SymbolOverviewTab: View {
                 overviewSections(bundle)
             }
         }
+        .task {
+            await positionViewModel.loadIfNeeded()
+        }
+        .sheet(isPresented: $viewModel.showChatHistory) {
+            NavigationStack {
+                ChatSessionHistorySheet(
+                    sessions: viewModel.chatSessions.filter {
+                        ($0.title ?? "").hasPrefix("Research:\(viewModel.symbol.uppercased()):")
+                    },
+                    isLoading: viewModel.chatSessionsLoading,
+                    onSelect: { session in
+                        Task { await viewModel.openChatSession(session) }
+                    },
+                    onDelete: { session in
+                        await viewModel.deleteChatSession(session)
+                    }
+                )
+            }
+        }
     }
 
     @ViewBuilder
     private func overviewSections(_ bundle: ResearchOverviewBundle) -> some View {
         SymbolQuoteHeroCard(bundle: bundle)
 
-        if !profileSymbolsHint.isEmpty {
-            Text(profileSymbolsHint)
-                .font(.caption2)
-                .foregroundStyle(AppColors.secondaryLabel)
-                .padding(.horizontal, 4)
+        if positionViewModel.hasPosition, !positionViewModel.symbolAlerts.isEmpty {
+            SymbolAlertStrip(
+                symbol: viewModel.symbol,
+                alerts: positionViewModel.symbolAlerts
+            ) { alert in
+                onQuickAction(
+                    IntelligenceHelpers.quickActionMessage(
+                        actionId: IntelligenceHelpers.alertToQuickActionId(alert),
+                        symbol: viewModel.symbol
+                    )
+                )
+            }
         }
+
+        ResearchStockChartSection(symbol: bundle.symbol, viewModel: viewModel)
+
+        BigPictureSection(
+            summary: bundle.summary,
+            isLoading: viewModel.isBigPictureLoading,
+            errorMessage: viewModel.bigPictureError,
+            onRefresh: {
+                Task { await viewModel.refreshBigPicture() }
+            }
+        )
 
         AppScreenSection(title: "Performance") {
             SymbolPerformanceCard(performance: bundle.performance)
         }
 
-        if !bundle.intelligence.signals.isEmpty {
-            AppDisclosureSection(
-                title: "Signals",
-                footnote: "\(min(bundle.intelligence.signals.count, 5)) active",
-                isExpanded: $signalsExpanded
-            ) {
-                SymbolSignalsCard(signals: bundle.intelligence.signals)
+        if !isEtfAsset(bundle.assetType) {
+            StreetAnalysisOverviewPreview(street: bundle.streetAnalysis)
+        } else {
+            EtfHoldingsOverviewPreview(holdings: bundle.etfHoldings)
+            if let funds = bundle.etfFunds {
+                AppScreenSection(title: "Fund profile") {
+                    EtfFundsOverviewSection(funds: funds)
+                }
             }
+        }
+
+        SymbolIntelligenceOverviewPanel(signals: bundle.intelligence.signals) { prompt in
+            viewModel.openChatWithPrompt(prompt)
         }
 
         AppScreenSection(title: "Company snapshot") {
@@ -62,10 +107,6 @@ struct SymbolOverviewTab: View {
         ResearchChatPanel(viewModel: viewModel)
     }
 
-    private var profileSymbolsHint: String {
-        ""
-    }
-
     private func snapshotRow(_ label: String, _ value: String) -> some View {
         HStack {
             Text(label)
@@ -76,6 +117,11 @@ struct SymbolOverviewTab: View {
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(AppColors.label)
         }
+    }
+
+    private func isEtfAsset(_ assetType: String?) -> Bool {
+        let normalized = assetType?.uppercased() ?? ""
+        return normalized == "ETF" || normalized == "MUTUAL_FUND" || normalized == "INDEX"
     }
 }
 
@@ -508,7 +554,7 @@ private struct EarningsDetailSection: View {
     @ViewBuilder
     private func transcriptContent(_ segments: [TranscriptSegment]) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            ForEach(segments.prefix(8)) { segment in
+            ForEach(segments) { segment in
                 VStack(alignment: .leading, spacing: 4) {
                     Text(segment.speaker)
                         .font(.caption.weight(.semibold))
@@ -518,11 +564,6 @@ private struct EarningsDetailSection: View {
                         .foregroundStyle(AppColors.label)
                         .lineSpacing(2)
                 }
-            }
-            if segments.count > 8 {
-                Text("\(segments.count - 8) more segments on web")
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.secondaryLabel)
             }
         }
     }
@@ -723,6 +764,8 @@ struct SymbolDividendsTab: View {
                         .appPanel(subtle: true)
                     }
 
+                    DividendHistoryChartSection(dividends: context)
+
                     if !context.annualIncome.isEmpty {
                         AppDisclosureSection(
                             title: "Annual income",
@@ -770,6 +813,7 @@ struct SymbolDividendsTab: View {
 struct SymbolOptionsTab: View {
     let viewModel: SymbolDepthViewModel
     let symbolPositions: [Position]
+    let assignmentRiskSummary: AssignmentRiskSummary?
     var onAnalyze: (String) -> Void
 
     var body: some View {
@@ -778,6 +822,13 @@ struct SymbolOptionsTab: View {
             let cspSummary = OptionsRiskHelpers.summarizeCSPCash(positions: symbolPositions, cashBalance: nil)
 
             VStack(alignment: .leading, spacing: Layout.sectionSpacing) {
+                if let assignmentRiskSummary,
+                   OptionsRiskHelpers.hasAssignmentRisk(assignmentRiskSummary) {
+                    AppScreenSection(title: "Assignment risk") {
+                        AssignmentRiskSummaryCard(summary: assignmentRiskSummary)
+                    }
+                }
+
                 if let cspSummary, cspSummary.totalReservedCash > 0 {
                     CashSecuredPutSummaryCard(summary: cspSummary, cashBalance: nil)
                 }
@@ -896,15 +947,25 @@ struct SymbolOptionsTab: View {
 
 struct SymbolWheelBacktestTab: View {
     @Environment(AccountContext.self) private var account
-    let viewModel: SymbolDepthViewModel
+    @Bindable var viewModel: SymbolDepthViewModel
 
     var body: some View {
         ResearchDepthTabShell(tab: .wheelBacktest, viewModel: viewModel) {
             if account.hasProFeature(.wheelBacktest) {
-                if let result = viewModel.wheelBacktest {
-                    WheelBacktestPanel(result: result)
-                } else {
-                    AppEmptyMessage(message: "Backtest results are not available.")
+                VStack(alignment: .leading, spacing: Layout.sectionSpacing) {
+                    WheelBacktestControlsPanel(
+                        query: $viewModel.wheelBacktestQuery,
+                        isLoading: viewModel.wheelBacktestLoading,
+                        onRun: {
+                            Task { await viewModel.runWheelBacktest() }
+                        }
+                    )
+
+                    if let result = viewModel.wheelBacktest {
+                        WheelBacktestExtendedPanel(result: result, query: viewModel.wheelBacktestQuery)
+                    } else if !viewModel.wheelBacktestLoading {
+                        AppEmptyMessage(message: "Run a backtest to see results.")
+                    }
                 }
             } else {
                 AppInlineBanner(
@@ -913,77 +974,6 @@ struct SymbolWheelBacktestTab: View {
                 )
             }
         }
-    }
-}
-
-struct WheelBacktestPanel: View {
-    let result: WheelBacktestResult
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: Layout.sectionSpacing) {
-            AppScreenSection(title: "Wheel backtest", footnote: "\(result.lookbackYears)-year lookback") {
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
-                    kpi("Total return", CurrencyFormatter.percent(result.totalReturnPct))
-                    kpi("CAGR", CurrencyFormatter.percent(result.cagrPct))
-                    kpi("Buy & hold", CurrencyFormatter.percent(result.buyAndHoldReturnPct))
-                    kpi("Premium", CurrencyFormatter.usd(result.totalPremiumCollectedUsd, fractionDigits: 0))
-                    kpi("Put assignments", "\(result.putAssignments)")
-                    kpi("Wheel cycles", "\(result.completedWheelCycles)")
-                }
-            }
-
-            if !result.equityCurve.isEmpty {
-                AppScreenSection(title: "Equity curve") {
-                    Chart(result.equityCurve) { point in
-                        LineMark(
-                            x: .value("Date", point.date),
-                            y: .value("Equity", point.equityUsd)
-                        )
-                        .foregroundStyle(AppColors.accent)
-                    }
-                    .chartXAxis(.hidden)
-                    .frame(height: 160)
-                }
-            }
-
-            if !result.trades.isEmpty {
-                AppScreenSection(title: "Trade log", footnote: "\(result.trades.count) trades") {
-                    VStack(spacing: 8) {
-                        ForEach(result.trades.prefix(20)) { trade in
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("\(trade.date) · \(trade.action)")
-                                    .font(.caption.weight(.semibold))
-                                if let label = trade.label {
-                                    Text(label)
-                                        .font(.caption2)
-                                        .foregroundStyle(AppColors.secondaryLabel)
-                                }
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.vertical, 4)
-                            if trade.id != result.trades.prefix(20).last?.id {
-                                AppGroupedDivider()
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private func kpi(_ label: String, _ value: String) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(label)
-                .font(.caption2.weight(.medium))
-                .foregroundStyle(AppColors.tertiaryLabel)
-                .textCase(.uppercase)
-            Text(value)
-                .font(.caption.weight(.semibold).monospacedDigit())
-        }
-        .padding(10)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AppColors.secondaryBackground.opacity(0.6))
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 }
 
@@ -1171,28 +1161,18 @@ struct SymbolFundamentalsTab: View {
         ResearchDepthTabShell(tab: .fundamentals, viewModel: viewModel) {
             if let block = viewModel.fundamentals {
                 VStack(alignment: .leading, spacing: Layout.sectionSpacing) {
+                    if isEtf, let funds = block.etfFunds {
+                        AppScreenSection(title: "Fund profile") {
+                            EtfFundsOverviewSection(funds: funds)
+                        }
+                    }
+
                     // Metrics first — the tab’s primary job; narrative blocks stay collapsed.
                     if !block.metrics.isEmpty {
                         AppScreenSection(
                             title: ResearchTab.fundamentals.fundamentalsLabel(for: assetType)
                         ) {
-                            AppGroupedList {
-                                ForEach(Array(block.metrics.prefix(12).enumerated()), id: \.element.id) { index, metric in
-                                    AppListRow {
-                                        Text(metric.label)
-                                            .font(AppTypography.bodySecondary)
-                                            .foregroundStyle(AppColors.secondaryLabel)
-                                    } trailing: {
-                                        Text(metric.value)
-                                            .font(AppTypography.cardTitle)
-                                            .foregroundStyle(AppColors.label)
-                                            .multilineTextAlignment(.trailing)
-                                    }
-                                    if index < min(block.metrics.count, 12) - 1 {
-                                        AppGroupedDivider()
-                                    }
-                                }
-                            }
+                            GroupedKeyMetricsSection(metrics: block.metrics)
                         }
                     }
 

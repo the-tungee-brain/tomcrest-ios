@@ -49,6 +49,26 @@ final class AuthSession {
         phase = .signedOut
     }
 
+    func handleUnauthorized() {
+        guard phase == .signedIn else { return }
+        signOut()
+        lastError = "Your session expired. Please sign in again."
+    }
+
+    func refreshAccessToken() async -> String? {
+        guard let accessToken else { return nil }
+        do {
+            let response: GoogleSignInResponse = try await api.postNoBody(
+                "/auth/refresh",
+                accessToken: accessToken
+            )
+            try completeSignIn(accessToken: response.accessToken)
+            return response.accessToken
+        } catch {
+            return nil
+        }
+    }
+
     func setError(_ message: String) {
         lastError = message
     }

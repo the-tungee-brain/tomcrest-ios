@@ -100,16 +100,30 @@ struct PortfolioOnboardingCard: View {
 }
 
 struct ResearchOnboardingCard: View {
-    let openedSymbol: Bool
+    let hasOpenedSymbol: Bool
+    let hasWatchlist: Bool
     let usedChat: Bool
     var onDismiss: () -> Void
 
+    private var completedCount: Int {
+        [hasOpenedSymbol, hasWatchlist, usedChat].filter { $0 }.count
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("Research checklist")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(AppColors.label)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Research")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(AppColors.accentHighlight)
+                        .textCase(.uppercase)
+                    Text("Explore any public company")
+                        .font(AppTypography.bodySecondary.weight(.semibold))
+                        .foregroundStyle(AppColors.label)
+                    Text("\(completedCount) of 3 complete")
+                        .font(.caption2)
+                        .foregroundStyle(AppColors.secondaryLabel)
+                }
                 Spacer()
                 Button("Dismiss", action: onDismiss)
                     .font(.caption2.weight(.semibold))
@@ -117,20 +131,58 @@ struct ResearchOnboardingCard: View {
                     .buttonStyle(.plain)
             }
 
-            checklistRow("Open a symbol page", done: openedSymbol)
-            checklistRow("Ask the research assistant", done: usedChat)
+            checklistRow(
+                "Search ticker or company name",
+                description: "Open a symbol from search to view its research hub.",
+                icon: "magnifyingglass",
+                done: hasOpenedSymbol
+            )
+            checklistRow(
+                "Save to your watchlist",
+                description: "Star a symbol to track it on Research.",
+                icon: "star",
+                done: hasWatchlist
+            )
+            checklistRow(
+                "Ask the assistant",
+                description: "On a symbol page, use quick prompts or type a question.",
+                icon: "message",
+                done: usedChat
+            )
         }
         .padding(14)
         .appPanel(subtle: true)
     }
 
-    private func checklistRow(_ title: String, done: Bool) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: done ? "checkmark.circle.fill" : "circle")
+    private func checklistRow(
+        _ title: String,
+        description: String,
+        icon: String,
+        done: Bool
+    ) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: done ? "checkmark.circle.fill" : icon)
+                .font(.body.weight(.semibold))
                 .foregroundStyle(done ? AppColors.success : AppColors.tertiaryLabel)
-            Text(title)
-                .font(.caption)
-                .foregroundStyle(AppColors.label)
+                .frame(width: 24)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(AppColors.label)
+                Text(description)
+                    .font(.caption2)
+                    .foregroundStyle(AppColors.secondaryLabel)
+                    .lineSpacing(2)
+            }
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(AppColors.background.opacity(done ? 0.6 : 0.4))
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(done ? AppColors.accentHighlight.opacity(0.3) : AppColors.separator, lineWidth: 1)
         }
     }
 }

@@ -78,13 +78,24 @@ struct SymbolIntelligenceDetail: Decodable {
 enum SymbolOptionsHelpers {
     static func hasOptionsContent(_ intelligence: SymbolIntelligenceDetail?) -> Bool {
         guard let intelligence else { return false }
-        if intelligence.optionsScorecard != nil { return true }
-        if intelligence.optionChainPreview != nil { return true }
+        if !(intelligence.optionsScorecard?.calls ?? []).isEmpty { return true }
+        if !(intelligence.optionsScorecard?.puts ?? []).isEmpty { return true }
+        if !(intelligence.optionsScorecard?.flags ?? []).isEmpty { return true }
+        if !(intelligence.optionChainPreview?.rows ?? []).isEmpty { return true }
         if !(intelligence.rollSuggestions ?? []).isEmpty { return true }
         return false
     }
 
     static func symbolHasOptionPositions(_ positions: [Position]) -> Bool {
         positions.contains { $0.instrument.assetType == "OPTION" }
+    }
+
+    static func shouldShowOptionsTab(
+        positions: [Position],
+        intelligence: SymbolIntelligenceDetail?,
+        activeTab: ResearchTab
+    ) -> Bool {
+        if activeTab == .options { return true }
+        return symbolHasOptionPositions(positions) || hasOptionsContent(intelligence)
     }
 }

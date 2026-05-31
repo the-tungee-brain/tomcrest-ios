@@ -34,6 +34,16 @@ final class SettingsViewModel {
     var selectedStrategyId: String?
     var selectedRiskTolerance = "moderate"
     var watchlistSymbolsText = ""
+    var optionsExperience = "beginner"
+    var incomeVsGrowth = "balanced"
+    var etfPrimary = "VTI"
+    var etfBond = "BND"
+    var etfStockPct: Double = 70
+    var rebalanceThresholdPct: Double = 5
+    var targetDeltaMin: Double = 0.20
+    var targetDeltaMax: Double = 0.30
+    var preferredDteDays: Int = 7
+    var maxSingleNamePct: Double = 15
 
     private let auth: AuthSession
 
@@ -181,6 +191,25 @@ final class SettingsViewModel {
         strategySavedMessage = nil
     }
 
+    func updateOptionsExperience(_ value: String) {
+        optionsExperience = value
+        strategySavedMessage = nil
+    }
+
+    func updateIncomeVsGrowth(_ value: String) {
+        incomeVsGrowth = value
+        strategySavedMessage = nil
+    }
+
+    var deltaBandDescription: String {
+        StrategyFormSupport.deltaBandDescription(for: selectedRiskTolerance)
+    }
+
+    var isWheelLikeStrategy: Bool {
+        guard let selectedStrategyId else { return false }
+        return StrategyFormSupport.wheelLikeStrategies.contains(selectedStrategyId)
+    }
+
     var selectedStrategyTitle: String? {
         guard let selectedStrategyId else { return nil }
         return strategyCatalog.first(where: { $0.id == selectedStrategyId })?.title
@@ -213,9 +242,7 @@ final class SettingsViewModel {
 
         let symbols = StrategyFormSupport.parseSymbols(watchlistSymbolsText)
         let update = StrategyFormSupport.buildUpdate(
-            strategyId: strategyId,
-            riskTolerance: selectedRiskTolerance,
-            symbols: symbols,
+            form: editorForm(symbols: symbols),
             profile: investmentProfile
         )
 
@@ -268,10 +295,41 @@ final class SettingsViewModel {
     }
 
     private func applyStrategyForm(from profile: UserInvestmentProfile?) {
-        selectedStrategyId = profile?.primaryStrategy ?? strategyCatalog.first?.id
-        selectedRiskTolerance = profile?.riskTolerance ?? "moderate"
-        let symbols = StrategyFormSupport.symbols(from: profile)
-        watchlistSymbolsText = symbols.joined(separator: ", ")
+        let form = StrategyFormSupport.editorForm(from: profile, strategyId: profile?.primaryStrategy)
+        selectedStrategyId = form.strategyId
+        selectedRiskTolerance = form.riskTolerance
+        optionsExperience = form.optionsExperience
+        incomeVsGrowth = form.incomeVsGrowth
+        watchlistSymbolsText = form.symbols.joined(separator: ", ")
+        etfPrimary = form.etfPrimary
+        etfBond = form.etfBond
+        etfStockPct = form.etfStockPct
+        rebalanceThresholdPct = form.rebalanceThresholdPct
+        targetDeltaMin = form.targetDeltaMin
+        targetDeltaMax = form.targetDeltaMax
+        preferredDteDays = form.preferredDteDays
+        maxSingleNamePct = form.maxSingleNamePct
+        if selectedStrategyId == nil {
+            selectedStrategyId = strategyCatalog.first?.id
+        }
+    }
+
+    private func editorForm(symbols: [String]) -> StrategyFormSupport.EditorForm {
+        StrategyFormSupport.EditorForm(
+            strategyId: selectedStrategyId ?? "wheel",
+            riskTolerance: selectedRiskTolerance,
+            optionsExperience: optionsExperience,
+            incomeVsGrowth: incomeVsGrowth,
+            symbols: symbols,
+            etfPrimary: etfPrimary,
+            etfBond: etfBond,
+            etfStockPct: etfStockPct,
+            rebalanceThresholdPct: rebalanceThresholdPct,
+            targetDeltaMin: targetDeltaMin,
+            targetDeltaMax: targetDeltaMax,
+            preferredDteDays: preferredDteDays,
+            maxSingleNamePct: maxSingleNamePct
+        )
     }
 
     private func showBanner(_ message: String, success: Bool) {

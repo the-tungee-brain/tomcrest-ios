@@ -45,16 +45,33 @@ struct AppChatPanelContent: View {
     let onToggle: () -> Void
     let onSend: () -> Void
     let onSelectPrompt: (String) -> Void
+    var onNewChat: (() -> Void)? = nil
+    var onShowHistory: (() -> Void)? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            AssistantPanelHeader(
-                title: title,
-                isExpanded: isExpanded,
-                expandAccessibilityLabel: expandAccessibilityLabel,
-                collapseAccessibilityLabel: collapseAccessibilityLabel,
-                onToggle: onToggle
-            )
+            HStack(spacing: 8) {
+                AssistantPanelHeader(
+                    title: title,
+                    isExpanded: isExpanded,
+                    expandAccessibilityLabel: expandAccessibilityLabel,
+                    collapseAccessibilityLabel: collapseAccessibilityLabel,
+                    onToggle: onToggle
+                )
+                if onNewChat != nil || onShowHistory != nil {
+                    Spacer(minLength: 0)
+                    if let onShowHistory {
+                        Button("History", action: onShowHistory)
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(AppColors.accentHighlight)
+                    }
+                    if let onNewChat {
+                        Button("New", action: onNewChat)
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(AppColors.accentHighlight)
+                    }
+                }
+            }
 
             if isExpanded {
                 Group {

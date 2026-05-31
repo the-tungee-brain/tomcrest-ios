@@ -331,9 +331,84 @@ struct StrategySettingsCard: View {
                         }
                     }
                     .pickerStyle(.segmented)
+                    Text(viewModel.deltaBandDescription)
+                        .font(.caption2)
+                        .foregroundStyle(AppColors.secondaryLabel)
                 }
 
-                if viewModel.selectedStrategyId != "etf-core" {
+                if viewModel.isWheelLikeStrategy {
+                    VStack(alignment: .leading, spacing: 8) {
+                        SettingsFieldLabel(title: "Options experience")
+                        Picker("Options experience", selection: Binding(
+                            get: { viewModel.optionsExperience },
+                            set: { viewModel.updateOptionsExperience($0) }
+                        )) {
+                            ForEach(StrategyFormSupport.optionsExperienceOptions, id: \.self) { option in
+                                Text(option.capitalized).tag(option)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                    }
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        SettingsFieldLabel(title: "Income vs growth")
+                        Picker("Income vs growth", selection: Binding(
+                            get: { viewModel.incomeVsGrowth },
+                            set: { viewModel.updateIncomeVsGrowth($0) }
+                        )) {
+                            ForEach(StrategyFormSupport.incomeVsGrowthOptions, id: \.self) { option in
+                                Text(option.capitalized).tag(option)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                    }
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        SettingsFieldLabel(title: "Delta band")
+                        HStack {
+                            Text("Min")
+                                .font(.caption2)
+                            TextField("Min", value: $viewModel.targetDeltaMin, format: .number)
+                                .textFieldStyle(.roundedBorder)
+                            Text("Max")
+                                .font(.caption2)
+                            TextField("Max", value: $viewModel.targetDeltaMax, format: .number)
+                                .textFieldStyle(.roundedBorder)
+                        }
+                        HStack {
+                            Stepper("DTE \(viewModel.preferredDteDays)", value: $viewModel.preferredDteDays, in: 5 ... 45)
+                                .font(.caption)
+                        }
+                        HStack {
+                            Text("Max single name %")
+                                .font(.caption2)
+                            Slider(value: $viewModel.maxSingleNamePct, in: 5 ... 30, step: 1)
+                            Text("\(Int(viewModel.maxSingleNamePct))%")
+                                .font(.caption.monospacedDigit())
+                        }
+                    }
+                }
+
+                if viewModel.selectedStrategyId == "etf-core" {
+                    VStack(alignment: .leading, spacing: 8) {
+                        SettingsFieldLabel(title: "Stock ETF")
+                        AppFormField(placeholder: "VTI", text: $viewModel.etfPrimary)
+                        SettingsFieldLabel(title: "Bond ETF")
+                        AppFormField(placeholder: "BND", text: $viewModel.etfBond)
+                        SettingsFieldLabel(title: "Stock allocation")
+                        HStack {
+                            Slider(value: $viewModel.etfStockPct, in: 50 ... 90, step: 5)
+                            Text("\(Int(viewModel.etfStockPct))%")
+                                .font(.caption.monospacedDigit())
+                        }
+                        SettingsFieldLabel(title: "Rebalance threshold")
+                        HStack {
+                            Slider(value: $viewModel.rebalanceThresholdPct, in: 3 ... 15, step: 1)
+                            Text("\(Int(viewModel.rebalanceThresholdPct))%")
+                                .font(.caption.monospacedDigit())
+                        }
+                    }
+                } else {
                     VStack(alignment: .leading, spacing: 8) {
                         SettingsFieldLabel(title: "Watchlist symbols")
                         AppFormField(
@@ -344,10 +419,6 @@ struct StrategySettingsCard: View {
                             )
                         )
                     }
-                } else {
-                    Text("ETF Core allocation is managed on the web app for now.")
-                        .font(.caption2)
-                        .foregroundStyle(AppColors.secondaryLabel)
                 }
             }
         }

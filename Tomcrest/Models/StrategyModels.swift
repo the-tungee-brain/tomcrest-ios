@@ -160,7 +160,57 @@ struct StrategyRecommendations: Decodable {
 
 enum StrategyFormSupport {
     static let riskOptions = ["conservative", "moderate", "aggressive"]
+    static let optionsExperienceOptions = ["none", "beginner", "intermediate", "advanced"]
+    static let incomeVsGrowthOptions = ["income", "balanced", "growth"]
     static let wheelLikeStrategies: Set<String> = ["wheel", "csp-income", "covered-call"]
+
+    struct EditorForm {
+        var strategyId: String
+        var riskTolerance: String
+        var optionsExperience: String
+        var incomeVsGrowth: String
+        var symbols: [String]
+        var etfPrimary: String
+        var etfBond: String
+        var etfStockPct: Double
+        var rebalanceThresholdPct: Double
+        var targetDeltaMin: Double
+        var targetDeltaMax: Double
+        var preferredDteDays: Int
+        var maxSingleNamePct: Double
+    }
+
+    static func deltaBandDescription(for riskTolerance: String) -> String {
+        let band = deltaBand(for: riskTolerance)
+        return String(format: "%.2f–%.2f delta", band.min, band.max)
+    }
+
+    static func editorForm(from profile: UserInvestmentProfile?, strategyId: String?) -> EditorForm {
+        let strategy = strategyId ?? profile?.primaryStrategy ?? "wheel"
+        let risk = profile?.riskTolerance ?? "moderate"
+        let delta = deltaBand(for: risk)
+        let allocation = profile?.etfCore?.targetAllocation ?? [:]
+        let entries = Array(allocation.sorted { $0.key < $1.key })
+        let primary = entries.first?.key ?? "VTI"
+        let bond = entries.dropFirst().first?.key ?? "BND"
+        let stockPct = entries.first?.value ?? 70
+
+        return EditorForm(
+            strategyId: strategy,
+            riskTolerance: risk,
+            optionsExperience: profile?.optionsExperience ?? "beginner",
+            incomeVsGrowth: profile?.incomeVsGrowth ?? "balanced",
+            symbols: symbols(from: profile),
+            etfPrimary: primary,
+            etfBond: bond,
+            etfStockPct: stockPct,
+            rebalanceThresholdPct: profile?.etfCore?.rebalanceThresholdPct ?? 5,
+            targetDeltaMin: profile?.wheel?.targetDeltaMin ?? delta.min,
+            targetDeltaMax: profile?.wheel?.targetDeltaMax ?? delta.max,
+            preferredDteDays: profile?.wheel?.preferredDteDays ?? 7,
+            maxSingleNamePct: profile?.wheel?.maxSingleNamePct ?? 15
+        )
+    }
 
     static func symbols(from profile: UserInvestmentProfile?) -> [String] {
         guard let profile else { return [] }
@@ -184,51 +234,66 @@ enum StrategyFormSupport {
         }
     }
 
+    static func buildUpdate(form: EditorForm, profile: UserInvestmentProfile?) -> UserInvestmentProfileUpdate {
+        let delta = deltaBand(for: form.riskTolerance)
+        let deltaMin = wheelLikeStrategies.contains(form.strategyId) ? form.targetDeltaMin : delta.min
+        let deltaMax = wheelLikeStrategies.contains(form.strategyId) ? form.targetDeltaMax : delta.max
+
+        var wheel: WheelStrategyConfigUpdate?
+        var dividend: DividendStrategyConfigUpdate?
+        var etfCore: EtfCoreStrategyConfigUpdate?
+
+        if wheelLikeStrategies.contains(form.strategyId) {
+            wheel = WheelStrategyConfigUpdate(
+                wheelSymbols: form.symbols,
+                targetDeltaMin: deltaMin,
+                targetDeltaMax: deltaMax,
+                preferredDteDays: form.preferredDteDays,
+                maxSingleNamePct: form.maxSingleNamePct
+            )
+        } else if form.strategyId == "dividend" {
+            dividend = DividendStrategyConfigUpdate(
+                dividendSymbols: form.symbols,
+                targetYieldPct: profile?.dividend?.targetYieldPct,
+                maxPayoutRatio: profile?.dividend?.maxPayoutRatio ?? 75
+            )
+        } else if form.strategyId == "etf-core" {
+            let bondPct = max(0, min(100, 100 - form.etfStockPct))
+            etfCore = EtfCoreStrategyConfigUpdate(
+                targetAllocation: [
+                    form.etfPrimary.uppercased(): form.etfStockPct,
+                    form.etfBond.uppercased(): bondPct,
+                ],
+                rebalanceThresholdPct: form.rebalanceThresholdPct
+            )
+        }
+
+        return UserInvestmentProfileUpdate(
+            primaryStrategy: form.strategyId,
+            riskTolerance: form.riskTolerance,
+            optionsExperience: form.optionsExperience,
+            incomeVsGrowth: form.incomeVsGrowth,
+            wheel: wheel,
+            dividend: dividend,
+            etfCore: etfCore,
+            completeOnboarding: nil
+        )
+    }
+
+    static func buildUpdate(form: EditorForm) -> UserInvestmentProfileUpdate {
+        buildUpdate(form: form, profile: nil)
+    }
+
     static func buildUpdate(
         strategyId: String,
         riskTolerance: String,
         symbols: [String],
         profile: UserInvestmentProfile?
     ) -> UserInvestmentProfileUpdate {
-        let delta = deltaBand(for: riskTolerance)
-        let optionsExperience = profile?.optionsExperience ?? "beginner"
-        let incomeVsGrowth = profile?.incomeVsGrowth ?? "balanced"
-
-        var wheel: WheelStrategyConfigUpdate?
-        var dividend: DividendStrategyConfigUpdate?
-        var etfCore: EtfCoreStrategyConfigUpdate?
-
-        if wheelLikeStrategies.contains(strategyId) {
-            wheel = WheelStrategyConfigUpdate(
-                wheelSymbols: symbols,
-                targetDeltaMin: delta.min,
-                targetDeltaMax: delta.max,
-                preferredDteDays: profile?.wheel?.preferredDteDays ?? 7,
-                maxSingleNamePct: profile?.wheel?.maxSingleNamePct ?? 15
-            )
-        } else if strategyId == "dividend" {
-            dividend = DividendStrategyConfigUpdate(
-                dividendSymbols: symbols,
-                targetYieldPct: profile?.dividend?.targetYieldPct,
-                maxPayoutRatio: profile?.dividend?.maxPayoutRatio ?? 75
-            )
-        } else if strategyId == "etf-core" {
-            etfCore = EtfCoreStrategyConfigUpdate(
-                targetAllocation: profile?.etfCore?.targetAllocation ?? ["VTI": 70, "BND": 30],
-                rebalanceThresholdPct: profile?.etfCore?.rebalanceThresholdPct ?? 5
-            )
-        }
-
-        return UserInvestmentProfileUpdate(
-            primaryStrategy: strategyId,
-            riskTolerance: riskTolerance,
-            optionsExperience: optionsExperience,
-            incomeVsGrowth: incomeVsGrowth,
-            wheel: wheel,
-            dividend: dividend,
-            etfCore: etfCore,
-            completeOnboarding: nil
-        )
+        var form = editorForm(from: profile, strategyId: strategyId)
+        form.riskTolerance = riskTolerance
+        form.symbols = symbols
+        return buildUpdate(form: form)
     }
 
     static func parseSymbols(_ text: String) -> [String] {

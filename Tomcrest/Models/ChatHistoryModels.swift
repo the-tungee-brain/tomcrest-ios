@@ -25,6 +25,11 @@ struct ChatSessionMessagesResponse: Decodable {
     let messages: [ServerChatMessage]
 }
 
+struct DeleteChatSessionResponse: Decodable {
+    let deleted: Bool
+    let sessionId: String
+}
+
 struct LoadedChatHistory {
     let sessionId: String
     let messages: [ChatMessage]

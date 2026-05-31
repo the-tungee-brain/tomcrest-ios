@@ -40,6 +40,9 @@ final class PortfolioViewModel {
     private(set) var chatInput = ""
     private(set) var chatLoading = false
     private(set) var chatExpanded = false
+    var showChatHistory = false
+    private(set) var chatSessions: [ChatSessionSummary] = []
+    private(set) var chatSessionsLoading = false
 
     var activeSection: PortfolioSection = .today
     private(set) var portfolioNews: [PortfolioHoldingsNewsItem] = []
@@ -481,6 +484,64 @@ final class PortfolioViewModel {
         }
         chatSessionId = loaded.sessionId
         chatHistoryHydrated = true
+    }
+
+    func startNewChat() {
+        chatSessionId = nil
+        chatMessages = []
+        chatHistoryHydrated = true
+        chatExpanded = true
+    }
+
+    func loadChatSessions() async {
+        guard let accessToken = auth.accessToken else { return }
+        chatSessionsLoading = true
+        defer { chatSessionsLoading = false }
+
+        do {
+            chatSessions = try await ChatService.listSessions(
+                accessToken: accessToken,
+                kind: ChatHistoryScope.portfolio.sessionKind
+            )
+        } catch {
+            chatSessions = []
+        }
+    }
+
+    func openChatSession(_ session: ChatSessionSummary) async {
+        guard let accessToken = auth.accessToken else { return }
+        showChatHistory = false
+        chatLoading = true
+        defer { chatLoading = false }
+
+        do {
+            if let loaded = try await ChatHistoryLoader.loadSession(
+                sessionId: session.id,
+                accessToken: accessToken
+            ) {
+                chatSessionId = loaded.sessionId
+                chatMessages = loaded.messages
+                chatHistoryHydrated = true
+                chatExpanded = true
+            }
+        } catch {
+            auth.setError((error as? APIError)?.errorDescription ?? error.localizedDescription)
+        }
+    }
+
+    func deleteChatSession(_ session: ChatSessionSummary) async {
+        guard let accessToken = auth.accessToken else { return }
+
+        do {
+            try await ChatService.deleteSession(sessionId: session.id, accessToken: accessToken)
+            chatSessions.removeAll { $0.id == session.id }
+            if chatSessionId == session.id {
+                startNewChat()
+            }
+            auth.clearError()
+        } catch {
+            auth.setError((error as? APIError)?.errorDescription ?? error.localizedDescription)
+        }
     }
 
     func loadIfNeeded() async {

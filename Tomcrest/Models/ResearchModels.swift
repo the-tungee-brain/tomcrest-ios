@@ -45,13 +45,28 @@ struct SymbolIntelligence: Codable {
     let partial: Bool?
 }
 
-struct ResearchOverviewBundle: Codable {
+struct ResearchOverviewBundle: Decodable {
     let symbol: String
     let assetType: String?
     let asOf: String
     let snapshot: ResearchSnapshot
     let performance: PerformanceSnapshot
     let intelligence: SymbolIntelligence
+    let summary: AISummary?
+    let streetAnalysis: StreetAnalysisSnapshot?
+    let etfHoldings: EtfHoldingsContext?
+    let etfFunds: EtfFundsSnapshot?
+}
+
+struct AISummary: Codable {
+    let short: String
+    let long: String
+    let sentiment: String
+    let investmentThesis: String
+    let keyStrengths: [String]
+    let keyRisks: [String]
+    let whatToWatch: [String]
+    let valuationContext: String
 }
 
 enum AssetTypeLabel {

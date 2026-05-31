@@ -40,23 +40,20 @@ struct SymbolFinancialsTab: View {
 
                     if !block.metrics.isEmpty {
                         AppScreenSection(title: "Key metrics") {
-                            AppGroupedList {
-                                ForEach(Array(block.metrics.prefix(10).enumerated()), id: \.element.id) { index, metric in
-                                    AppListRow {
-                                        Text(metric.label)
-                                            .font(AppTypography.bodySecondary)
-                                            .foregroundStyle(AppColors.secondaryLabel)
-                                    } trailing: {
-                                        Text(metric.value)
-                                            .font(AppTypography.cardTitle)
-                                            .foregroundStyle(AppColors.label)
-                                    }
-                                    if index < min(block.metrics.count, 10) - 1 {
-                                        AppGroupedDivider()
-                                    }
-                                }
-                            }
+                            GroupedKeyMetricsSection(metrics: block.metrics)
                         }
+                    }
+
+                    AppScreenSection(title: "SEC filings") {
+                        SecFilingsSectionView(filings: viewModel.secFilings)
+                    }
+
+                    AppScreenSection(title: "Financial trends (SEC)") {
+                        SecFinancialTrendSectionView(financials: viewModel.secFinancials)
+                    }
+
+                    AppScreenSection(title: "Ratios (SEC)") {
+                        SecRatiosSectionView(ratios: viewModel.secRatios)
                     }
                 }
             }
@@ -270,6 +267,16 @@ struct DividendSnowballCard: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(AppColors.accentHighlight)
                     .buttonStyle(.plain)
+
+                    PdfShareButton(
+                        title: "Download PDF",
+                        url: PdfExportSupport.writeDividendSnowballPdf(
+                            symbol: context.ticker,
+                            context: context,
+                            projectYears: Int(projectYears),
+                            reinvest: reinvest
+                        )
+                    )
                 }
                 .appPanel(subtle: true)
             }

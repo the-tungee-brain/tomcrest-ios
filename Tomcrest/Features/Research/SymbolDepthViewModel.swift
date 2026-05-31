@@ -15,6 +15,11 @@ final class SymbolDepthViewModel {
     private(set) var etfHoldings: EtfHoldingsContext?
     private(set) var symbolIntelligence: SymbolIntelligenceDetail?
     private(set) var wheelBacktest: WheelBacktestResult?
+    private(set) var secFilings: SecFilingsResponse?
+    private(set) var secRatios: SecRatiosResponse?
+    private(set) var secFinancials: SecFinancialsResponse?
+    var wheelBacktestQuery: WheelBacktestQuery
+    private(set) var wheelBacktestLoading = false
 
     private(set) var selectedHistoryEvent: EarningsEvent?
     private(set) var earningsDetail: EarningsDetailResponse?
@@ -30,6 +35,7 @@ final class SymbolDepthViewModel {
     init(symbol: String, auth: AuthSession) {
         self.symbol = symbol.uppercased()
         self.auth = auth
+        self.wheelBacktestQuery = WheelBacktestQuery(symbol: symbol.uppercased())
     }
 
     func loadIfNeeded(_ tab: ResearchTab, force: Bool = false) async {
@@ -44,6 +50,24 @@ final class SymbolDepthViewModel {
             }
         }
 
+        await loadTab(tab)
+    }
+
+    func prefetchOptionsIntelligenceIfNeeded(hasOptionPositions: Bool) async {
+        guard hasOptionPositions, symbolIntelligence == nil else { return }
+        guard let accessToken = auth.accessToken else { return }
+
+        do {
+            symbolIntelligence = try await ResearchService.fetchSymbolIntelligence(
+                symbol: symbol,
+                accessToken: accessToken
+            )
+        } catch {
+            // Options tab gating falls back to position checks only.
+        }
+    }
+
+    private func loadTab(_ tab: ResearchTab) async {
         do {
             switch tab {
             case .overview, .position:
@@ -82,7 +106,7 @@ final class SymbolDepthViewModel {
                     symbol: symbol,
                     accessToken: accessToken
                 )
-            case .fundamentals, .financials:
+            case .fundamentals:
                 guard let accessToken = auth.accessToken else {
                     throw APIError.missingToken
                 }
@@ -90,6 +114,33 @@ final class SymbolDepthViewModel {
                     symbol: symbol,
                     accessToken: accessToken
                 )
+            case .financials:
+                guard let accessToken = auth.accessToken else {
+                    throw APIError.missingToken
+                }
+                async let fundamentalsTask = ResearchService.fetchFundamentals(
+                    symbol: symbol,
+                    accessToken: accessToken
+                )
+                async let filingsTask = ResearchService.fetchSecFilings(
+                    symbol: symbol,
+                    accessToken: accessToken
+                )
+                async let ratiosTask = ResearchService.fetchSecRatios(
+                    symbol: symbol,
+                    accessToken: accessToken
+                )
+                async let financialsTask = ResearchService.fetchSecFinancials(
+                    symbol: symbol,
+                    accessToken: accessToken
+                )
+                let (fundamentalsResult, filingsResult, ratiosResult, financialsResult) = try await (
+                    fundamentalsTask, filingsTask, ratiosTask, financialsTask
+                )
+                fundamentals = fundamentalsResult
+                secFilings = filingsResult
+                secRatios = ratiosResult
+                secFinancials = financialsResult
             case .composition:
                 guard let accessToken = auth.accessToken else {
                     throw APIError.missingToken
@@ -115,13 +166,10 @@ final class SymbolDepthViewModel {
                     accessToken: accessToken
                 )
             case .wheelBacktest:
-                guard let accessToken = auth.accessToken else {
-                    throw APIError.missingToken
+                await runWheelBacktest()
+                guard wheelBacktest != nil else {
+                    throw APIError.httpStatus(0, message: tabErrors[.wheelBacktest] ?? "Backtest failed.")
                 }
-                wheelBacktest = try await ResearchService.fetchWheelBacktest(
-                    query: WheelBacktestQuery(symbol: symbol),
-                    accessToken: accessToken
-                )
             }
             loadedTabs.insert(tab)
         } catch {
@@ -219,6 +267,22 @@ final class SymbolDepthViewModel {
             loadedTabs.insert(.dividends)
         } catch {
             tabErrors[.dividends] = (error as? APIError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+
+    func runWheelBacktest() async {
+        guard let accessToken = auth.accessToken else { return }
+        wheelBacktestLoading = true
+        tabErrors[.wheelBacktest] = nil
+        defer { wheelBacktestLoading = false }
+
+        do {
+            wheelBacktest = try await ResearchService.fetchWheelBacktest(
+                query: wheelBacktestQuery,
+                accessToken: accessToken
+            )
+        } catch {
+            tabErrors[.wheelBacktest] = (error as? APIError)?.errorDescription ?? error.localizedDescription
         }
     }
 }

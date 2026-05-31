@@ -28,6 +28,7 @@ final class StrategyScreenerViewModel {
 
     private let auth: AuthSession
     private let strategyId: String
+    private var autoRunTask: Task<Void, Never>?
 
     init(strategyId: String, auth: AuthSession) {
         self.strategyId = strategyId
@@ -73,6 +74,15 @@ final class StrategyScreenerViewModel {
         page = 1
         result = nil
         await load(force: true)
+    }
+
+    func scheduleAutoRun() {
+        autoRunTask?.cancel()
+        autoRunTask = Task {
+            try? await Task.sleep(for: .milliseconds(450))
+            guard !Task.isCancelled else { return }
+            await runSearch()
+        }
     }
 
     func nextPage() async {
@@ -147,7 +157,19 @@ struct StrategyStockScreenerSheet: View {
                 }
             }
             .task {
-                await viewModel.load()
+                await viewModel.runSearch()
+            }
+            .onChange(of: viewModel.filters.minMarketCap) { _, _ in
+                viewModel.scheduleAutoRun()
+            }
+            .onChange(of: viewModel.filters.requireDividend) { _, _ in
+                viewModel.scheduleAutoRun()
+            }
+            .onChange(of: viewModel.filters.maxPe) { _, _ in
+                viewModel.scheduleAutoRun()
+            }
+            .onChange(of: viewModel.filters.sectors) { _, _ in
+                viewModel.scheduleAutoRun()
             }
         }
     }

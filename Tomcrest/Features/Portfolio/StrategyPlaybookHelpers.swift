@@ -65,6 +65,10 @@ enum StrategyPlaybookHelpers {
         return status.held ? "Held" : "Not held"
     }
 
+    static func symbolNeedsAttention(_ status: StrategySymbolStatus) -> Bool {
+        (status.priority ?? 50) <= 2
+    }
+
     static func wheelPhaseLabel(_ phase: String?) -> String {
         switch phase {
         case "ready-for-csp": return "Ready for CSP"

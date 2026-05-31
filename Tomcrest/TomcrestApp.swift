@@ -4,6 +4,7 @@ import SwiftUI
 struct TomcrestApp: App {
     @State private var auth = AuthSession()
     @State private var account = AccountContext()
+    @State private var researchBookmarks = ResearchSymbolBookmarks()
 
     init() {
         GoogleSignInCoordinator.configure()
@@ -14,12 +15,21 @@ struct TomcrestApp: App {
             RootView()
                 .environment(auth)
                 .environment(account)
+                .environment(researchBookmarks)
                 .preferredColorScheme(.dark)
                 .onOpenURL { url in
                     _ = GoogleSignInCoordinator.handle(url)
                 }
                 .task {
                     auth.bootstrap()
+                    let refresh: @Sendable () async -> String? = { [auth] in
+                        await auth.refreshAccessToken()
+                    }
+                    await APIClient.shared.setTokenRefresher(refresh)
+                    StreamingAPIClient.setTokenRefresher(refresh)
+                }
+                .onReceive(NotificationCenter.default.publisher(for: .tomcrestUnauthorized)) { _ in
+                    auth.handleUnauthorized()
                 }
         }
     }

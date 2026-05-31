@@ -21,6 +21,7 @@ enum ResearchService {
         symbol: String,
         accessToken: String,
         holdingsLimit: Int = 8,
+        includeSummary: Bool = false,
         api: APIClient = .shared
     ) async throws -> ResearchOverviewBundle {
         try await api.get(
@@ -28,6 +29,77 @@ enum ResearchService {
             query: [
                 "symbol": symbol.uppercased(),
                 "holdings_limit": String(holdingsLimit),
+                "include_summary": includeSummary ? "true" : "false",
+            ],
+            accessToken: accessToken
+        )
+    }
+
+    static func fetchStockChart(
+        symbol: String,
+        accessToken: String,
+        period: String = "3mo",
+        interval: String = "1d",
+        api: APIClient = .shared
+    ) async throws -> StockChartPayload {
+        try await api.get(
+            "/get-stock-data",
+            query: [
+                "symbol": symbol.uppercased(),
+                "period": period,
+                "interval": interval,
+            ],
+            accessToken: accessToken
+        )
+    }
+
+    static func fetchSecFilings(
+        symbol: String,
+        accessToken: String,
+        limit: Int = 12,
+        api: APIClient = .shared
+    ) async throws -> SecFilingsResponse {
+        try await api.get(
+            "/research/sec/filings",
+            query: [
+                "symbol": symbol.uppercased(),
+                "limit": String(limit),
+            ],
+            accessToken: accessToken
+        )
+    }
+
+    static func fetchSecFinancials(
+        symbol: String,
+        accessToken: String,
+        period: String = "annual",
+        limit: Int = 8,
+        api: APIClient = .shared
+    ) async throws -> SecFinancialsResponse {
+        try await api.get(
+            "/research/sec/financials",
+            query: [
+                "symbol": symbol.uppercased(),
+                "period": period,
+                "limit": String(limit),
+            ],
+            accessToken: accessToken
+        )
+    }
+
+    static func fetchSecRatios(
+        symbol: String,
+        accessToken: String,
+        period: String = "annual",
+        limit: Int = 8,
+        api: APIClient = .shared
+    ) async throws -> SecRatiosResponse {
+        try await api.get(
+            "/research/sec/ratios",
+            query: [
+                "symbol": symbol.uppercased(),
+                "period": period,
+                "limit": String(limit),
             ],
             accessToken: accessToken
         )

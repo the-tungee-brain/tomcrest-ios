@@ -83,6 +83,17 @@ final class SymbolOverviewViewModel {
     private(set) var isLoading = false
     private(set) var errorMessage: String?
 
+    private(set) var stockChart: StockChartPayload?
+    private(set) var isChartLoading = false
+    private(set) var chartError: String?
+    var chartPeriod: StockChartPeriod = .threeMonths
+
+    private(set) var isBigPictureLoading = false
+    private(set) var bigPictureError: String?
+
+    private(set) var chatSessions: [ChatSessionSummary] = []
+    private(set) var chatSessionsLoading = false
+    var showChatHistory = false
     private(set) var chatMessages: [ChatMessage] = []
     private(set) var chatInput = ""
     private(set) var chatLoading = false
@@ -181,6 +192,8 @@ final class SymbolOverviewViewModel {
                 chatSessionId = sessionId
             }
 
+            ResearchSymbolStorage.markResearchChatUsed()
+
             if chatMessages.first(where: { $0.id == assistantId })?
                 .content
                 .trimmingCharacters(in: .whitespacesAndNewlines)
@@ -232,6 +245,7 @@ final class SymbolOverviewViewModel {
             if let sessionId = completion.chatSessionId {
                 chatSessionId = sessionId
             }
+            ResearchSymbolStorage.markResearchChatUsed()
             auth.clearError()
         } catch {
             appendAssistantChunk(
@@ -299,6 +313,108 @@ final class SymbolOverviewViewModel {
         } catch {
             bundle = nil
             errorMessage = (error as? APIError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+
+    func loadStockChartIfNeeded() async {
+        guard stockChart == nil else { return }
+        await loadStockChart()
+    }
+
+    func loadStockChart() async {
+        guard let accessToken = auth.accessToken else { return }
+
+        isChartLoading = true
+        chartError = nil
+        defer { isChartLoading = false }
+
+        do {
+            stockChart = try await ResearchService.fetchStockChart(
+                symbol: symbol,
+                accessToken: accessToken,
+                period: chartPeriod.rawValue,
+                api: api
+            )
+        } catch {
+            stockChart = nil
+            chartError = (error as? APIError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+
+    func refreshBigPicture() async {
+        guard let accessToken = auth.accessToken else { return }
+
+        isBigPictureLoading = true
+        bigPictureError = nil
+        defer { isBigPictureLoading = false }
+
+        do {
+            bundle = try await ResearchService.fetchOverviewBundle(
+                symbol: symbol,
+                accessToken: accessToken,
+                includeSummary: true,
+                api: api
+            )
+        } catch {
+            bigPictureError = (error as? APIError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+
+    func startNewChat() {
+        chatSessionId = nil
+        chatMessages = []
+        chatHistoryHydrated = true
+        chatExpanded = true
+    }
+
+    func loadChatSessions() async {
+        guard let accessToken = auth.accessToken else { return }
+        chatSessionsLoading = true
+        defer { chatSessionsLoading = false }
+
+        do {
+            chatSessions = try await ChatService.listSessions(
+                accessToken: accessToken,
+                kind: ChatHistoryScope.research(symbol: symbol).sessionKind
+            )
+        } catch {
+            chatSessions = []
+        }
+    }
+
+    func openChatSession(_ session: ChatSessionSummary) async {
+        guard let accessToken = auth.accessToken else { return }
+        showChatHistory = false
+        chatLoading = true
+        defer { chatLoading = false }
+
+        do {
+            if let loaded = try await ChatHistoryLoader.loadSession(
+                sessionId: session.id,
+                accessToken: accessToken
+            ) {
+                chatSessionId = loaded.sessionId
+                chatMessages = loaded.messages
+                chatHistoryHydrated = true
+                chatExpanded = true
+            }
+        } catch {
+            auth.setError((error as? APIError)?.errorDescription ?? error.localizedDescription)
+        }
+    }
+
+    func deleteChatSession(_ session: ChatSessionSummary) async {
+        guard let accessToken = auth.accessToken else { return }
+
+        do {
+            try await ChatService.deleteSession(sessionId: session.id, accessToken: accessToken)
+            chatSessions.removeAll { $0.id == session.id }
+            if chatSessionId == session.id {
+                startNewChat()
+            }
+            auth.clearError()
+        } catch {
+            auth.setError((error as? APIError)?.errorDescription ?? error.localizedDescription)
         }
     }
 }

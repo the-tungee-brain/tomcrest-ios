@@ -3,6 +3,7 @@ import SwiftUI
 struct SymbolResearchView: View {
     @Environment(AccountContext.self) private var account
     @Environment(AuthSession.self) private var auth
+    @Environment(ResearchSymbolBookmarks.self) private var bookmarks
     @State private var overviewVM: SymbolOverviewViewModel
     @State private var depthVM: SymbolDepthViewModel
     @State private var positionVM: SymbolPositionViewModel
@@ -20,7 +21,18 @@ struct SymbolResearchView: View {
     }
 
     private var availableTabs: [ResearchTab] {
-        ResearchTab.tabs(for: overviewVM.bundle?.assetType, primaryStrategy: primaryStrategy)
+        let tabs = ResearchTab.tabs(
+            for: overviewVM.bundle?.assetType,
+            primaryStrategy: primaryStrategy
+        )
+        guard SymbolOptionsHelpers.shouldShowOptionsTab(
+            positions: positionVM.positions,
+            intelligence: depthVM.symbolIntelligence,
+            activeTab: selectedTab
+        ) else {
+            return tabs.filter { $0 != .options }
+        }
+        return tabs
     }
 
     private var companyName: String? {
@@ -83,8 +95,11 @@ struct SymbolResearchView: View {
                 .accessibilityElement(children: .combine)
             }
             ToolbarItem(placement: .topBarTrailing) {
-                AppToolbarRefreshButton(isRefreshing: isRefreshing) {
-                    Task { await refreshCurrentTab() }
+                HStack(spacing: 4) {
+                    WatchlistToggleButton(symbol: overviewVM.symbol)
+                    AppToolbarRefreshButton(isRefreshing: isRefreshing) {
+                        Task { await refreshCurrentTab() }
+                    }
                 }
             }
         }
@@ -95,8 +110,15 @@ struct SymbolResearchView: View {
         }
         .task {
             await overviewVM.loadIfNeeded()
+            await positionVM.loadIfNeeded()
+            await depthVM.prefetchOptionsIntelligenceIfNeeded(
+                hasOptionPositions: positionVM.hasOptionPositions
+            )
             await loadStrategyContext()
             ensureValidTabSelection()
+        }
+        .onAppear {
+            bookmarks.recordRecent(overviewVM.symbol)
         }
         .onChange(of: selectedTab) { _, tab in
             Task {
@@ -114,6 +136,15 @@ struct SymbolResearchView: View {
                 }
             }
         }
+        .onChange(of: positionVM.hasOptionPositions) { _, hasOptions in
+            Task {
+                await depthVM.prefetchOptionsIntelligenceIfNeeded(hasOptionPositions: hasOptions)
+                ensureValidTabSelection()
+            }
+        }
+        .onChange(of: depthVM.symbolIntelligence?.symbol) { _, _ in
+            ensureValidTabSelection()
+        }
         .onChange(of: overviewVM.bundle?.assetType) { _, _ in
             ensureValidTabSelection()
         }
@@ -123,7 +154,13 @@ struct SymbolResearchView: View {
     private var tabContent: some View {
         switch selectedTab {
         case .overview:
-            SymbolOverviewTab(viewModel: overviewVM, bundle: overviewVM.bundle)
+            SymbolOverviewTab(
+                viewModel: overviewVM,
+                positionViewModel: positionVM,
+                bundle: overviewVM.bundle
+            ) { prompt in
+                overviewVM.openChatWithPrompt(prompt)
+            }
         case .position:
             SymbolPositionTab(viewModel: positionVM) { prompt in
                 if prompt == "__open_options_tab__" {
@@ -134,7 +171,14 @@ struct SymbolResearchView: View {
                 }
             }
         case .options:
-            SymbolOptionsTab(viewModel: depthVM, symbolPositions: positionVM.positions) { prompt in
+            SymbolOptionsTab(
+                viewModel: depthVM,
+                symbolPositions: positionVM.positions,
+                assignmentRiskSummary: OptionsRiskHelpers.filterAssignmentRisk(
+                    positionVM.assignmentRiskSummary,
+                    symbol: overviewVM.symbol
+                )
+            ) { prompt in
                 selectedTab = .overview
                 overviewVM.openChatWithPrompt(prompt)
             }
@@ -234,5 +278,6 @@ struct SymbolResearchView: View {
         }
         .environment(AuthSession())
         .environment(AccountContext())
+        .environment(ResearchSymbolBookmarks())
     }
 }

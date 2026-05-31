@@ -327,6 +327,7 @@ struct SymbolAlertStrip: View {
                     .font(.caption2)
                     .foregroundStyle(AppColors.secondaryLabel)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
             .background(AppColors.secondaryBackground.opacity(0.5))
@@ -369,9 +370,16 @@ struct SymbolAlertStrip: View {
                     .buttonStyle(.plain)
                 }
             }
-            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
         }
-        .appPanel(subtle: true)
+        .background(AppColors.secondaryBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(AppColors.panelBorder, lineWidth: 1)
+        }
     }
 
     private func alertIcon(for alert: ProactiveAlert) -> String {

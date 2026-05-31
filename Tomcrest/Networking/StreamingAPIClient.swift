@@ -8,10 +8,32 @@ enum StreamingAPIClient {
         return URLSession(configuration: config)
     }()
 
+    private static var tokenRefresher: (@Sendable () async -> String?)?
+
+    static func setTokenRefresher(_ refresher: (@Sendable () async -> String?)?) {
+        tokenRefresher = refresher
+    }
+
     static func streamPost(
         path: String,
         bodyData: Data,
         accessToken: String,
+        onChunk: @escaping @Sendable (String) -> Void
+    ) async throws -> StreamCompletion {
+        try await streamPost(
+            path: path,
+            bodyData: bodyData,
+            accessToken: accessToken,
+            isRetry: false,
+            onChunk: onChunk
+        )
+    }
+
+    private static func streamPost(
+        path: String,
+        bodyData: Data,
+        accessToken: String,
+        isRetry: Bool,
         onChunk: @escaping @Sendable (String) -> Void
     ) async throws -> StreamCompletion {
         let config = APIConfiguration()
@@ -28,6 +50,16 @@ enum StreamingAPIClient {
         }
 
         if http.statusCode == 401 {
+            if !isRetry, let refresher = tokenRefresher, let newToken = await refresher() {
+                return try await streamPost(
+                    path: path,
+                    bodyData: bodyData,
+                    accessToken: newToken,
+                    isRetry: true,
+                    onChunk: onChunk
+                )
+            }
+            NotificationCenter.default.post(name: .tomcrestUnauthorized, object: nil)
             throw APIError.unauthorized
         }
 

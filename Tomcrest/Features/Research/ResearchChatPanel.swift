@@ -28,6 +28,13 @@ struct ResearchChatPanel: View {
                 if let prompt = viewModel.suggestedPrompt(for: label) {
                     viewModel.updateChatInput(prompt)
                 }
+            },
+            onNewChat: { viewModel.startNewChat() },
+            onShowHistory: {
+                Task {
+                    await viewModel.loadChatSessions()
+                    viewModel.showChatHistory = true
+                }
             }
         )
     }

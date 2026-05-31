@@ -31,6 +31,17 @@ enum ChatService {
         )
         return response.messages
     }
+
+    static func deleteSession(
+        sessionId: String,
+        accessToken: String,
+        api: APIClient = .shared
+    ) async throws {
+        let _: DeleteChatSessionResponse = try await api.delete(
+            "/chat/sessions/\(sessionId)",
+            accessToken: accessToken
+        )
+    }
 }
 
 enum ChatHistoryLoader {
