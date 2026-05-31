@@ -7,13 +7,15 @@ enum AppTab: Hashable {
 }
 
 struct MainTabView: View {
+    @Environment(AuthSession.self) private var auth
+    @Environment(AccountContext.self) private var account
     @State private var selectedTab: AppTab = .portfolio
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            PortfolioView()
+            PortfolioView(selectedTab: $selectedTab)
                 .tabItem {
-                    Label("Portfolio", systemImage: "chart.pie.fill")
+                    Label("Portfolio", systemImage: "chart.pie")
                 }
                 .tag(AppTab.portfolio)
 
@@ -25,15 +27,23 @@ struct MainTabView: View {
 
             SettingsView()
                 .tabItem {
-                    Label("Settings", systemImage: "gearshape.fill")
+                    Label("Settings", systemImage: "gearshape")
                 }
                 .tag(AppTab.settings)
         }
-        .tint(Theme.accent)
+        .appMainTabBarChrome()
+        .background(AppColors.background)
+        .task(id: auth.accessToken) {
+            guard let accessToken = auth.accessToken else { return }
+            await account.loadPlan(accessToken: accessToken)
+        }
     }
 }
 
 #Preview {
-    MainTabView()
-        .environment(AuthSession())
+    AppPreview.environments {
+        MainTabView()
+            .environment(AuthSession())
+            .environment(AccountContext())
+    }
 }

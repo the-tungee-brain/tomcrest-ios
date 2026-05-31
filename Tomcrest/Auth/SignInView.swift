@@ -5,68 +5,49 @@ struct SignInView: View {
     @State private var isSigningIn = false
 
     var body: some View {
-        VStack(spacing: 24) {
-            Spacer()
-
-            VStack(spacing: 12) {
-                Image(systemName: "chart.line.uptrend.xyaxis.circle.fill")
-                    .font(.system(size: 56))
-                    .foregroundStyle(Theme.accent)
-
-                Text(AppConfig.brandName)
-                    .font(.largeTitle.bold())
-                    .foregroundStyle(Theme.foreground)
-
-                Text(AppConfig.brandTagline)
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.muted)
-            }
-
-            VStack(spacing: 12) {
-                Button {
-                    signInTapped()
-                } label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: "g.circle.fill")
-                        Text("Continue with Google")
-                            .fontWeight(.semibold)
+        AppAuthScreen(
+            systemImage: "chart.line.uptrend.xyaxis.circle.fill",
+            title: AppConfig.brandName,
+            message: AppConfig.brandTagline
+        ) {
+            VStack(spacing: 16) {
+                AppAuthActionPanel {
+                    Button {
+                        signInTapped()
+                    } label: {
+                        Label("Continue with Google", systemImage: "g.circle.fill")
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
+                    .buttonStyle(AppPrimaryButtonStyle())
+                    .disabled(isSigningIn)
+
+                    Text("Read-only Schwab access. Credentials stay with Google and Schwab.")
+                        .font(.footnote)
+                        .foregroundStyle(AppColors.secondaryLabel)
+                        .multilineTextAlignment(.center)
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(Theme.accent)
-                .disabled(isSigningIn)
 
-                Text("Read-only Schwab connection. Your credentials stay with Google and Schwab.")
-                    .font(.footnote)
-                    .foregroundStyle(Theme.muted)
-                    .multilineTextAlignment(.center)
+                if isSigningIn {
+                    HStack(spacing: 8) {
+                        ProgressView()
+                            .tint(AppColors.accent)
+                        Text("Signing in…")
+                            .font(AppTypography.caption)
+                            .foregroundStyle(AppColors.secondaryLabel)
+                    }
+                }
+
+                if let error = auth.lastError {
+                    AppInlineBanner(message: error, tone: .error)
+                }
             }
-            .appPanel()
-
-            if isSigningIn {
-                ProgressView("Signing in…")
-                    .tint(Theme.accent)
-            }
-
-            if let error = auth.lastError {
-                Text(error)
-                    .font(.footnote)
-                    .foregroundStyle(Theme.danger)
-                    .multilineTextAlignment(.center)
-            }
-
-            Spacer()
         }
-        .padding(24)
-        .background(Theme.background.ignoresSafeArea())
     }
 
     private func signInTapped() {
-        guard AppConfig.googleClientID.hasPrefix("REPLACE_") == false else {
+        guard AppConfig.isGoogleSignInConfigured else {
             auth.setError(
-                "Set GOOGLE_IOS_CLIENT_ID in AppConfig.swift before signing in."
+                "Set googleClientID and googleReversedClientID in AppConfig.swift, " +
+                    "and match the URL scheme in Info.plist."
             )
             return
         }
@@ -74,10 +55,14 @@ struct SignInView: View {
         isSigningIn = true
         Task {
             defer { isSigningIn = false }
-            // Phase 1: wire GoogleSignIn-iOS SDK and pass idToken here.
-            auth.setError(
-                "Google Sign-In SDK not wired yet. Add the iOS client ID, then integrate GoogleSignIn."
-            )
+            do {
+                let idToken = try await GoogleSignInCoordinator.signIn()
+                await auth.exchangeGoogleIDToken(idToken)
+            } catch GoogleSignInFailure.cancelled {
+                return
+            } catch {
+                auth.setError(error.localizedDescription)
+            }
         }
     }
 }
@@ -86,45 +71,36 @@ struct WaitlistView: View {
     @Environment(AuthSession.self) private var auth
 
     var body: some View {
-        VStack(spacing: 20) {
-            Spacer()
+        AppAuthScreen(
+            systemImage: "hourglass.circle.fill",
+            iconColor: AppColors.warning,
+            title: "Private beta",
+            message: "Tomcrest is invite-only. Join the waitlist, then return after you're approved."
+        ) {
+            VStack(spacing: 16) {
+                Link("tomcrest.com/waitlist", destination: URL(string: "https://tomcrest.com/waitlist")!)
+                    .font(.headline)
+                    .foregroundStyle(AppColors.accent)
 
-            Image(systemName: "hourglass.circle.fill")
-                .font(.system(size: 52))
-                .foregroundStyle(Theme.warning)
-
-            Text("Private beta")
-                .font(.title.bold())
-                .foregroundStyle(Theme.foreground)
-
-            Text("Tomcrest is invite-only right now. Join the waitlist at tomcrest.com, then come back after you're approved.")
-                .font(.body)
-                .foregroundStyle(Theme.muted)
-                .multilineTextAlignment(.center)
-
-            Link("tomcrest.com", destination: URL(string: "https://tomcrest.com/waitlist")!)
-                .font(.headline)
-                .foregroundStyle(Theme.accent)
-
-            Button("Back to sign in") {
-                auth.signOut()
+                Button("Back to sign in") {
+                    auth.signOut()
+                }
+                .buttonStyle(AppSecondaryButtonStyle())
             }
-            .buttonStyle(.bordered)
-            .tint(Theme.foreground)
-
-            Spacer()
         }
-        .padding(24)
-        .background(Theme.background.ignoresSafeArea())
     }
 }
 
 #Preview("Sign in") {
-    SignInView()
-        .environment(AuthSession())
+    AppPreview.environments {
+        SignInView()
+            .environment(AuthSession())
+    }
 }
 
 #Preview("Waitlist") {
-    WaitlistView()
-        .environment(AuthSession())
+    AppPreview.environments {
+        WaitlistView()
+            .environment(AuthSession())
+    }
 }

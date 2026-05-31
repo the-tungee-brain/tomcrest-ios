@@ -7,8 +7,7 @@ struct RootView: View {
         Group {
             switch auth.phase {
             case .loading:
-                ProgressView("Loading…")
-                    .tint(Theme.accent)
+                AppLoadingState(message: "Loading…")
             case .signedOut:
                 SignInView()
             case .waitlist:
@@ -18,11 +17,12 @@ struct RootView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Theme.background.ignoresSafeArea())
+        .background(AppColors.background.ignoresSafeArea())
     }
 }
 
 #Preview {
     RootView()
         .environment(AuthSession())
+        .environment(AccountContext())
 }

@@ -26,39 +26,12 @@ struct ProactiveAlert: Codable, Identifiable {
 
 struct PortfolioIntelligence: Codable {
     let signals: [IntelligenceSignal]
+    let digest: PortfolioDigest?
     let alerts: [ProactiveAlert]
-}
 
-struct MorningBrief: Codable {
-    let headline: String?
-    let summary: String?
-    let generatedAt: String?
-
-    enum CodingKeys: String, CodingKey {
-        case headline
-        case summary
-        case generatedAt = "generated_at"
+    init(signals: [IntelligenceSignal], digest: PortfolioDigest? = nil, alerts: [ProactiveAlert]) {
+        self.signals = signals
+        self.digest = digest
+        self.alerts = alerts
     }
-}
-
-struct SymbolSearchResult: Codable, Identifiable {
-    var id: String { symbol }
-    let symbol: String
-    let name: String?
-    let assetType: String?
-
-    enum CodingKeys: String, CodingKey {
-        case symbol
-        case name
-        case assetType = "asset_type"
-    }
-}
-
-struct SymbolSearchResponse: Decodable {
-    let results: [SymbolSearchResult]
-}
-
-struct AccountPlanResponse: Decodable {
-    let plan: String?
-    let features: [String: Bool]?
 }

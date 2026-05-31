@@ -30,6 +30,10 @@ struct SchwabStatusResponse: Decodable {
     let authorized: Bool
 }
 
+struct SchwabDisconnectResponse: Decodable {
+    let disconnected: Bool
+}
+
 struct WaitlistErrorDetail: Decodable {
     let code: String?
     let message: String?

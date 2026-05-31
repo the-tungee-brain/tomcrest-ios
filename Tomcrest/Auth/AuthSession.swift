@@ -42,6 +42,7 @@ final class AuthSession {
     }
 
     func signOut() {
+        GoogleSignInCoordinator.signOut()
         KeychainTokenStore.delete()
         accessToken = nil
         lastError = nil
@@ -50,6 +51,10 @@ final class AuthSession {
 
     func setError(_ message: String) {
         lastError = message
+    }
+
+    func clearError() {
+        lastError = nil
     }
 
     func exchangeGoogleIDToken(_ idToken: String) async {
@@ -94,6 +99,7 @@ final class AuthSession {
         do {
             let response: SchwabConnectResponse = try await api.get(
                 "/auth/schwab/connect",
+                query: ["client": "ios"],
                 accessToken: accessToken
             )
             return URL(string: response.authURL)
@@ -101,5 +107,60 @@ final class AuthSession {
             lastError = (error as? APIError)?.errorDescription ?? error.localizedDescription
             return nil
         }
+    }
+
+    func connectSchwab() async -> SchwabOAuthResult {
+        clearError()
+        guard let authURL = await fetchSchwabConnectURL() else {
+            return .failed(lastError ?? "Could not start Schwab connection.")
+        }
+
+        do {
+            return try await SchwabOAuthCoordinator.shared.start(authURL: authURL)
+        } catch SchwabOAuthFailure.couldNotStart {
+            let message = SchwabOAuthFailure.couldNotStart.errorDescription ?? "Could not open Schwab sign-in."
+            lastError = message
+            return .failed(message)
+        } catch {
+            let message = error.localizedDescription
+            lastError = message
+            return .failed(message)
+        }
+    }
+
+    func disconnectSchwab() async -> Bool {
+        clearError()
+        guard let accessToken else {
+            lastError = APIError.missingToken.errorDescription
+            return false
+        }
+
+        do {
+            let response: SchwabDisconnectResponse = try await api.delete(
+                "/auth/schwab/disconnect",
+                accessToken: accessToken
+            )
+            return response.disconnected
+        } catch {
+            lastError = (error as? APIError)?.errorDescription ?? error.localizedDescription
+            return false
+        }
+    }
+
+    func reconnectSchwabIfNeeded(from error: APIError) async -> SchwabOAuthResult? {
+        guard case let .schwabReauth(detail) = error else { return nil }
+        lastError = detail.message
+
+        if let authorizationURL = detail.authorizationURL,
+           let url = URL(string: authorizationURL) {
+            do {
+                return try await SchwabOAuthCoordinator.shared.start(authURL: url)
+            } catch {
+                lastError = error.localizedDescription
+                return .failed(error.localizedDescription)
+            }
+        }
+
+        return await connectSchwab()
     }
 }

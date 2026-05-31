@@ -54,6 +54,43 @@ actor APIClient {
         return try await perform(request)
     }
 
+    func put<T: Decodable, Body: Encodable>(
+        _ path: String,
+        body: Body,
+        accessToken: String? = nil
+    ) async throws -> T {
+        let url = try config.url(path: path)
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+        request.httpBody = try encoder.encode(body)
+        applyHeaders(&request, accessToken: accessToken)
+        return try await perform(request)
+    }
+
+    func patch<T: Decodable, Body: Encodable>(
+        _ path: String,
+        body: Body,
+        accessToken: String? = nil
+    ) async throws -> T {
+        let url = try config.url(path: path)
+        var request = URLRequest(url: url)
+        request.httpMethod = "PATCH"
+        request.httpBody = try encoder.encode(body)
+        applyHeaders(&request, accessToken: accessToken)
+        return try await perform(request)
+    }
+
+    func delete<T: Decodable>(
+        _ path: String,
+        accessToken: String? = nil
+    ) async throws -> T {
+        let url = try config.url(path: path)
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        applyHeaders(&request, accessToken: accessToken)
+        return try await perform(request)
+    }
+
     private func applyHeaders(_ request: inout URLRequest, accessToken: String?) {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")

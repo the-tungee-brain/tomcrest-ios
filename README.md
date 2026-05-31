@@ -15,16 +15,32 @@ Native SwiftUI companion app for [Tomcrest](https://tomcrest.com) — AI portfol
 
 ## Configuration (before sign-in)
 
-Edit `Tomcrest/Config/AppConfig.swift`:
+### 1. Create Google iOS OAuth client
+
+In [Google Cloud Console](https://console.cloud.google.com/) (same project as the web app):
+
+1. **APIs & Services → Credentials → Create credentials → OAuth client ID**
+2. Application type: **iOS**
+3. Bundle ID: `com.tomcrest.app`
+4. Copy the **iOS client ID** and **iOS URL scheme** (reversed client ID)
+
+### 2. Update `Tomcrest/Config/AppConfig.swift`
 
 | Constant | Value |
 |----------|--------|
-| `googleClientID` | Google Cloud **iOS** OAuth client ID for bundle `com.tomcrest.app` |
-| `apiBaseURL` | Already points to production (`thetungeebrain.duckdns.org`) |
+| `googleClientID` | iOS OAuth client ID |
+| `googleReversedClientID` | iOS URL scheme from Google Console |
+| `googleServerClientID` | Web client ID (already set — matches backend `GOOGLE_CLIENT_ID`) |
 
-After creating the Google iOS client, also update `Tomcrest/Info.plist`:
+The `serverClientID` makes Google return an ID token whose audience matches your backend, so no API changes are needed.
 
-- `GOOGLE_REVERSED_CLIENT_ID` → reversed client ID (URL scheme for Google Sign-In callback)
+### 3. Update `Tomcrest/Info.plist`
+
+Replace the URL scheme placeholder with your **reversed client ID** (must match `googleReversedClientID`):
+
+```xml
+<string>com.googleusercontent.apps.YOUR-IOS-CLIENT-SUFFIX</string>
+```
 
 ## Architecture
 
@@ -44,12 +60,31 @@ Tomcrest/
 | Phase | Status | Scope |
 |-------|--------|--------|
 | 0 | **Done** | Project shell, tabs, API client, Keychain, auth placeholders |
-| 1 | Next | Google Sign-In SDK → `POST /auth/google/callback` |
-| 2 | Planned | Schwab OAuth via `ASWebAuthenticationSession` |
-| 3 | Planned | Portfolio Today (morning brief, alerts, positions) |
-| 4 | Planned | Streaming AI chat |
-| 5 | Planned | Symbol search + overview |
-| 6 | Planned | Settings (disconnect, account plan) |
+| 1 | **Done** | Google Sign-In SDK → `POST /auth/google/callback` |
+| 2 | **Done** | Schwab OAuth via `ASWebAuthenticationSession` |
+| 3 | **Done** | Portfolio Today (morning brief, alerts, positions) |
+| 4 | **Done** | Streaming portfolio AI chat |
+| 5 | **Done** | Symbol search + overview |
+| 6 | **Done** | Settings polish (plan card, delete account, security links) |
+| 7 | **Done** | Research symbol AI chat (`POST /research/chat`) |
+| 8 | **Done** | Chat markdown + history hydration + strategy settings |
+| 9 | **Done** | Research depth tabs (earnings, news, dividends, fundamentals) |
+| 10 | **Done** | Earnings detail + Pro AI analysis (`GET /research/earnings/detail`) |
+| 11 | **Done** | Strategy journey checklist in Settings |
+| 12 | **Done** | Chat model picker (Pro/Free tiers) |
+| 13 | **Done** | TestFlight prep docs + export compliance |
+| UI | **Done** | Portfolio, Research, Settings design passes |
+
+## Schwab OAuth (Phase 2)
+
+1. Sign in with Google.
+2. Open **Settings → Connect Schwab**.
+3. Complete Schwab login in the in-app browser.
+4. On success, the app receives `tomcrest://schwab?status=success`.
+
+The iOS app calls `GET /auth/schwab/connect?client=ios`. The backend redirects iOS OAuth completions to `tomcrest://schwab` instead of the web frontend. Override with env var `POWERPOCKET_IOS_OAUTH_REDIRECT_URI` if needed.
+
+Deploy the backend changes in `stock-analysis` before testing Schwab connect on iOS.
 
 ## Regenerate Xcode project
 
@@ -60,6 +95,8 @@ xcodegen generate
 ## Apple Developer
 
 Not required for Simulator development. Enroll ($99/yr) when you need a physical device, TestFlight, or App Store release.
+
+See **[docs/TESTFLIGHT.md](docs/TESTFLIGHT.md)** for archive, upload, and App Store Connect checklist.
 
 ## Related repos
 

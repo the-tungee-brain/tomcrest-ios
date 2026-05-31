@@ -1,48 +1,159 @@
 import SwiftUI
 
 struct ResearchView: View {
-    @State private var query = ""
+    @Environment(AuthSession.self) private var auth
+    @State private var viewModel: ResearchViewModel?
+    @State private var selectedSymbol: TickerSymbolItem?
+
+    private let exampleSymbols = ["NVDA", "SPY", "AAPL", "SCHD"]
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 16) {
-                HStack(spacing: 10) {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundStyle(Theme.muted)
-                    TextField("Search symbols", text: $query)
-                        .textInputAutocapitalization(.characters)
-                        .autocorrectionDisabled()
-                        .foregroundStyle(Theme.foreground)
-                }
-                .padding(14)
-                .background(Theme.panelBackgroundSubtle)
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(Theme.border.opacity(0.6), lineWidth: 1)
-                }
+            ScrollView {
+                VStack(alignment: .leading, spacing: Layout.sectionSpacing) {
+                    if let viewModel {
+                        AppSearchField(
+                            placeholder: "Search tickers",
+                            text: Binding(
+                                get: { viewModel.query },
+                                set: { viewModel.updateQuery($0) }
+                            ),
+                            isLoading: viewModel.isSearching,
+                            onSubmit: {
+                                if let first = viewModel.results.first {
+                                    selectedSymbol = first
+                                }
+                            }
+                        )
 
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Phase 5")
-                        .font(.headline)
-                        .foregroundStyle(Theme.foreground)
-                    Text("Symbol search hits `/symbols/search`. Overview uses `/research/overview-bundle`.")
-                        .font(.subheadline)
-                        .foregroundStyle(Theme.muted)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .appPanel(subtle: true)
+                        searchResults(viewModel)
 
-                Spacer()
+                        if viewModel.query.isEmpty {
+                            examplesSection
+                        }
+                    } else {
+                        AppSearchField(
+                            placeholder: "Search tickers",
+                            text: .constant(""),
+                            isLoading: true
+                        )
+                    }
+                }
+                .padding(.horizontal, Layout.horizontalPadding)
+                .padding(.bottom, 24)
+                .appContentWidth()
             }
-            .padding(20)
-            .background(Theme.background)
+            .background(AppColors.background)
             .navigationTitle("Research")
             .navigationBarTitleDisplayMode(.large)
+            .navigationDestination(item: $selectedSymbol) { item in
+                SymbolResearchView(symbol: item.symbol, auth: auth)
+            }
+            .task {
+                if viewModel == nil {
+                    viewModel = ResearchViewModel(auth: auth)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func searchResults(_ viewModel: ResearchViewModel) -> some View {
+        if let error = viewModel.searchError {
+            AppInlineBanner(message: error, tone: .error)
+        } else if !viewModel.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                  !viewModel.isSearching,
+                  viewModel.results.isEmpty {
+            AppInlineBanner(
+                message: "No symbols found for \"\(viewModel.query.uppercased())\".",
+                tone: .neutral
+            )
+        } else if !viewModel.results.isEmpty {
+            // No section header — search field already frames results; list speaks for itself.
+            AppGroupedList {
+                ForEach(Array(viewModel.results.prefix(12).enumerated()), id: \.element.id) { index, item in
+                    Button {
+                        selectedSymbol = item
+                    } label: {
+                        SymbolSearchRow(item: item)
+                    }
+                    .buttonStyle(.plain)
+
+                    if index < min(viewModel.results.count, 12) - 1 {
+                        AppGroupedDivider()
+                    }
+                }
+            }
+        }
+    }
+
+    private var examplesSection: some View {
+        AppScreenSection(title: "Examples") {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(exampleSymbols, id: \.self) { symbol in
+                        AppChip(title: symbol) {
+                            selectedSymbol = TickerSymbolItem(
+                                symbol: symbol,
+                                title: nil,
+                                assetType: nil,
+                                logoURL: nil
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }
 
+private struct SymbolSearchRow: View {
+    let item: TickerSymbolItem
+
+    var body: some View {
+        HStack(spacing: 12) {
+            SymbolAvatar(symbol: item.symbol, size: 32)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.symbol)
+                    .font(AppTypography.cardTitle)
+                    .foregroundStyle(AppColors.label)
+                if !subtitle.isEmpty {
+                    Text(subtitle)
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.secondaryLabel)
+                        .lineLimit(1)
+                }
+            }
+
+            Spacer(minLength: 8)
+
+            Image(systemName: "chevron.right")
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(AppColors.tertiaryLabel)
+                .accessibilityHidden(true)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .frame(minHeight: Layout.minTouchTarget)
+        .contentShape(Rectangle())
+    }
+
+    private var subtitle: String {
+        if let title = item.title, !title.isEmpty {
+            return title
+        }
+        if let assetType = item.assetType {
+            return AssetTypeLabel.display(assetType)
+        }
+        return ""
+    }
+}
+
 #Preview {
-    ResearchView()
+    AppPreview.environments {
+        ResearchView()
+            .environment(AuthSession())
+            .environment(AccountContext())
+    }
 }

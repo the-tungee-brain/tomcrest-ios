@@ -7,50 +7,158 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0B1A53F6AAAEE34A3C5565F8 /* PortfolioModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2876AF7CC87B87EFE6291EAD /* PortfolioModels.swift */; };
 		149F1390EBB5296DA3EFEE72 /* TomcrestApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12C1F01FA657D19CAA988133 /* TomcrestApp.swift */; };
 		16E0CC4DFF6364BA853F895E /* ResearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B3B6C7CF672616FAF79C7FB /* ResearchView.swift */; };
 		1AC66644463AC2C0CC810E93 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 536DB0E375E94676910F3EC9 /* MainTabView.swift */; };
+		1CCD64FA7691792BA72A6C50 /* AppPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2206A889B0D773B65EE0D9EF /* AppPreview.swift */; };
+		23728EDEFEA59356CF52E3DB /* ResearchChatPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9952646BAFBB92A38F812F53 /* ResearchChatPanel.swift */; };
+		2572DB42360EAF15B1713636 /* SymbolOverviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68D51E9CDB8C1BE024A2559B /* SymbolOverviewView.swift */; };
+		28BDE433477973AF54E3EAF5 /* SettingsLoadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F488810FC54D310EAA5E582 /* SettingsLoadingView.swift */; };
 		2E28456CD185944AE5CBA28A /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A2B74C42F6C6407526B9E97 /* APIClient.swift */; };
+		345C86413058724D88395F42 /* AccountContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 536B980C033E23E32C2E7250 /* AccountContext.swift */; };
+		36CBE95366E0512B42C09B1D /* StreamingAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5494CC946CEF0B3ADD20310 /* StreamingAPIClient.swift */; };
 		3919F82CE73A628AF197FA7A /* KeychainTokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 825C28405F79ACAC670D23A1 /* KeychainTokenStore.swift */; };
+		3E8273AE6D298275A3E57771 /* ResearchOverviewComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F7D42BB285D3287FD44230C /* ResearchOverviewComponents.swift */; };
+		45CF25CB9EBB7E13EA2EA615 /* ChatComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 159B360A0E6EF1587218E713 /* ChatComponents.swift */; };
+		47E21CF2F216C07A6DDBC4C8 /* AppColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37A30B22F0223EE6C2254BF5 /* AppColors.swift */; };
+		4CFE1A320FB9B8D3B244F53D /* ChatModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 188BBAE794F7E217C4550D19 /* ChatModels.swift */; };
+		52860501FB9FFDD5609277EC /* ResearchTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = A233D5D6226CF735F473D173 /* ResearchTab.swift */; };
+		5499A7B6F06A987E55ACDEF1 /* ResearchViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEA479CA24F0FF3F8389855B /* ResearchViewModel.swift */; };
 		5CDF03F4465036AC24C61ACF /* APIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BBAE16CB8B242BE30F33EF7 /* APIError.swift */; };
 		6420F069F391BBD23C04593A /* APIModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAE50C77132469C890F7F1B0 /* APIModels.swift */; };
+		7837205773948EFAABB681F8 /* ChatModelPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2712BCDAF2FF05439D48D034 /* ChatModelPicker.swift */; };
+		784DD916A66CE0730ADEF318 /* Formatters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CB247B405713EC9F19D96A5 /* Formatters.swift */; };
 		7BEEB74D7A3BB5E65F07B7A7 /* AuthModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = C32CCCD1FCD03C3B78D45A94 /* AuthModels.swift */; };
+		7C67929BFF4D41646A188068 /* AccountModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C578D1CBA37A06DC24E6A0B /* AccountModels.swift */; };
+		7E6F5C8C06C5AF03ED5B1B1B /* JSONPassThrough.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A7425B84E4BA97DD6A86CF /* JSONPassThrough.swift */; };
+		803398111240AD132B56577A /* AppSectionHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E6FCA2852A54762DBF62BBD /* AppSectionHeader.swift */; };
+		81595E85B8150C8DED86419C /* Layout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 827A3A2BD66E2D8BA8AB5171 /* Layout.swift */; };
+		8A0596DBD784D5F9F553918A /* SymbolDepthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EDECBD7FA0089B449BCCE6A /* SymbolDepthViewModel.swift */; };
+		8A6FAE9EB668DCD65584BA38 /* GoogleSignInCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4F5A21220D53144566D08F5 /* GoogleSignInCoordinator.swift */; };
+		8EF24DA69479B0046FDBC426 /* AppTypography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ECEFF01CC52BE5A75A7A7A8 /* AppTypography.swift */; };
+		8F0D0A88D68993A27DBDA07F /* SettingsComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = F084935B5A66C1A122711FD9 /* SettingsComponents.swift */; };
+		92F4DFB6FAB79D3DBDB36E29 /* AppPanels.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB2B8342D24E5B3EFC6DBA92 /* AppPanels.swift */; };
+		95B5383B71683D5E95CB1603 /* ChatHistoryModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8811CF2E231D1E6CBC3747AB /* ChatHistoryModels.swift */; };
+		95BFFD728F1449645BAF7D52 /* SettingsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2340213ADCB169F9EAC23961 /* SettingsService.swift */; };
+		965CFFA572463C3B4BF12AC7 /* ResearchService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34B8510EAF3EAF1133A79AE3 /* ResearchService.swift */; };
 		966CD692662B7C6C9C195F05 /* SignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7D20F8285482654F0DD3430 /* SignInView.swift */; };
 		9BC44D3207BEA7E6946F90F1 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45A53DA98EF9507D59EFEDF6 /* SettingsView.swift */; };
+		9D5E850C1101A6D3F77E4A41 /* MarkdownText.swift in Sources */ = {isa = PBXBuildFile; fileRef = C04F6A28B4366BCD70F121E7 /* MarkdownText.swift */; };
 		9F61E35E72A4407122BC12F8 /* AuthSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26FC43841F7166FFF4004CA2 /* AuthSession.swift */; };
 		A0D9F297E45D4A437B76D4B1 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 199C625F0D158E0D439FF60E /* AppConfig.swift */; };
 		A2A74883AD83B67C28D0B9B0 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4702E9C83A8FBEDD10E249CB /* RootView.swift */; };
-		AC0FE0DAABC6AD58B4080269 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82D9DECE759CF808892092EC /* Theme.swift */; };
+		A4EE0C975141119CE6DDAD86 /* SymbolResearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53BB8D1046E4B55799793F05 /* SymbolResearchView.swift */; };
+		AC7D9B871A12FB1302BBFF24 /* ResearchModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD7A2957C9BD8560D92DDC8A /* ResearchModels.swift */; };
+		B0DC5D06C53CFFED4C278EBC /* ChatService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0E427C11209C5F8F1AEAD1C /* ChatService.swift */; };
+		B20789628BC1A40F0BB1B94C /* AppComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDC256E90943A68F1D9B1912 /* AppComponents.swift */; };
+		B56A9900012BD963937C8B33 /* SchwabOAuthCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AE26F43C0ED4D1B1BD16F8C /* SchwabOAuthCoordinator.swift */; };
+		BC0AAE1F5FA9DE27A5EDEDFB /* StrategyModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8788CDEAF697F62FB4CB1BAE /* StrategyModels.swift */; };
 		BC8C745B75A50BFFC2FE0479 /* PortfolioView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5820C4BCB31919DE292FDCCE /* PortfolioView.swift */; };
+		BD0A59EF10FF13AB64D7AF68 /* ResearchTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A39BC11142DA243292ACD08B /* ResearchTabBar.swift */; };
+		C45BA35E0B0C78EE8523D258 /* ResearchDepthModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E453F056257B1FE592C10F23 /* ResearchDepthModels.swift */; };
+		CC027238F64C3A7048BBE78D /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = F095CC3DA398A8E9D0975A8C /* GoogleSignIn */; };
+		D1EDF95AFFA5C3D8BAF54D67 /* PortfolioChatPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC04A37CDB93D2C01043898 /* PortfolioChatPanel.swift */; };
+		D1FBD2C51C3BAB70CCBFC25E /* StrategyJourneyCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39C98136DDC0FC825197FA9E /* StrategyJourneyCard.swift */; };
 		D6DF2E241EE76BE13FDB6DC8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5846B37CAF738D6B5CE3F79B /* Assets.xcassets */; };
+		E11EE29B2EA051338B14ACAA /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97AE132548425F9A2A96F97C /* SettingsViewModel.swift */; };
+		EFB5B5F68785C84539204E71 /* ResearchDepthTabViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71AC1879AABF6DAB8563AF02 /* ResearchDepthTabViews.swift */; };
+		F0F5B8A7D6E473A1400631C7 /* PortfolioComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A4B7E0719E26DF2A730210E /* PortfolioComponents.swift */; };
+		F44BCF05384E6A789B23ED88 /* PortfolioService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4BB850DE87618BD225F52B6 /* PortfolioService.swift */; };
+		F793B0C25DD5215BA233D127 /* PortfolioViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D863CB5166F2200AED0CD0C0 /* PortfolioViewModel.swift */; };
+		FA4196BD364D08A127CCC7D5 /* StrategyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78AA1E797ADD3849B5EC6425 /* StrategyService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		0BBAE16CB8B242BE30F33EF7 /* APIError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIError.swift; sourceTree = "<group>"; };
 		12C1F01FA657D19CAA988133 /* TomcrestApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TomcrestApp.swift; sourceTree = "<group>"; };
+		159B360A0E6EF1587218E713 /* ChatComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatComponents.swift; sourceTree = "<group>"; };
+		188BBAE794F7E217C4550D19 /* ChatModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatModels.swift; sourceTree = "<group>"; };
 		199C625F0D158E0D439FF60E /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
+		1C578D1CBA37A06DC24E6A0B /* AccountModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountModels.swift; sourceTree = "<group>"; };
+		1E6FCA2852A54762DBF62BBD /* AppSectionHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSectionHeader.swift; sourceTree = "<group>"; };
+		2206A889B0D773B65EE0D9EF /* AppPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPreview.swift; sourceTree = "<group>"; };
+		2340213ADCB169F9EAC23961 /* SettingsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsService.swift; sourceTree = "<group>"; };
 		26FC43841F7166FFF4004CA2 /* AuthSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthSession.swift; sourceTree = "<group>"; };
+		2712BCDAF2FF05439D48D034 /* ChatModelPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatModelPicker.swift; sourceTree = "<group>"; };
+		2876AF7CC87B87EFE6291EAD /* PortfolioModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortfolioModels.swift; sourceTree = "<group>"; };
+		2CB247B405713EC9F19D96A5 /* Formatters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Formatters.swift; sourceTree = "<group>"; };
+		2F7D42BB285D3287FD44230C /* ResearchOverviewComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResearchOverviewComponents.swift; sourceTree = "<group>"; };
+		34B8510EAF3EAF1133A79AE3 /* ResearchService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResearchService.swift; sourceTree = "<group>"; };
+		37A30B22F0223EE6C2254BF5 /* AppColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppColors.swift; sourceTree = "<group>"; };
+		39C98136DDC0FC825197FA9E /* StrategyJourneyCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrategyJourneyCard.swift; sourceTree = "<group>"; };
 		45A53DA98EF9507D59EFEDF6 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		4702E9C83A8FBEDD10E249CB /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		4AE26F43C0ED4D1B1BD16F8C /* SchwabOAuthCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchwabOAuthCoordinator.swift; sourceTree = "<group>"; };
 		4D114FAE5DFFFD58359EDB0C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		536B980C033E23E32C2E7250 /* AccountContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountContext.swift; sourceTree = "<group>"; };
 		536DB0E375E94676910F3EC9 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
+		53BB8D1046E4B55799793F05 /* SymbolResearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymbolResearchView.swift; sourceTree = "<group>"; };
 		5820C4BCB31919DE292FDCCE /* PortfolioView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortfolioView.swift; sourceTree = "<group>"; };
 		5846B37CAF738D6B5CE3F79B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		5A2B74C42F6C6407526B9E97 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
+		5A4B7E0719E26DF2A730210E /* PortfolioComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortfolioComponents.swift; sourceTree = "<group>"; };
+		5ECEFF01CC52BE5A75A7A7A8 /* AppTypography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTypography.swift; sourceTree = "<group>"; };
+		68D51E9CDB8C1BE024A2559B /* SymbolOverviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymbolOverviewView.swift; sourceTree = "<group>"; };
+		6DC04A37CDB93D2C01043898 /* PortfolioChatPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortfolioChatPanel.swift; sourceTree = "<group>"; };
+		71AC1879AABF6DAB8563AF02 /* ResearchDepthTabViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResearchDepthTabViews.swift; sourceTree = "<group>"; };
+		78AA1E797ADD3849B5EC6425 /* StrategyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrategyService.swift; sourceTree = "<group>"; };
 		7B3B6C7CF672616FAF79C7FB /* ResearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResearchView.swift; sourceTree = "<group>"; };
 		825C28405F79ACAC670D23A1 /* KeychainTokenStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainTokenStore.swift; sourceTree = "<group>"; };
-		82D9DECE759CF808892092EC /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		827A3A2BD66E2D8BA8AB5171 /* Layout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Layout.swift; sourceTree = "<group>"; };
+		8788CDEAF697F62FB4CB1BAE /* StrategyModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrategyModels.swift; sourceTree = "<group>"; };
+		8811CF2E231D1E6CBC3747AB /* ChatHistoryModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatHistoryModels.swift; sourceTree = "<group>"; };
 		89DE7F43425C8D390A939AAA /* Tomcrest.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Tomcrest.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		8EDECBD7FA0089B449BCCE6A /* SymbolDepthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymbolDepthViewModel.swift; sourceTree = "<group>"; };
+		97AE132548425F9A2A96F97C /* SettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewModel.swift; sourceTree = "<group>"; };
+		9952646BAFBB92A38F812F53 /* ResearchChatPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResearchChatPanel.swift; sourceTree = "<group>"; };
+		9F488810FC54D310EAA5E582 /* SettingsLoadingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsLoadingView.swift; sourceTree = "<group>"; };
+		A233D5D6226CF735F473D173 /* ResearchTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResearchTab.swift; sourceTree = "<group>"; };
+		A39BC11142DA243292ACD08B /* ResearchTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResearchTabBar.swift; sourceTree = "<group>"; };
+		AEA479CA24F0FF3F8389855B /* ResearchViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResearchViewModel.swift; sourceTree = "<group>"; };
+		B0E427C11209C5F8F1AEAD1C /* ChatService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatService.swift; sourceTree = "<group>"; };
+		B4BB850DE87618BD225F52B6 /* PortfolioService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortfolioService.swift; sourceTree = "<group>"; };
+		B5494CC946CEF0B3ADD20310 /* StreamingAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreamingAPIClient.swift; sourceTree = "<group>"; };
 		B7D20F8285482654F0DD3430 /* SignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInView.swift; sourceTree = "<group>"; };
+		C04F6A28B4366BCD70F121E7 /* MarkdownText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownText.swift; sourceTree = "<group>"; };
 		C32CCCD1FCD03C3B78D45A94 /* AuthModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthModels.swift; sourceTree = "<group>"; };
+		D863CB5166F2200AED0CD0C0 /* PortfolioViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortfolioViewModel.swift; sourceTree = "<group>"; };
+		DD7A2957C9BD8560D92DDC8A /* ResearchModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResearchModels.swift; sourceTree = "<group>"; };
+		E453F056257B1FE592C10F23 /* ResearchDepthModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResearchDepthModels.swift; sourceTree = "<group>"; };
+		E4F5A21220D53144566D08F5 /* GoogleSignInCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleSignInCoordinator.swift; sourceTree = "<group>"; };
+		EDC256E90943A68F1D9B1912 /* AppComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppComponents.swift; sourceTree = "<group>"; };
+		F084935B5A66C1A122711FD9 /* SettingsComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsComponents.swift; sourceTree = "<group>"; };
+		F5A7425B84E4BA97DD6A86CF /* JSONPassThrough.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONPassThrough.swift; sourceTree = "<group>"; };
 		FAE50C77132469C890F7F1B0 /* APIModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIModels.swift; sourceTree = "<group>"; };
+		FB2B8342D24E5B3EFC6DBA92 /* AppPanels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPanels.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		FE20D78B053384FB027A9F7C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CC027238F64C3A7048BBE78D /* GoogleSignIn in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		05D69D212935E07A57BB3253 /* Research */ = {
 			isa = PBXGroup;
 			children = (
+				9952646BAFBB92A38F812F53 /* ResearchChatPanel.swift */,
+				71AC1879AABF6DAB8563AF02 /* ResearchDepthTabViews.swift */,
+				2F7D42BB285D3287FD44230C /* ResearchOverviewComponents.swift */,
+				34B8510EAF3EAF1133A79AE3 /* ResearchService.swift */,
+				A233D5D6226CF735F473D173 /* ResearchTab.swift */,
+				A39BC11142DA243292ACD08B /* ResearchTabBar.swift */,
 				7B3B6C7CF672616FAF79C7FB /* ResearchView.swift */,
+				AEA479CA24F0FF3F8389855B /* ResearchViewModel.swift */,
+				8EDECBD7FA0089B449BCCE6A /* SymbolDepthViewModel.swift */,
+				68D51E9CDB8C1BE024A2559B /* SymbolOverviewView.swift */,
+				53BB8D1046E4B55799793F05 /* SymbolResearchView.swift */,
 			);
 			path = Research;
 			sourceTree = "<group>";
@@ -58,7 +166,12 @@
 		1A1E23AF38688FCFC49F35CA /* Portfolio */ = {
 			isa = PBXGroup;
 			children = (
+				159B360A0E6EF1587218E713 /* ChatComponents.swift */,
+				6DC04A37CDB93D2C01043898 /* PortfolioChatPanel.swift */,
+				5A4B7E0719E26DF2A730210E /* PortfolioComponents.swift */,
+				B4BB850DE87618BD225F52B6 /* PortfolioService.swift */,
 				5820C4BCB31919DE292FDCCE /* PortfolioView.swift */,
+				D863CB5166F2200AED0CD0C0 /* PortfolioViewModel.swift */,
 			);
 			path = Portfolio;
 			sourceTree = "<group>";
@@ -84,7 +197,9 @@
 			isa = PBXGroup;
 			children = (
 				26FC43841F7166FFF4004CA2 /* AuthSession.swift */,
+				E4F5A21220D53144566D08F5 /* GoogleSignInCoordinator.swift */,
 				825C28405F79ACAC670D23A1 /* KeychainTokenStore.swift */,
+				4AE26F43C0ED4D1B1BD16F8C /* SchwabOAuthCoordinator.swift */,
 				B7D20F8285482654F0DD3430 /* SignInView.swift */,
 			);
 			path = Auth;
@@ -93,7 +208,16 @@
 		870ECCAFF8C28036EC9DBD96 /* Design */ = {
 			isa = PBXGroup;
 			children = (
-				82D9DECE759CF808892092EC /* Theme.swift */,
+				37A30B22F0223EE6C2254BF5 /* AppColors.swift */,
+				EDC256E90943A68F1D9B1912 /* AppComponents.swift */,
+				FB2B8342D24E5B3EFC6DBA92 /* AppPanels.swift */,
+				2206A889B0D773B65EE0D9EF /* AppPreview.swift */,
+				1E6FCA2852A54762DBF62BBD /* AppSectionHeader.swift */,
+				5ECEFF01CC52BE5A75A7A7A8 /* AppTypography.swift */,
+				2712BCDAF2FF05439D48D034 /* ChatModelPicker.swift */,
+				2CB247B405713EC9F19D96A5 /* Formatters.swift */,
+				827A3A2BD66E2D8BA8AB5171 /* Layout.swift */,
+				C04F6A28B4366BCD70F121E7 /* MarkdownText.swift */,
 			);
 			path = Design;
 			sourceTree = "<group>";
@@ -103,6 +227,9 @@
 			children = (
 				5A2B74C42F6C6407526B9E97 /* APIClient.swift */,
 				0BBAE16CB8B242BE30F33EF7 /* APIError.swift */,
+				B0E427C11209C5F8F1AEAD1C /* ChatService.swift */,
+				F5A7425B84E4BA97DD6A86CF /* JSONPassThrough.swift */,
+				B5494CC946CEF0B3ADD20310 /* StreamingAPIClient.swift */,
 			);
 			path = Networking;
 			sourceTree = "<group>";
@@ -136,8 +263,16 @@
 		C1A0AF2E0025AF3FD69AB0CD /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				536B980C033E23E32C2E7250 /* AccountContext.swift */,
+				1C578D1CBA37A06DC24E6A0B /* AccountModels.swift */,
 				FAE50C77132469C890F7F1B0 /* APIModels.swift */,
 				C32CCCD1FCD03C3B78D45A94 /* AuthModels.swift */,
+				8811CF2E231D1E6CBC3747AB /* ChatHistoryModels.swift */,
+				188BBAE794F7E217C4550D19 /* ChatModels.swift */,
+				2876AF7CC87B87EFE6291EAD /* PortfolioModels.swift */,
+				E453F056257B1FE592C10F23 /* ResearchDepthModels.swift */,
+				DD7A2957C9BD8560D92DDC8A /* ResearchModels.swift */,
+				8788CDEAF697F62FB4CB1BAE /* StrategyModels.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -145,7 +280,13 @@
 		E09C27F0400DCE512209C9E6 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				F084935B5A66C1A122711FD9 /* SettingsComponents.swift */,
+				9F488810FC54D310EAA5E582 /* SettingsLoadingView.swift */,
+				2340213ADCB169F9EAC23961 /* SettingsService.swift */,
 				45A53DA98EF9507D59EFEDF6 /* SettingsView.swift */,
+				97AE132548425F9A2A96F97C /* SettingsViewModel.swift */,
+				39C98136DDC0FC825197FA9E /* StrategyJourneyCard.swift */,
+				78AA1E797ADD3849B5EC6425 /* StrategyService.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -176,6 +317,7 @@
 			buildPhases = (
 				5EDBEBBF63D9EBD6E6D1F32B /* Sources */,
 				450EE9BDAD4D3E3F32D51443 /* Resources */,
+				FE20D78B053384FB027A9F7C /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -183,6 +325,7 @@
 			);
 			name = Tomcrest;
 			packageProductDependencies = (
+				F095CC3DA398A8E9D0975A8C /* GoogleSignIn */,
 			);
 			productName = Tomcrest;
 			productReference = 89DE7F43425C8D390A939AAA /* Tomcrest.app */;
@@ -212,6 +355,9 @@
 			);
 			mainGroup = A057449BDF123C968F4F3A49;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				1B68DFB71B2D981473C88BF2 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 9436D7672295F3DB046D3EE8 /* Products */;
 			projectDirPath = "";
@@ -241,17 +387,60 @@
 				2E28456CD185944AE5CBA28A /* APIClient.swift in Sources */,
 				5CDF03F4465036AC24C61ACF /* APIError.swift in Sources */,
 				6420F069F391BBD23C04593A /* APIModels.swift in Sources */,
+				345C86413058724D88395F42 /* AccountContext.swift in Sources */,
+				7C67929BFF4D41646A188068 /* AccountModels.swift in Sources */,
+				47E21CF2F216C07A6DDBC4C8 /* AppColors.swift in Sources */,
+				B20789628BC1A40F0BB1B94C /* AppComponents.swift in Sources */,
 				A0D9F297E45D4A437B76D4B1 /* AppConfig.swift in Sources */,
+				92F4DFB6FAB79D3DBDB36E29 /* AppPanels.swift in Sources */,
+				1CCD64FA7691792BA72A6C50 /* AppPreview.swift in Sources */,
+				803398111240AD132B56577A /* AppSectionHeader.swift in Sources */,
+				8EF24DA69479B0046FDBC426 /* AppTypography.swift in Sources */,
 				7BEEB74D7A3BB5E65F07B7A7 /* AuthModels.swift in Sources */,
 				9F61E35E72A4407122BC12F8 /* AuthSession.swift in Sources */,
+				45CF25CB9EBB7E13EA2EA615 /* ChatComponents.swift in Sources */,
+				95B5383B71683D5E95CB1603 /* ChatHistoryModels.swift in Sources */,
+				7837205773948EFAABB681F8 /* ChatModelPicker.swift in Sources */,
+				4CFE1A320FB9B8D3B244F53D /* ChatModels.swift in Sources */,
+				B0DC5D06C53CFFED4C278EBC /* ChatService.swift in Sources */,
+				784DD916A66CE0730ADEF318 /* Formatters.swift in Sources */,
+				8A6FAE9EB668DCD65584BA38 /* GoogleSignInCoordinator.swift in Sources */,
+				7E6F5C8C06C5AF03ED5B1B1B /* JSONPassThrough.swift in Sources */,
 				3919F82CE73A628AF197FA7A /* KeychainTokenStore.swift in Sources */,
+				81595E85B8150C8DED86419C /* Layout.swift in Sources */,
 				1AC66644463AC2C0CC810E93 /* MainTabView.swift in Sources */,
+				9D5E850C1101A6D3F77E4A41 /* MarkdownText.swift in Sources */,
+				D1EDF95AFFA5C3D8BAF54D67 /* PortfolioChatPanel.swift in Sources */,
+				F0F5B8A7D6E473A1400631C7 /* PortfolioComponents.swift in Sources */,
+				0B1A53F6AAAEE34A3C5565F8 /* PortfolioModels.swift in Sources */,
+				F44BCF05384E6A789B23ED88 /* PortfolioService.swift in Sources */,
 				BC8C745B75A50BFFC2FE0479 /* PortfolioView.swift in Sources */,
+				F793B0C25DD5215BA233D127 /* PortfolioViewModel.swift in Sources */,
+				23728EDEFEA59356CF52E3DB /* ResearchChatPanel.swift in Sources */,
+				C45BA35E0B0C78EE8523D258 /* ResearchDepthModels.swift in Sources */,
+				EFB5B5F68785C84539204E71 /* ResearchDepthTabViews.swift in Sources */,
+				AC7D9B871A12FB1302BBFF24 /* ResearchModels.swift in Sources */,
+				3E8273AE6D298275A3E57771 /* ResearchOverviewComponents.swift in Sources */,
+				965CFFA572463C3B4BF12AC7 /* ResearchService.swift in Sources */,
+				52860501FB9FFDD5609277EC /* ResearchTab.swift in Sources */,
+				BD0A59EF10FF13AB64D7AF68 /* ResearchTabBar.swift in Sources */,
 				16E0CC4DFF6364BA853F895E /* ResearchView.swift in Sources */,
+				5499A7B6F06A987E55ACDEF1 /* ResearchViewModel.swift in Sources */,
 				A2A74883AD83B67C28D0B9B0 /* RootView.swift in Sources */,
+				B56A9900012BD963937C8B33 /* SchwabOAuthCoordinator.swift in Sources */,
+				8F0D0A88D68993A27DBDA07F /* SettingsComponents.swift in Sources */,
+				28BDE433477973AF54E3EAF5 /* SettingsLoadingView.swift in Sources */,
+				95BFFD728F1449645BAF7D52 /* SettingsService.swift in Sources */,
 				9BC44D3207BEA7E6946F90F1 /* SettingsView.swift in Sources */,
+				E11EE29B2EA051338B14ACAA /* SettingsViewModel.swift in Sources */,
 				966CD692662B7C6C9C195F05 /* SignInView.swift in Sources */,
-				AC0FE0DAABC6AD58B4080269 /* Theme.swift in Sources */,
+				D1FBD2C51C3BAB70CCBFC25E /* StrategyJourneyCard.swift in Sources */,
+				BC0AAE1F5FA9DE27A5EDEDFB /* StrategyModels.swift in Sources */,
+				FA4196BD364D08A127CCC7D5 /* StrategyService.swift in Sources */,
+				36CBE95366E0512B42C09B1D /* StreamingAPIClient.swift in Sources */,
+				8A0596DBD784D5F9F553918A /* SymbolDepthViewModel.swift in Sources */,
+				2572DB42360EAF15B1713636 /* SymbolOverviewView.swift in Sources */,
+				A4EE0C975141119CE6DDAD86 /* SymbolResearchView.swift in Sources */,
 				149F1390EBB5296DA3EFEE72 /* TomcrestApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -397,6 +586,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Tomcrest/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Tomcrest;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
@@ -420,6 +610,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Tomcrest/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Tomcrest;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
@@ -456,6 +647,25 @@
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		1B68DFB71B2D981473C88BF2 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		F095CC3DA398A8E9D0975A8C /* GoogleSignIn */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1B68DFB71B2D981473C88BF2 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignIn;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 6D66BE7A4603004C3618F66F /* Project object */;
 }

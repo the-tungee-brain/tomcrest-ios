@@ -23,7 +23,17 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>$(GOOGLE_REVERSED_CLIENT_ID)</string>
+				<string>com.googleusercontent.apps.516814280647-h8h4ehcm6cpc925ndpmghh9mbcph9kqb</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.tomcrest.app.schwab</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>tomcrest</string>
 			</array>
 		</dict>
 	</array>
