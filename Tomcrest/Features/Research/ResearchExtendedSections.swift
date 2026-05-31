@@ -226,30 +226,25 @@ struct WheelBacktestControlsPanel: View {
                         )
                     }
 
-                    BacktestIntField(
-                        label: "Contracts per leg",
-                        placeholder: "1",
-                        value: $query.contracts,
-                        range: 1 ... 100
+                    BacktestOptionToggle(
+                        title: "Add cash if CSP needs more",
+                        footnote: "Top up cash when the next put needs more collateral than you have.",
+                        isOn: $query.maintainOneLot
                     )
 
-                    Toggle("Add cash if CSP needs more", isOn: $query.maintainOneLot)
-                        .font(.caption)
-                        .tint(AppColors.accentHighlight)
-
-                    Toggle(
-                        "Calls at/above assign strike",
+                    BacktestOptionToggle(
+                        title: "Calls at/above assign strike",
+                        footnote: "After assignment, sell covered calls only at or above the put strike.",
                         isOn: Binding(
                             get: { query.callStrikeMode == "at_or_above_assignment" },
                             set: { query.callStrikeMode = $0 ? "at_or_above_assignment" : "delta" }
                         )
                     )
-                    .font(.caption)
-                    .tint(AppColors.accentHighlight)
+
+                    BacktestRunButton(isLoading: isLoading, action: onRun)
+                        .panelFooter
                 }
             }
-
-            BacktestRunButton(isLoading: isLoading, action: onRun)
         }
     }
 }

@@ -25,8 +25,9 @@ struct WheelBacktestExtendedPanel: View {
             )
 
             if !result.equityCurve.isEmpty {
-                AppScreenSection(title: "Equity curve") {
+                AppScreenSection(title: "Equity curve", footnote: "Drag to scrub · gray = buy & hold") {
                     InteractiveEquityCurveChart(points: result.equityCurve)
+                        .appPanel(subtle: true)
                 }
             }
 

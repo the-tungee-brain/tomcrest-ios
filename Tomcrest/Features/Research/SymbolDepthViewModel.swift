@@ -276,27 +276,46 @@ final class SymbolDepthViewModel {
         }
     }
 
-    func loadDividendBacktest(historyStartYear: Int) async {
+    func loadDividendBacktest(
+        historyStartYear: Int,
+        context: DividendHistoryContext,
+        marketSharePrice: Double?
+    ) async {
         guard let accessToken = auth.accessToken else { return }
         dividendBacktestLoading = true
-        tabErrors[.dividends] = nil
+        tabErrors[.backtest] = nil
         defer { dividendBacktestLoading = false }
 
-        let query = dividendBacktestQuery
+        let endYear = DividendBacktestSupport.completedYears(from: context).last ?? historyStartYear
+        let (resolvedQuery, sharePrice) = DividendBacktestSupport.resolveQueryForRun(
+            dividendBacktestQuery,
+            context: context,
+            marketSharePrice: marketSharePrice,
+            startYear: historyStartYear,
+            endYear: endYear
+        )
+        dividendBacktestQuery = resolvedQuery
+
+        guard resolvedQuery.shares > 0 || resolvedQuery.investmentUsd > 0 else {
+            tabErrors[.backtest] = "Enter an investment amount or share count to run the backtest."
+            return
+        }
+
         do {
             dividends = try await ResearchService.fetchDividendHistory(
                 symbol: symbol,
                 accessToken: accessToken,
-                shares: query.shares,
-                investmentUsd: query.investmentUsd > 0 ? query.investmentUsd : nil,
-                reinvestDividends: query.reinvestDividends,
+                shares: max(resolvedQuery.shares, 0.01),
+                investmentUsd: resolvedQuery.investmentUsd > 0 ? resolvedQuery.investmentUsd : nil,
+                sharePrice: sharePrice,
+                reinvestDividends: resolvedQuery.reinvestDividends,
                 historyStartYear: historyStartYear,
-                annualContributionUsd: query.annualContributionUsd
+                annualContributionUsd: resolvedQuery.annualContributionUsd
             )
             loadedTabs.insert(.dividends)
             hasRunDividendBacktest = true
         } catch {
-            tabErrors[.dividends] = (error as? APIError)?.errorDescription ?? error.localizedDescription
+            tabErrors[.backtest] = (error as? APIError)?.errorDescription ?? error.localizedDescription
         }
     }
 

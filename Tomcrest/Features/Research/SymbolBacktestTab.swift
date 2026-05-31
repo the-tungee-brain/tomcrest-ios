@@ -42,6 +42,7 @@ struct SymbolBacktestTab: View {
     @Binding var exploreSection: BacktestExploreSection?
     @Bindable var viewModel: SymbolDepthViewModel
     let primaryStrategy: String?
+    var marketSharePrice: Double?
 
     var body: some View {
         ResearchDepthTabShell(tab: .backtest, viewModel: viewModel) {
@@ -133,7 +134,11 @@ struct SymbolBacktestTab: View {
             switch section {
             case .dividend:
                 if let context = viewModel.dividends {
-                    DividendBacktestSection(context: context, viewModel: viewModel)
+                    DividendBacktestSection(
+                        context: context,
+                        marketSharePrice: marketSharePrice,
+                        viewModel: viewModel
+                    )
                 } else if viewModel.loadingTab == .backtest {
                     AppLoadingState(message: "Loading dividend history…")
                 } else {

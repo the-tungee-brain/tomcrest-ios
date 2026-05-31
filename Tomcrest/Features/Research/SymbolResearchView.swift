@@ -237,7 +237,8 @@ struct SymbolResearchView: View {
             SymbolBacktestTab(
                 exploreSection: $backtestExploreSection,
                 viewModel: depthVM,
-                primaryStrategy: primaryStrategy
+                primaryStrategy: primaryStrategy,
+                marketSharePrice: overviewVM.bundle?.snapshot.price
             )
         }
     }

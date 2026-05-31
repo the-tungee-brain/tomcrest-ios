@@ -135,7 +135,7 @@ struct DividendHistoricalBacktest: Decodable {
 }
 
 struct DividendBacktestQuery: Equatable {
-    var shares: Double = 100
+    var shares: Double = 0
     var investmentUsd: Double = 0
     var reinvestDividends: Bool = true
     var annualContributionUsd: Double = 0
@@ -144,6 +144,122 @@ struct DividendBacktestQuery: Equatable {
 
 enum DividendBacktestSupport {
     static let lookbackPresets = [5, 10, 15]
+
+    static func roundScenarioValue(_ value: Double) -> Double {
+        (value * 100).rounded() / 100
+    }
+
+    static func deriveSharePriceAtStart(
+        currentSharePrice: Double,
+        priceCagrPct: Double,
+        yearsElapsed: Int
+    ) -> Double {
+        guard yearsElapsed > 0, currentSharePrice > 0 else {
+            return roundScenarioValue(currentSharePrice)
+        }
+        let rate = priceCagrPct / 100
+        let denominator = pow(1 + rate, Double(yearsElapsed))
+        guard denominator > 0 else {
+            return roundScenarioValue(currentSharePrice)
+        }
+        return roundScenarioValue(currentSharePrice / denominator)
+    }
+
+    static func resolveStartSharePrice(
+        context: DividendHistoryContext,
+        marketSharePrice: Double?,
+        startYear: Int,
+        endYear: Int
+    ) -> Double? {
+        if let backtest = context.historicalBacktest,
+           backtest.startYear == startYear,
+           let drip = backtest.drip,
+           drip.sharePriceAtStart > 0 {
+            return drip.sharePriceAtStart
+        }
+
+        if let row = context.historicalBacktest?.yearlyBreakdown.first(where: { $0.year == startYear }),
+           row.sharePrice > 0 {
+            return row.sharePrice
+        }
+
+        let latestPrice = marketSharePrice
+            ?? context.scenario?.advanced?.sharePriceLatest
+            ?? context.historicalBacktest?.yearlyBreakdown.last?.sharePrice
+
+        guard let latestPrice, latestPrice > 0 else { return nil }
+
+        let priceCagrPct = context.scenario?.advanced?.priceCagrPct
+            ?? context.historicalBacktest?.drip?.priceCagrPct
+            ?? 0
+        let yearsElapsed = max(0, endYear - startYear)
+        return deriveSharePriceAtStart(
+            currentSharePrice: latestPrice,
+            priceCagrPct: priceCagrPct,
+            yearsElapsed: yearsElapsed
+        )
+    }
+
+    static func resolveMarketSharePrice(
+        context: DividendHistoryContext,
+        marketSharePrice: Double?
+    ) -> Double? {
+        if let marketSharePrice, marketSharePrice > 0 { return marketSharePrice }
+        if let latest = context.scenario?.advanced?.sharePriceLatest, latest > 0 { return latest }
+        if let latest = context.historicalBacktest?.yearlyBreakdown.last?.sharePrice, latest > 0 {
+            return latest
+        }
+        return nil
+    }
+
+    static func syncFromInvestment(_ investmentUsd: Double, startSharePrice: Double?) -> (investmentUsd: Double, shares: Double) {
+        guard investmentUsd > 0, let startSharePrice, startSharePrice > 0 else {
+            return (0, 0)
+        }
+        let investment = roundScenarioValue(investmentUsd)
+        return (investment, roundScenarioValue(investment / startSharePrice))
+    }
+
+    static func syncFromShares(_ shares: Double, startSharePrice: Double?) -> (investmentUsd: Double, shares: Double) {
+        guard shares > 0, let startSharePrice, startSharePrice > 0 else {
+            return (0, 0)
+        }
+        let resolvedShares = roundScenarioValue(shares)
+        return (roundScenarioValue(resolvedShares * startSharePrice), resolvedShares)
+    }
+
+    static func canRunBacktest(query: DividendBacktestQuery, startSharePrice: Double?) -> Bool {
+        guard let startSharePrice, startSharePrice > 0 else { return false }
+        return query.investmentUsd > 0 || query.shares > 0
+    }
+
+    static func resolveQueryForRun(
+        _ query: DividendBacktestQuery,
+        context: DividendHistoryContext,
+        marketSharePrice: Double?,
+        startYear: Int,
+        endYear: Int
+    ) -> (query: DividendBacktestQuery, sharePrice: Double?) {
+        var resolved = query
+        let startPrice = resolveStartSharePrice(
+            context: context,
+            marketSharePrice: marketSharePrice,
+            startYear: startYear,
+            endYear: endYear
+        )
+
+        if resolved.investmentUsd > 0, let startPrice, startPrice > 0 {
+            let synced = syncFromInvestment(resolved.investmentUsd, startSharePrice: startPrice)
+            resolved.investmentUsd = synced.investmentUsd
+            resolved.shares = synced.shares
+        } else if resolved.shares > 0, let startPrice, startPrice > 0 {
+            let synced = syncFromShares(resolved.shares, startSharePrice: startPrice)
+            resolved.investmentUsd = synced.investmentUsd
+            resolved.shares = synced.shares
+        }
+
+        return (resolved, resolveMarketSharePrice(context: context, marketSharePrice: marketSharePrice))
+    }
 
     static func completedYears(from context: DividendHistoryContext) -> [Int] {
         context.annualIncome.map(\.year).sorted()

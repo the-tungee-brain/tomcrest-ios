@@ -173,70 +173,238 @@ struct InteractiveAnnualBarChart: View {
     }
 }
 
-// MARK: - Equity curve chart
+// MARK: - Dividend backtest year chart
 
-struct InteractiveEquityCurveChart: View {
-    let points: [WheelBacktestEquityPoint]
+struct InteractiveDividendBacktestYearChart: View {
+    let rows: [DividendBacktestYearRow]
 
-    private var rows: [EquityCurveRow] {
-        points.map { point in
-            EquityCurveRow(
-                id: point.date,
-                date: ChartDateParser.date(from: point.date),
-                point: point
-            )
+    @State private var selectedYearLabel: String?
+
+    private var displayRow: DividendBacktestYearRow? {
+        if let selectedYearLabel,
+           let year = Int(selectedYearLabel),
+           let row = rows.first(where: { $0.year == year }) {
+            return row
         }
+        return rows.last
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            if let row = rows.last {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(DateFormatters.display(row.date))
-                        .font(.caption2.weight(.medium))
-                        .foregroundStyle(AppColors.secondaryLabel)
-                    HStack(spacing: 12) {
-                        Text("Strategy \(CurrencyFormatter.usd(row.point.equityUsd, fractionDigits: 0))")
-                        if let buyHold = row.point.buyAndHoldEquityUsd {
-                            Text("Buy & hold \(CurrencyFormatter.usd(buyHold, fractionDigits: 0))")
-                        }
-                    }
-                    .font(.caption2.weight(.semibold).monospacedDigit())
-                    .foregroundStyle(AppColors.label)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-                }
-                .padding(10)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(AppColors.surfaceElevated.opacity(0.65))
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            if let row = displayRow {
+                backtestYearReadout(row, scrubbing: selectedYearLabel != nil)
             }
 
-            Chart(rows) { row in
-                LineMark(
-                    x: .value("Date", row.date),
-                    y: .value("Equity", row.point.equityUsd)
+            if rows.isEmpty {
+                AppEmptyMessage(
+                    message: "No yearly breakdown available.",
+                    systemImage: "chart.bar"
                 )
-                .foregroundStyle(AppColors.accent)
-                .interpolationMethod(.catmullRom)
-
-                if let buyHold = row.point.buyAndHoldEquityUsd {
-                    LineMark(
-                        x: .value("Date", row.date),
-                        y: .value("Buy & hold", buyHold)
+                .frame(height: 160)
+            } else {
+                Chart(rows) { row in
+                    BarMark(
+                        x: .value("Year", String(row.year)),
+                        y: .value("Income", row.dividendIncome)
                     )
-                    .foregroundStyle(AppColors.secondaryLabel.opacity(0.7))
-                    .interpolationMethod(.catmullRom)
+                    .foregroundStyle(
+                        selectedYearLabel == String(row.year)
+                            ? AppColors.accentHighlight
+                            : AppColors.accent
+                    )
                 }
+                .chartXSelection(value: $selectedYearLabel)
+                .frame(height: 180)
             }
-            .chartXAxis(.hidden)
-            .frame(height: 180)
+        }
+    }
+
+    @ViewBuilder
+    private func backtestYearReadout(_ row: DividendBacktestYearRow, scrubbing: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(String(row.year))
+                .font(.caption2.weight(.medium))
+                .foregroundStyle(scrubbing ? AppColors.accentHighlight : AppColors.secondaryLabel)
+
+            HStack(spacing: 10) {
+                readoutMetric("Income", CurrencyFormatter.usd(row.dividendIncome, fractionDigits: 0))
+                readoutMetric("DPS", String(format: "$%.4f", row.dps))
+                readoutMetric("Shares", String(format: "%.2f", row.shares))
+                readoutMetric("Yield", String(format: "%.2f%%", row.dividendYieldPct))
+            }
+            .lineLimit(1)
+            .minimumScaleFactor(0.75)
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(AppColors.surfaceElevated.opacity(0.65))
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .animation(.easeOut(duration: 0.15), value: scrubbing)
+    }
+
+    private func readoutMetric(_ label: String, _ value: String) -> some View {
+        HStack(spacing: 3) {
+            Text(label)
+                .font(.caption2)
+                .foregroundStyle(AppColors.tertiaryLabel)
+            Text(value)
+                .font(.caption2.weight(.semibold).monospacedDigit())
+                .foregroundStyle(AppColors.label)
         }
     }
 }
 
-private struct EquityCurveRow: Identifiable {
-    let id: String
-    let date: Date
-    let point: WheelBacktestEquityPoint
+// MARK: - Equity curve chart
+
+private struct EquityCurveChartModel {
+    let equityValues: [CGFloat]
+    let buyHoldValues: [CGFloat]?
+    let lineColor: Color
+
+    init(points: [WheelBacktestEquityPoint]) {
+        equityValues = points.map { CGFloat($0.equityUsd) }
+        if points.allSatisfy({ ($0.buyAndHoldEquityUsd ?? 0) > 0 }) {
+            buyHoldValues = points.map { CGFloat($0.buyAndHoldEquityUsd ?? 0) }
+        } else {
+            buyHoldValues = nil
+        }
+
+        if let first = points.first?.equityUsd, let last = points.last?.equityUsd {
+            lineColor = last >= first ? AppColors.success : AppColors.error
+        } else {
+            lineColor = AppColors.accent
+        }
+    }
+}
+
+private struct EquityCurveBuyHoldLine: View, Equatable {
+    let values: [CGFloat]
+
+    var body: some View {
+        RHLinePlot(
+            values: values,
+            showGlowingIndicator: false,
+            customLatestValueIndicator: {
+                Color.clear.frame(width: 0, height: 0)
+            }
+        )
+        .foregroundColor(AppColors.secondaryLabel.opacity(0.4))
+        .environment(\.rhLinePlotConfig, tomcrestLinePlotConfig)
+        .allowsHitTesting(false)
+        .drawingGroup()
+    }
+}
+
+private struct EquityCurveInteractiveLine: View {
+    let values: [CGFloat]
+    let lineColor: Color
+    @Binding var selectedIndex: Int?
+
+    var body: some View {
+        RHInteractiveLinePlot(
+            values: values,
+            showGlowingIndicator: true,
+            didSelectValueAtIndex: { index in
+                guard selectedIndex != index else { return }
+                selectedIndex = index
+            },
+            valueStickLabel: { _ in
+                Text(" ")
+                    .font(.caption2)
+            }
+        )
+        .foregroundColor(lineColor)
+        .environment(\.rhLinePlotConfig, tomcrestLinePlotConfig)
+    }
+}
+
+struct InteractiveEquityCurveChart: View {
+    let points: [WheelBacktestEquityPoint]
+    private let model: EquityCurveChartModel
+
+    @State private var selectedIndex: Int?
+
+    init(points: [WheelBacktestEquityPoint]) {
+        self.points = points
+        self.model = EquityCurveChartModel(points: points)
+    }
+
+    private var displayIndex: Int {
+        if let selectedIndex, points.indices.contains(selectedIndex) {
+            return selectedIndex
+        }
+        return max(points.count - 1, 0)
+    }
+
+    private var displayPoint: WheelBacktestEquityPoint? {
+        guard points.indices.contains(displayIndex) else { return nil }
+        return points[displayIndex]
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if let point = displayPoint {
+                equityReadout(point, scrubbing: selectedIndex != nil)
+                    .animation(nil, value: selectedIndex)
+            }
+
+            if points.count < 2 {
+                AppEmptyMessage(
+                    message: "Not enough data to draw this chart.",
+                    systemImage: "chart.line.uptrend.xyaxis"
+                )
+                .frame(height: 180)
+            } else {
+                ZStack {
+                    if let buyHoldValues = model.buyHoldValues {
+                        EquityCurveBuyHoldLine(values: buyHoldValues)
+                            .equatable()
+                    }
+
+                    EquityCurveInteractiveLine(
+                        values: model.equityValues,
+                        lineColor: model.lineColor,
+                        selectedIndex: $selectedIndex
+                    )
+                }
+                .frame(height: 200)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func equityReadout(_ point: WheelBacktestEquityPoint, scrubbing: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(DateFormatters.display(ChartDateParser.date(from: point.date)))
+                .font(.caption2.weight(.medium))
+                .foregroundStyle(scrubbing ? AppColors.accentHighlight : AppColors.secondaryLabel)
+
+            HStack(spacing: 10) {
+                readoutMetric("Strategy", CurrencyFormatter.usd(point.equityUsd, fractionDigits: 0))
+                if let buyHold = point.buyAndHoldEquityUsd {
+                    readoutMetric("Buy & hold", CurrencyFormatter.usd(buyHold, fractionDigits: 0))
+                }
+                if let cash = point.cashUsd {
+                    readoutMetric("Cash", CurrencyFormatter.usd(cash, fractionDigits: 0))
+                }
+            }
+            .lineLimit(1)
+            .minimumScaleFactor(0.75)
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(AppColors.surfaceElevated.opacity(0.65))
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+
+    private func readoutMetric(_ label: String, _ value: String) -> some View {
+        HStack(spacing: 3) {
+            Text(label)
+                .font(.caption2)
+                .foregroundStyle(AppColors.tertiaryLabel)
+            Text(value)
+                .font(.caption2.weight(.semibold).monospacedDigit())
+                .foregroundStyle(AppColors.label)
+        }
+    }
 }

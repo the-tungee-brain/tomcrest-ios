@@ -75,6 +75,7 @@ struct BacktestDecimalField: View {
     @Binding var value: Double
     var allowsEmpty = false
     var fractionDigits = 2
+    var onCommit: ((Double) -> Void)? = nil
 
     @State private var text = ""
     @FocusState private var focused: Bool
@@ -135,64 +136,24 @@ struct BacktestDecimalField: View {
 
     private func commit() {
         if allowsEmpty, text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            let previous = value
             value = 0
+            if previous != 0 {
+                onCommit?(value)
+            }
             return
         }
         if let parsed = BacktestInputComponents.parseDecimal(text) {
-            value = max(allowsEmpty ? 0 : 0.01, parsed)
+            let next = max(allowsEmpty ? 0 : 0.01, parsed)
+            let previous = value
+            value = next
             syncTextFromValue()
+            if next != previous {
+                onCommit?(next)
+            }
         } else {
             syncTextFromValue()
         }
-    }
-}
-
-struct BacktestIntField: View {
-    let label: String
-    let placeholder: String
-    @Binding var value: Int
-    var range: ClosedRange<Int> = 1 ... 999
-
-    @State private var text = ""
-    @FocusState private var focused: Bool
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(label)
-                .font(.caption.weight(.medium))
-                .foregroundStyle(AppColors.secondaryLabel)
-
-            TextField(placeholder, text: $text)
-                .keyboardType(.numberPad)
-                .font(.body.monospacedDigit())
-                .foregroundStyle(AppColors.label)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 11)
-                .background(AppColors.insetSurface)
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .stroke(focused ? AppColors.accentHighlight.opacity(0.55) : AppColors.separator, lineWidth: 1)
-                }
-                .focused($focused)
-                .submitLabel(.done)
-                .onSubmit { commit() }
-        }
-        .onAppear { text = String(value) }
-        .onChange(of: value) { _, newValue in
-            guard !focused else { return }
-            text = String(newValue)
-        }
-        .onChange(of: focused) { _, isFocused in
-            if !isFocused { commit() }
-        }
-    }
-
-    private func commit() {
-        if let parsed = Int(text.trimmingCharacters(in: .whitespacesAndNewlines)) {
-            value = min(max(range.lowerBound, parsed), range.upperBound)
-        }
-        text = String(value)
     }
 }
 
@@ -226,6 +187,81 @@ struct BacktestChipRow<Option: Hashable>: View {
     }
 }
 
+struct BacktestOptionToggle: View {
+    let title: String
+    var footnote: String?
+    @Binding var isOn: Bool
+
+    var body: some View {
+        Button {
+            isOn.toggle()
+        } label: {
+            HStack(alignment: .center, spacing: 12) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title)
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(AppColors.label)
+                        .multilineTextAlignment(.leading)
+                    if let footnote {
+                        Text(footnote)
+                            .font(.caption2)
+                            .foregroundStyle(AppColors.secondaryLabel)
+                            .lineSpacing(2)
+                            .multilineTextAlignment(.leading)
+                    }
+                }
+
+                Spacer(minLength: 8)
+
+                BacktestToggleIndicator(isOn: isOn)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 11)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(isOn ? AppColors.accentMuted : AppColors.insetSurface)
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(
+                        isOn ? AppColors.accentHighlight.opacity(0.35) : AppColors.separator,
+                        lineWidth: 1
+                    )
+            }
+        }
+        .buttonStyle(BacktestOptionToggleStyle())
+        .accessibilityAddTraits(isOn ? .isSelected : [])
+    }
+}
+
+private struct BacktestToggleIndicator: View {
+    let isOn: Bool
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(isOn ? AppColors.accentHighlight.opacity(0.18) : AppColors.secondaryFill.opacity(0.65))
+                .frame(width: 22, height: 22)
+
+            if isOn {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(AppColors.accentHighlight)
+            }
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .stroke(isOn ? AppColors.accentHighlight.opacity(0.5) : AppColors.separator, lineWidth: 1)
+        }
+    }
+}
+
+private struct BacktestOptionToggleStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .opacity(configuration.isPressed ? 0.82 : 1)
+    }
+}
+
 struct BacktestRunButton: View {
     let isLoading: Bool
     let action: () -> Void
@@ -233,16 +269,57 @@ struct BacktestRunButton: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 8) {
-                if isLoading {
-                    ProgressView()
-                        .controlSize(.small)
+                Group {
+                    if isLoading {
+                        ProgressView()
+                            .controlSize(.small)
+                            .tint(AppColors.accentHighlight)
+                    } else {
+                        Image(systemName: "play.fill")
+                            .font(.system(size: 10, weight: .bold))
+                    }
                 }
+                .frame(width: 14, height: 14)
+
                 Text(isLoading ? "Running…" : "Run backtest")
-                    .font(.subheadline.weight(.semibold))
+                    .font(.caption.weight(.semibold))
             }
-            .frame(maxWidth: .infinity)
+            .foregroundStyle(isLoading ? AppColors.secondaryLabel : AppColors.accentHighlight)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(AppColors.insetSurface)
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(
+                        isLoading ? AppColors.separator : AppColors.accentHighlight.opacity(0.4),
+                        lineWidth: 1
+                    )
+            }
         }
-        .buttonStyle(AppPrimaryButtonStyle())
+        .buttonStyle(BacktestRunButtonStyle())
         .disabled(isLoading)
+    }
+
+    /// Divider + left-aligned run action for the bottom of a controls panel.
+    var panelFooter: some View {
+        VStack(spacing: 0) {
+            Divider()
+                .overlay(AppColors.separator)
+                .padding(.top, 2)
+
+            self
+                .padding(.top, 14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+}
+
+private struct BacktestRunButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .opacity(configuration.isPressed ? 0.72 : 1)
+            .scaleEffect(configuration.isPressed ? 0.98 : 1)
+            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
     }
 }
