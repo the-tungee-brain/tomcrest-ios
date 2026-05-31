@@ -6,6 +6,7 @@ struct PortfolioView: View {
     @Binding var settingsFocus: SettingsFocus?
     @State private var viewModel: PortfolioViewModel?
     @State private var researchSymbol: String?
+    @State private var path: [PortfolioDestination] = []
 
     init(selectedTab: Binding<AppTab>, settingsFocus: Binding<SettingsFocus?> = .constant(nil)) {
         _selectedTab = selectedTab
@@ -13,7 +14,7 @@ struct PortfolioView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             Group {
                 if let viewModel {
                     portfolioContent(viewModel)
@@ -26,6 +27,11 @@ struct PortfolioView: View {
             .appRootNavigation("Portfolio")
             .navigationDestination(item: $researchSymbol) { symbol in
                 SymbolResearchView(symbol: symbol, auth: auth)
+            }
+            .navigationDestination(for: PortfolioDestination.self) { destination in
+                if let viewModel {
+                    portfolioDestination(destination, viewModel: viewModel)
+                }
             }
             .sheet(isPresented: onboardingWizardBinding) {
                 if let viewModel {
@@ -59,13 +65,13 @@ struct PortfolioView: View {
         }
     }
 
+    // MARK: - Dashboard (minimal main screen)
+
     @ViewBuilder
     private func portfolioContent(_ viewModel: PortfolioViewModel) -> some View {
         switch viewModel.screenState {
         case .loading:
-            AppScrollScreen {
-                PortfolioLoadingView()
-            }
+            AppScrollScreen { PortfolioLoadingView() }
 
         case .schwabNotConnected:
             emptyStateScroll {
@@ -90,7 +96,6 @@ struct PortfolioView: View {
                     ) {
                         Task { await viewModel.reconnectSchwab() }
                     }
-
                     if let error = auth.lastError {
                         AppInlineBanner(message: error, tone: .error)
                     }
@@ -117,185 +122,167 @@ struct PortfolioView: View {
             }
 
         case .content:
-            AppScrollScreen(refresh: { await viewModel.refresh(fromPull: true) }) {
-                if let snapshot = viewModel.snapshot {
-                    PortfolioSnapshotCard(
-                        snapshot: snapshot,
-                        syncedAtLabel: viewModel.syncedAtLabel
+            portfolioDashboard(viewModel)
+        }
+    }
+
+    @ViewBuilder
+    private func portfolioDashboard(_ viewModel: PortfolioViewModel) -> some View {
+        AppScrollScreen(refresh: { await viewModel.refresh(fromPull: true) }) {
+            if let snapshot = viewModel.snapshot {
+                PortfolioHeroSummary(
+                    liquidationValue: snapshot.liquidationValue,
+                    totalDayProfitLoss: viewModel.totalDayProfitLoss,
+                    totalOpenProfitLoss: snapshot.totalOpenProfitLoss ?? 0,
+                    openProfitLossPct: snapshot.openProfitLossPct,
+                    cashBalance: snapshot.cashBalance,
+                    syncedAtLabel: viewModel.syncedAtLabel
+                )
+            }
+
+            if viewModel.needsStrategyOnboarding, viewModel.showStrategyNudge {
+                PortfolioStrategyNudge(
+                    onStart: { viewModel.presentOnboardingWizard() },
+                    onOpenSettings: {
+                        settingsFocus = .strategy
+                        selectedTab = .settings
+                    }
+                )
+            }
+
+            NavigationLink(value: PortfolioDestination.today) {
+                PortfolioBriefPreview(
+                    lead: viewModel.briefLead,
+                    isUrgent: viewModel.briefIsUrgent,
+                    attentionCount: viewModel.attentionItemCount
+                )
+            }
+            .buttonStyle(.plain)
+
+            exploreSection(viewModel)
+
+            holdingsPreviewSection(viewModel)
+        }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if viewModel.isRefreshing {
+                AppRefreshBanner(text: "Refreshing…")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func exploreSection(_ viewModel: PortfolioViewModel) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Explore")
+                .font(.caption2.weight(.medium))
+                .foregroundStyle(AppColors.tertiaryLabel)
+                .textCase(.uppercase)
+                .padding(.horizontal, 4)
+
+            VStack(spacing: 0) {
+                portfolioLink(.today, viewModel: viewModel) {
+                    PortfolioQuickLinkRow(
+                        icon: "sun.max.fill",
+                        title: "Today's briefing",
+                        subtitle: "Brief, alerts, playbook & assistant",
+                        badge: viewModel.todayBadgeCount
                     )
                 }
-
-                PortfolioSectionTabBar(
-                    selection: Binding(
-                        get: { viewModel.activeSection },
-                        set: { viewModel.setActiveSection($0) }
-                    ),
-                    todayBadge: viewModel.todayBadgeCount,
-                    activityBadge: viewModel.activityBadgeCount
-                )
-
-                sectionContent(viewModel)
+                Divider().overlay(AppColors.separator).padding(.leading, 58)
+                portfolioLink(.holdings, viewModel: viewModel) {
+                    PortfolioQuickLinkRow(
+                        icon: "chart.pie.fill",
+                        title: "Holdings & risk",
+                        subtitle: "\(viewModel.snapshot?.symbolCount ?? 0) symbols · sort & filter"
+                    )
+                }
+                Divider().overlay(AppColors.separator).padding(.leading, 58)
+                portfolioLink(.news, viewModel: viewModel) {
+                    PortfolioQuickLinkRow(
+                        icon: "newspaper.fill",
+                        iconTint: AppColors.secondaryLabel,
+                        title: "Headlines",
+                        subtitle: "News from your largest positions"
+                    )
+                }
+                Divider().overlay(AppColors.separator).padding(.leading, 58)
+                portfolioLink(.activity, viewModel: viewModel) {
+                    PortfolioQuickLinkRow(
+                        icon: "arrow.left.arrow.right",
+                        iconTint: AppColors.secondaryLabel,
+                        title: "Activity",
+                        subtitle: "Recent trades",
+                        badge: viewModel.activityBadgeCount
+                    )
+                }
             }
-            .safeAreaInset(edge: .top, spacing: 0) {
-                if viewModel.isRefreshing, viewModel.screenState == .content {
-                    AppRefreshBanner(text: "Refreshing portfolio…")
+            .background(AppColors.secondaryBackground)
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(AppColors.panelBorder, lineWidth: 1)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func holdingsPreviewSection(_ viewModel: PortfolioViewModel) -> some View {
+        let top = viewModel.topHoldings(limit: 6)
+        if !top.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text("Top holdings")
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(AppColors.tertiaryLabel)
+                        .textCase(.uppercase)
+                    Spacer()
+                    if viewModel.holdingSummaries.count > top.count {
+                        NavigationLink(value: PortfolioDestination.holdings) {
+                            Text("View all")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(AppColors.accentHighlight)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, 4)
+
+                PortfolioCompactHoldingsList(summaries: top) { symbol in
+                    researchSymbol = symbol
                 }
             }
         }
     }
 
     @ViewBuilder
-    private func sectionContent(_ viewModel: PortfolioViewModel) -> some View {
-        switch viewModel.activeSection {
+    private func portfolioLink<Label: View>(
+        _ destination: PortfolioDestination,
+        viewModel: PortfolioViewModel,
+        @ViewBuilder label: () -> Label
+    ) -> some View {
+        NavigationLink(value: destination, label: label)
+            .buttonStyle(.plain)
+    }
+
+    @ViewBuilder
+    private func portfolioDestination(
+        _ destination: PortfolioDestination,
+        viewModel: PortfolioViewModel
+    ) -> some View {
+        switch destination {
         case .today:
-            AppScreenSection(title: "Today") {
-                VStack(alignment: .leading, spacing: Layout.itemSpacing) {
-                    if viewModel.showPortfolioOnboarding {
-                        PortfolioOnboardingCard(
-                            schwabConnected: viewModel.screenState != .schwabNotConnected,
-                            hasPositions: !viewModel.positions.isEmpty,
-                            hasUsedAssistant: !viewModel.chatMessages.isEmpty,
-                            onConnectSchwab: {
-                                selectedTab = .settings
-                            },
-                            onDismiss: {
-                                viewModel.dismissPortfolioOnboarding()
-                            }
-                        )
-                    }
-
-                    if viewModel.needsStrategyOnboarding {
-                        PortfolioStrategyNudge(
-                            onStart: { viewModel.presentOnboardingWizard() },
-                            onOpenSettings: {
-                                settingsFocus = .strategy
-                                selectedTab = .settings
-                            }
-                        )
-                        .overlay(alignment: .topTrailing) {
-                            if viewModel.showStrategyNudge || !OnboardingStorage.isStrategyOnboardingDismissed() {
-                                Button("Dismiss") {
-                                    viewModel.dismissStrategyNudge()
-                                }
-                                .font(.caption2.weight(.semibold))
-                                .foregroundStyle(AppColors.secondaryLabel)
-                                .padding(8)
-                            }
-                        }
-                    }
-
-                    MorningBriefCard(
-                        lead: viewModel.briefLead,
-                        changes: viewModel.morningBrief?.changes,
-                        macroRegime: viewModel.morningBrief?.macroRegime
-                            ?? viewModel.displayBrief?.digest?.macroRegime,
-                        digest: viewModel.briefDigest,
-                        signals: viewModel.topBriefSignals,
-                        isUrgentLead: viewModel.briefIsUrgent,
-                        generatedAt: viewModel.morningBrief?.generatedAt,
-                        onGoDeeper: {
-                            viewModel.runDiversificationAnalysis()
-                        },
-                        onSymbolTap: { researchSymbol = $0 }
-                    )
-
-                    PortfolioAttentionSection(
-                        taxItems: viewModel.taxAlertItems,
-                        alerts: viewModel.alerts,
-                        attentionQueue: viewModel.attentionQueue,
-                        suggestedActions: viewModel.portfolioTradeSuggestions,
-                        itemCount: viewModel.attentionItemCount,
-                        onDismiss: { item in
-                            Task { await viewModel.dismissAttentionItem(item) }
-                        },
-                        onQuickAction: { actionId in
-                            viewModel.runQuickAction(actionId)
-                        }
-                    )
-
-                    if viewModel.showStrategyPlaybook, let strategyId = viewModel.primaryStrategyId {
-                        StrategyPlaybookCard(
-                            strategyId: strategyId,
-                            catalogItem: viewModel.strategyCatalogItem,
-                            recommendations: viewModel.strategyRecommendations,
-                            isLoading: viewModel.strategyPlaybookLoading,
-                            onEditPlaybook: {
-                                settingsFocus = .strategy
-                                selectedTab = .settings
-                            },
-                            onRunAction: { action in
-                                viewModel.runPlaybookAction(action)
-                            },
-                            onConnectSchwab: {
-                                Task { await viewModel.connectSchwabFromPlaybook() }
-                            },
-                            onOpenSymbol: { researchSymbol = $0 },
-                            isConnectingSchwab: viewModel.isConnectingSchwab,
-                            wheelSymbols: StrategyPlaybookHelpers.symbols(from: viewModel.investmentProfile)
-                        )
-                    }
-
-                    PortfolioAnalysisSection(
-                        isLoading: viewModel.portfolioAnalysisLoading,
-                        statusText: viewModel.portfolioAnalysisStatus,
-                        errorMessage: viewModel.portfolioAnalysisError,
-                        analysis: viewModel.structuredAnalysis,
-                        precomputed: viewModel.portfolioPrecomputed,
-                        onAnalyze: {
-                            Task { await viewModel.runPortfolioAnalysis() }
-                        },
-                        progressiveDisclosure: true
-                    )
-                }
-            }
-
-            PortfolioChatPanel(viewModel: viewModel)
-
-        case .news:
-            PortfolioNewsSection(
-                items: viewModel.portfolioNews,
-                isLoading: viewModel.portfolioNewsLoading,
+            PortfolioTodayScreen(
+                viewModel: viewModel,
+                selectedTab: $selectedTab,
+                settingsFocus: $settingsFocus,
                 onSymbolTap: { researchSymbol = $0 }
             )
-
         case .holdings:
-            if viewModel.positions.isEmpty {
-                AppEmptyMessage(message: "No holdings to show.")
-            } else {
-                VStack(alignment: .leading, spacing: Layout.sectionSpacing) {
-                    PortfolioRiskSection(
-                        cashSecuredPutSummary: viewModel.cashSecuredPutSummary,
-                        assignmentRiskSummary: viewModel.assignmentRiskSummary,
-                        cashBalance: viewModel.snapshot?.cashBalance
-                    )
-
-                    AppScreenSection(title: "Holdings", footnote: "Grouped by symbol · tap to research") {
-                        PortfolioHoldingsTable(
-                            summaries: viewModel.holdingSummaries,
-                            alerts: viewModel.alerts,
-                            onSymbolTap: { researchSymbol = $0 }
-                        )
-                    }
-                }
-            }
-
+            PortfolioHoldingsScreen(viewModel: viewModel, onSymbolTap: { researchSymbol = $0 })
+        case .news:
+            PortfolioNewsScreen(viewModel: viewModel, onSymbolTap: { researchSymbol = $0 })
         case .activity:
-            PortfolioActivitySection(
-                orders: viewModel.recentOrders,
-                totalOrders: viewModel.totalActivityOrders,
-                recentOrderCount: viewModel.recentOrderCount,
-                daysBack: viewModel.activityDaysBack,
-                symbolFilter: viewModel.activitySymbolFilter,
-                activityBySymbol: viewModel.activityBySymbol,
-                isLoading: viewModel.recentOrdersLoading,
-                errorMessage: viewModel.recentOrdersError,
-                onDaysBackChange: { viewModel.setActivityDaysBack($0) },
-                onSymbolFilterChange: { viewModel.setActivitySymbolFilter($0) },
-                onSymbolTap: { researchSymbol = $0 },
-                onRetry: {
-                    Task { await viewModel.loadRecentOrdersIfNeeded(force: true) }
-                }
-            )
+            PortfolioActivityScreen(viewModel: viewModel, onSymbolTap: { researchSymbol = $0 })
         }
     }
 

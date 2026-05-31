@@ -130,6 +130,14 @@ final class PortfolioViewModel {
         PortfolioHoldingsSupport.buildSummaries(positions: positions, alerts: alerts)
     }
 
+    var totalDayProfitLoss: Double {
+        positions.reduce(0) { $0 + $1.currentDayProfitLoss }
+    }
+
+    func topHoldings(limit: Int = 6) -> [SymbolHoldingSummary] {
+        Array(holdingSummaries.prefix(limit))
+    }
+
     var taxAlertItems: [TaxAlertItem] {
         IntelligenceHelpers.collectTaxAlertItems(
             alerts: alerts,

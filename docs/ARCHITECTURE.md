@@ -27,7 +27,11 @@ Tomcrest/
 │   └── Networking/         API client, streaming, chat service
 │
 └── Features/
-    ├── Portfolio/          Today, holdings, playbook, analysis
+    ├── Portfolio/          Dashboard + pushed detail screens (see PORTFOLIO_UX.md)
+    │   ├── Navigation/     PortfolioDestination routes
+    │   ├── Dashboard/      Hero summary, compact holdings
+    │   ├── Screens/        Today, Holdings, Headlines, Activity
+    │   └── PortfolioView.swift
     ├── Research/           Hub, symbol depth tabs, watchlist
     ├── Settings/           Hub + pushed detail screens
     │   ├── Navigation/     SettingsDestination routes
@@ -48,6 +52,17 @@ Tomcrest/
 | About | `AboutSettingsScreen` | Version, support |
 
 Deep link from Portfolio: `SettingsFocus.strategy` pushes the Strategy screen.
+
+## Portfolio navigation
+
+| Dashboard link | Screen | Contents |
+|----------------|--------|----------|
+| Morning brief preview / Today | `PortfolioTodayScreen` | Brief, attention, playbook, analysis, chat |
+| Holdings & risk | `PortfolioHoldingsScreen` | Options risk, full sortable table |
+| Headlines | `PortfolioNewsScreen` | Portfolio news |
+| Activity | `PortfolioActivityScreen` | Recent trades + filters |
+
+Main dashboard shows only hero metrics, brief teaser, explore links, and top 6 holdings.
 
 ## Adding a feature
 
