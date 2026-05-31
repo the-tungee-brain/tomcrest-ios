@@ -146,7 +146,7 @@ struct PortfolioBriefPreview: View {
 
     private var previewText: String {
         if let lead, !lead.isEmpty { return lead }
-        return "Tap for today's briefing, playbook, and assistant."
+        return "Tap for today's briefing, alerts, and playbook."
     }
 }
 

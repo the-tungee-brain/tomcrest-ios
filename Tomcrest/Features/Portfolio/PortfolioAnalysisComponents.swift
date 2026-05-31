@@ -11,8 +11,12 @@ struct PortfolioAnalysisSection: View {
 
     @State private var disclosureExpanded = false
 
+    private var hasAnalysis: Bool { analysis != nil }
+
     private var showContent: Bool {
-        !progressiveDisclosure || disclosureExpanded || analysis != nil || isLoading
+        guard progressiveDisclosure else { return true }
+        if isLoading { return true }
+        return disclosureExpanded
     }
 
     var body: some View {
@@ -36,7 +40,7 @@ struct PortfolioAnalysisSection: View {
 
                 Spacer(minLength: 0)
 
-                if progressiveDisclosure, analysis == nil, !isLoading {
+                if progressiveDisclosure, hasAnalysis, !isLoading {
                     Button(disclosureExpanded ? "Hide" : "Expand") {
                         withAnimation(.easeInOut(duration: 0.2)) {
                             disclosureExpanded.toggle()
@@ -50,7 +54,7 @@ struct PortfolioAnalysisSection: View {
 
             if showContent {
                 analysisBody
-            } else if progressiveDisclosure {
+            } else if progressiveDisclosure, !hasAnalysis {
                 Button {
                     withAnimation(.easeInOut(duration: 0.2)) {
                         disclosureExpanded = true
@@ -65,6 +69,13 @@ struct PortfolioAnalysisSection: View {
             }
         }
         .appPanel()
+        .onChange(of: hasAnalysis) { _, available in
+            if available {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    disclosureExpanded = true
+                }
+            }
+        }
     }
 
     @ViewBuilder

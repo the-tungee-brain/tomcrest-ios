@@ -16,14 +16,12 @@ final class AccountContext {
     private(set) var plan: AccountPlanResponse?
     private(set) var isLoadingPlan = false
 
-    private let selectedModelKey = "tomcrest.chatModel"
+    private static let selectedModelStorageKey = "tomcrest.chatModel"
 
-    var selectedChatModel: String {
-        get {
-            UserDefaults.standard.string(forKey: selectedModelKey) ?? defaultChatModel
-        }
-        set {
-            UserDefaults.standard.set(newValue, forKey: selectedModelKey)
+    var selectedChatModel: String = UserDefaults.standard.string(forKey: selectedModelStorageKey)
+        ?? ChatConfig.defaultModel {
+        didSet {
+            UserDefaults.standard.set(selectedChatModel, forKey: Self.selectedModelStorageKey)
         }
     }
 
@@ -34,10 +32,8 @@ final class AccountContext {
 
     var effectiveChatModel: String {
         let options = chatModelOptions()
-        if options.contains(where: { $0.id == selectedChatModel }) {
-            if requiresProModel(selectedChatModel), plan?.isPaid != true {
-                return defaultChatModel
-            }
+        if options.contains(where: { $0.id == selectedChatModel }),
+           ChatModelSupport.isAllowed(modelId: selectedChatModel, plan: plan) {
             return selectedChatModel
         }
         return defaultChatModel
@@ -79,12 +75,16 @@ final class AccountContext {
     }
 
     func selectChatModel(_ modelId: String) {
-        if requiresProModel(modelId), plan?.isPaid != true { return }
+        guard ChatModelSupport.isAllowed(modelId: modelId, plan: plan) else { return }
         selectedChatModel = modelId
     }
 
     func requiresProModel(_ modelId: String) -> Bool {
         ChatModelSupport.requiresPro(modelId: modelId, plan: plan)
+    }
+
+    func isModelAllowed(_ modelId: String) -> Bool {
+        ChatModelSupport.isAllowed(modelId: modelId, plan: plan)
     }
 
     private func normalizeSelectedModel() {
@@ -97,14 +97,14 @@ final class AccountContext {
 
 enum ChatModelSupport {
     static let fallbackOptions: [ChatModelDefinition] = [
-        ChatModelDefinition(id: "gpt-5-nano", label: "Fast", description: "Quick replies", tier: "fast"),
-        ChatModelDefinition(id: "gpt-4o-mini", label: "Fast", description: "Lightweight", tier: "fast"),
-        ChatModelDefinition(id: ChatConfig.defaultModel, label: "Balanced", description: "Recommended default", tier: "balanced"),
-        ChatModelDefinition(id: "gpt-5.1", label: "Advanced", description: "Strong analysis", tier: "advanced"),
-        ChatModelDefinition(id: "gpt-4o", label: "Advanced", description: "Reliable depth", tier: "advanced"),
-        ChatModelDefinition(id: "gpt-5.4", label: "Advanced", description: "Deepest analysis", tier: "advanced"),
-        ChatModelDefinition(id: "o3", label: "Advanced", description: "Maximum reasoning", tier: "advanced"),
-        ChatModelDefinition(id: "o4-mini", label: "Advanced", description: "Strong reasoning", tier: "advanced"),
+        ChatModelDefinition(id: "gpt-5-nano", label: "Fast", description: "Quick replies for simple questions", tier: "fast"),
+        ChatModelDefinition(id: "gpt-4o-mini", label: "Fast", description: "Lightweight and responsive", tier: "fast"),
+        ChatModelDefinition(id: ChatConfig.defaultModel, label: "Balanced", description: "Recommended for most portfolio and research questions", tier: "balanced"),
+        ChatModelDefinition(id: "gpt-5.1", label: "Advanced", description: "Strong general-purpose analysis", tier: "advanced"),
+        ChatModelDefinition(id: "gpt-4o", label: "Advanced", description: "Reliable depth for everyday use", tier: "advanced"),
+        ChatModelDefinition(id: "gpt-5.4", label: "Advanced", description: "Deepest analysis — best for complex questions", tier: "advanced"),
+        ChatModelDefinition(id: "o3", label: "Advanced", description: "Maximum reasoning depth, slower responses", tier: "advanced"),
+        ChatModelDefinition(id: "o4-mini", label: "Advanced", description: "Strong reasoning with moderate speed", tier: "advanced"),
     ]
 
     static let tierLabels: [(id: String, label: String)] = [
@@ -135,10 +135,26 @@ enum ChatModelSupport {
     }
 
     static func requiresPro(modelId: String, plan: AccountPlanResponse?) -> Bool {
-        if let proOnly = plan?.proOnlyModels, proOnly.contains(modelId) { return true }
-        if let paid = plan?.paidModels, paid.contains(modelId) { return plan?.isPaid != true }
-        if let allowed = plan?.allowedModels, !allowed.contains(modelId) { return true }
-        return matchTier(modelId, plan: plan) == "advanced" && plan?.isPaid != true
+        if let proOnly = plan?.proOnlyModels, !proOnly.isEmpty {
+            return proOnly.contains(modelId)
+        }
+        return matchTier(modelId, plan: plan) == "advanced"
+    }
+
+    static func isAllowed(modelId: String, plan: AccountPlanResponse?) -> Bool {
+        if plan?.isPaid == true {
+            if let allowed = plan?.allowedModels, !allowed.isEmpty {
+                return allowed.contains(modelId)
+            }
+            if let paid = plan?.paidModels, !paid.isEmpty {
+                return paid.contains(modelId)
+            }
+            return matchTier(modelId, plan: plan) != nil
+        }
+        if let freeModels = plan?.freeModels, !freeModels.isEmpty {
+            return freeModels.contains(modelId)
+        }
+        return !requiresPro(modelId: modelId, plan: plan)
     }
 
     private static func matchTier(_ modelId: String, plan: AccountPlanResponse?) -> String? {

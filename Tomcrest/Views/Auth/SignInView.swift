@@ -15,7 +15,19 @@ struct SignInView: View {
                     Button {
                         signInTapped()
                     } label: {
-                        Label("Continue with Google", systemImage: "g.circle.fill")
+                        Group {
+                            if isSigningIn {
+                                HStack(spacing: 8) {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                        .tint(Token.onPrimary)
+                                    Text("Signing in…")
+                                }
+                            } else {
+                                Label("Continue with Google", systemImage: "g.circle.fill")
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(AppPrimaryButtonStyle())
                     .disabled(isSigningIn)
@@ -24,16 +36,6 @@ struct SignInView: View {
                         .font(.footnote)
                         .foregroundStyle(AppColors.secondaryLabel)
                         .multilineTextAlignment(.center)
-                }
-
-                if isSigningIn {
-                    HStack(spacing: 8) {
-                        ProgressView()
-                            .tint(AppColors.accent)
-                        Text("Signing in…")
-                            .font(AppTypography.caption)
-                            .foregroundStyle(AppColors.secondaryLabel)
-                    }
                 }
 
                 if let error = auth.lastError {

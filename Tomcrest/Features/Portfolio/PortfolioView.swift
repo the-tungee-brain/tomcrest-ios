@@ -201,8 +201,16 @@ struct PortfolioView: View {
                     PortfolioQuickLinkRow(
                         icon: "sun.max.fill",
                         title: "Today's briefing",
-                        subtitle: "Brief, alerts, playbook & assistant",
+                        subtitle: "Morning brief, alerts & playbook",
                         badge: viewModel.todayBadgeCount
+                    )
+                }
+                Divider().overlay(AppColors.separator).padding(.leading, 58)
+                portfolioLink(.portfolioAnalysis, viewModel: viewModel) {
+                    PortfolioQuickLinkRow(
+                        icon: "chart.bar.doc.horizontal.fill",
+                        title: "Portfolio analysis",
+                        subtitle: "Diversification review, cash map & action plan"
                     )
                 }
                 Divider().overlay(AppColors.separator).padding(.leading, 58)
@@ -295,6 +303,8 @@ struct PortfolioView: View {
                     settingsFocus: $settingsFocus,
                     onSymbolTap: { researchSymbol = $0 }
                 )
+            case .portfolioAnalysis:
+                PortfolioAnalysisScreen(viewModel: viewModel)
             case .holdings:
                 PortfolioHoldingsScreen(viewModel: viewModel, onSymbolTap: { researchSymbol = $0 })
             case .news:

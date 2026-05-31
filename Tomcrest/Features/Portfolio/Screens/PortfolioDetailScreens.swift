@@ -1,6 +1,6 @@
 import SwiftUI
 
-// MARK: - Today (brief, attention, playbook, analysis, chat)
+// MARK: - Today (brief, attention, playbook)
 
 struct PortfolioTodayScreen: View {
     @Environment(AssistantPresenter.self) private var assistant
@@ -82,7 +82,23 @@ struct PortfolioTodayScreen: View {
                         wheelSymbols: StrategyPlaybookHelpers.symbols(from: viewModel.investmentProfile)
                     )
                 }
+            }
+        }
+        .navigationTitle("Today")
+        .navigationBarTitleDisplayMode(.large)
+        .appNavigationCanvas()
+    }
+}
 
+// MARK: - Portfolio analysis + assistant
+
+struct PortfolioAnalysisScreen: View {
+    @Environment(AssistantPresenter.self) private var assistant
+    @Bindable var viewModel: PortfolioViewModel
+
+    var body: some View {
+        AppScrollScreen {
+            VStack(alignment: .leading, spacing: Layout.sectionSpacing) {
                 PortfolioAnalysisSection(
                     isLoading: viewModel.portfolioAnalysisLoading,
                     statusText: viewModel.portfolioAnalysisStatus,
@@ -101,7 +117,7 @@ struct PortfolioTodayScreen: View {
                 }
             }
         }
-        .navigationTitle("Today")
+        .navigationTitle("Portfolio analysis")
         .navigationBarTitleDisplayMode(.large)
         .appNavigationCanvas()
     }
