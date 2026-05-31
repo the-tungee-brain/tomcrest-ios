@@ -59,6 +59,7 @@ enum ResearchService {
 
     static func fetchEarningsList(
         symbol: String,
+        accessToken: String,
         limit: Int = 8,
         api: APIClient = .shared
     ) async throws -> EarningsListResponse {
@@ -67,7 +68,8 @@ enum ResearchService {
             query: [
                 "symbol": symbol.uppercased(),
                 "limit": String(limit),
-            ]
+            ],
+            accessToken: accessToken
         )
     }
 
@@ -111,13 +113,34 @@ enum ResearchService {
         symbol: String,
         accessToken: String,
         shares: Double = 100,
+        projectYears: Int? = nil,
+        reinvestDividends: Bool = false,
+        priceCagrPct: Double? = nil,
+        annualContributionUsd: Double = 0,
         api: APIClient = .shared
     ) async throws -> DividendHistoryContext {
+        var query: [String: String?] = [
+            "symbol": symbol.uppercased(),
+            "shares": String(shares),
+            "reinvest_dividends": reinvestDividends ? "true" : "false",
+            "annual_contribution_usd": String(annualContributionUsd),
+        ]
+        if let projectYears { query["project_years"] = String(projectYears) }
+        if let priceCagrPct { query["price_cagr_pct"] = String(priceCagrPct) }
+        return try await api.get("/research/dividends", query: query, accessToken: accessToken)
+    }
+
+    static func fetchEtfHoldings(
+        symbol: String,
+        accessToken: String,
+        limit: Int = 25,
+        api: APIClient = .shared
+    ) async throws -> EtfHoldingsContext {
         try await api.get(
-            "/research/dividends",
+            "/research/etf-holdings",
             query: [
                 "symbol": symbol.uppercased(),
-                "shares": String(shares),
+                "limit": String(limit),
             ],
             accessToken: accessToken
         )
@@ -131,6 +154,78 @@ enum ResearchService {
         try await api.get(
             "/research/fundamentals",
             query: ["symbol": symbol.uppercased()],
+            accessToken: accessToken
+        )
+    }
+
+    static func fetchCompanyNews(
+        symbol: String,
+        accessToken: String,
+        refresh: Bool = false,
+        api: APIClient = .shared
+    ) async throws -> StockNewsView {
+        try await api.get(
+            "/get-company-news",
+            query: [
+                "symbol": symbol.uppercased(),
+                "refresh": refresh ? "true" : "false",
+            ],
+            accessToken: accessToken
+        )
+    }
+
+    static func analyzeCompanyNews(
+        symbol: String,
+        accessToken: String,
+        refresh: Bool = false,
+        api: APIClient = .shared
+    ) async throws -> StockNewsView {
+        try await api.postNoBody(
+            "/analyze-company-news",
+            query: [
+                "symbol": symbol.uppercased(),
+                "refresh": refresh ? "true" : "false",
+            ],
+            accessToken: accessToken
+        )
+    }
+
+    static func fetchBusinessDetails(
+        symbol: String,
+        accessToken: String,
+        api: APIClient = .shared
+    ) async throws -> BusinessBlock {
+        try await api.get(
+            "/research/business",
+            query: ["symbol": symbol.uppercased()],
+            accessToken: accessToken
+        )
+    }
+
+    static func fetchSymbolIntelligence(
+        symbol: String,
+        accessToken: String,
+        includeOptions: Bool = true,
+        api: APIClient = .shared
+    ) async throws -> SymbolIntelligenceDetail {
+        try await api.get(
+            "/research/intelligence",
+            query: [
+                "symbol": symbol.uppercased(),
+                "include_options": includeOptions ? "true" : "false",
+            ],
+            accessToken: accessToken
+        )
+    }
+
+    static func fetchWheelBacktest(
+        query: WheelBacktestQuery,
+        accessToken: String,
+        api: APIClient = .shared
+    ) async throws -> WheelBacktestResult {
+        try await api.get(
+            "/strategy/wheel-backtest",
+            query: query.queryItems,
             accessToken: accessToken
         )
     }

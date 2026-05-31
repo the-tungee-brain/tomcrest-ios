@@ -139,6 +139,11 @@ final class SymbolOverviewViewModel {
         chatExpanded.toggle()
     }
 
+    func openChatWithPrompt(_ prompt: String) {
+        chatInput = prompt
+        chatExpanded = true
+    }
+
     func sendChatMessage(model: String = ChatConfig.defaultModel) async {
         let prompt = chatInput.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !prompt.isEmpty,
@@ -190,6 +195,47 @@ final class SymbolOverviewViewModel {
         } catch {
             appendAssistantChunk(
                 "Sorry, something went wrong while researching this symbol.",
+                assistantId: assistantId
+            )
+            auth.setError((error as? APIError)?.errorDescription ?? error.localizedDescription)
+        }
+
+        chatLoading = false
+    }
+
+    func sendPlaybookAsk(action: StrategyNextAction, strategyId: String) async {
+        guard let accessToken = auth.accessToken else { return }
+
+        chatMessages.append(ChatMessage(
+            id: "user-\(Date().timeIntervalSince1970)",
+            role: .user,
+            content: action.title
+        ))
+        chatLoading = true
+        chatExpanded = true
+
+        let assistantId = "assistant-\(Date().timeIntervalSince1970)"
+        chatMessages.append(ChatMessage(id: assistantId, role: .assistant, content: ""))
+
+        do {
+            let completion = try await StrategyService.streamPlaybookAsk(
+                action: action,
+                strategyId: strategyId,
+                accessToken: accessToken,
+                chatSessionId: chatSessionId,
+                newChatSession: chatSessionId == nil
+            ) { [weak self] chunk in
+                Task { @MainActor in
+                    self?.appendAssistantChunk(chunk, assistantId: assistantId)
+                }
+            }
+            if let sessionId = completion.chatSessionId {
+                chatSessionId = sessionId
+            }
+            auth.clearError()
+        } catch {
+            appendAssistantChunk(
+                "Sorry, something went wrong while answering your playbook question.",
                 assistantId: assistantId
             )
             auth.setError((error as? APIError)?.errorDescription ?? error.localizedDescription)

@@ -84,7 +84,7 @@ struct SymbolPerformanceCard: View {
                 .foregroundStyle(AppColors.secondaryLabel)
                 .lineSpacing(2)
         }
-        .appPanel(subtle: true)
+        // Plain metrics inside AppScreenSection("Performance") — no nested panel.
     }
 }
 

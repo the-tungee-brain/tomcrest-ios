@@ -85,9 +85,7 @@ struct AccountIdentityRow: View {
             }
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
-        .frame(minHeight: Layout.minTouchTarget)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .appPanel(subtle: true)
     }
 }
@@ -223,9 +221,24 @@ private struct PlanBadge: View {
 
 struct StrategySettingsCard: View {
     @Bindable var viewModel: SettingsViewModel
+    @Binding var strategyExpanded: Bool
+    @Environment(AuthSession.self) private var auth
     @State private var journeyExpanded = false
+    @State private var preferencesExpanded = false
+    @State private var showScreener = false
+
+    init(viewModel: SettingsViewModel, strategyExpanded: Binding<Bool> = .constant(true)) {
+        self.viewModel = viewModel
+        _strategyExpanded = strategyExpanded
+    }
 
     var body: some View {
+        AppDisclosureSection(title: "Strategy editor", isExpanded: $strategyExpanded) {
+            strategyCardBody
+        }
+    }
+
+    private var strategyCardBody: some View {
         VStack(alignment: .leading, spacing: 16) {
             if viewModel.isLoadingStrategy, viewModel.strategyCatalog.isEmpty {
                 HStack(spacing: 8) {
@@ -285,37 +298,58 @@ struct StrategySettingsCard: View {
                         .font(.caption2)
                         .foregroundStyle(AppColors.secondaryLabel)
                 }
-            }
-        }
 
-        VStack(alignment: .leading, spacing: 8) {
-            SettingsFieldLabel(title: "Risk tolerance")
-            Picker("Risk tolerance", selection: Binding(
-                get: { viewModel.selectedRiskTolerance },
-                set: { viewModel.updateRiskTolerance($0) }
-            )) {
-                ForEach(StrategyFormSupport.riskOptions, id: \.self) { option in
-                    Text(option.capitalized).tag(option)
+                if let strategyId = viewModel.selectedStrategyId {
+                    Button {
+                        showScreener = true
+                    } label: {
+                        Label("Open stock screener", systemImage: "line.3.horizontal.decrease.circle")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(AppColors.accentHighlight)
+                    }
+                    .buttonStyle(.plain)
+                    .sheet(isPresented: $showScreener) {
+                        StrategyStockScreenerSheet(strategyId: strategyId, auth: auth) { symbol in
+                            await viewModel.addSymbolToWatchlist(symbol)
+                        }
+                    }
                 }
             }
-            .pickerStyle(.segmented)
         }
 
-        if viewModel.selectedStrategyId != "etf-core" {
-            VStack(alignment: .leading, spacing: 8) {
-                SettingsFieldLabel(title: "Watchlist symbols")
-                AppFormField(
-                    placeholder: "AAPL, MSFT, SCHD",
-                    text: Binding(
-                        get: { viewModel.watchlistSymbolsText },
-                        set: { viewModel.updateWatchlistSymbols($0) }
-                    )
-                )
+        // Risk + watchlist are secondary — collapsed so strategy choice + Save stay primary.
+        AppDisclosureSection(title: "Preferences", isExpanded: $preferencesExpanded) {
+            VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 8) {
+                    SettingsFieldLabel(title: "Risk tolerance")
+                    Picker("Risk tolerance", selection: Binding(
+                        get: { viewModel.selectedRiskTolerance },
+                        set: { viewModel.updateRiskTolerance($0) }
+                    )) {
+                        ForEach(StrategyFormSupport.riskOptions, id: \.self) { option in
+                            Text(option.capitalized).tag(option)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                }
+
+                if viewModel.selectedStrategyId != "etf-core" {
+                    VStack(alignment: .leading, spacing: 8) {
+                        SettingsFieldLabel(title: "Watchlist symbols")
+                        AppFormField(
+                            placeholder: "AAPL, MSFT, SCHD",
+                            text: Binding(
+                                get: { viewModel.watchlistSymbolsText },
+                                set: { viewModel.updateWatchlistSymbols($0) }
+                            )
+                        )
+                    }
+                } else {
+                    Text("ETF Core allocation is managed on the web app for now.")
+                        .font(.caption2)
+                        .foregroundStyle(AppColors.secondaryLabel)
+                }
             }
-        } else {
-            Text("ETF Core allocation is managed on the web app for now.")
-                .font(.caption2)
-                .foregroundStyle(AppColors.secondaryLabel)
         }
 
         if let strategyError = viewModel.strategyError, !viewModel.strategyCatalog.isEmpty {

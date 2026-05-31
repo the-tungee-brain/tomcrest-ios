@@ -29,3 +29,16 @@ enum CurrencyFormatter {
         return String(format: "%.1f%%", value)
     }
 }
+
+enum DateFormatters {
+    /// ISO8601 date prefix (yyyy-MM-dd) → abbreviated display for news and earnings rows.
+    static func abbreviatedDay(from iso: String) -> String {
+        let prefix = String(iso.prefix(10))
+        let parser = ISO8601DateFormatter()
+        parser.formatOptions = [.withFullDate, .withDashSeparatorInDate]
+        if let date = parser.date(from: prefix) {
+            return date.formatted(date: .abbreviated, time: .omitted)
+        }
+        return prefix
+    }
+}

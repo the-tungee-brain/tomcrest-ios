@@ -8,7 +8,13 @@ final class SymbolDepthViewModel {
     private(set) var earnings: EarningsListResponse?
     private(set) var dividends: DividendHistoryContext?
     private(set) var news: PressReleasesResponse?
+    private(set) var companyNews: StockNewsView?
+    private(set) var companyNewsAnalyzing = false
     private(set) var fundamentals: FundamentalsBlock?
+    private(set) var business: BusinessBlock?
+    private(set) var etfHoldings: EtfHoldingsContext?
+    private(set) var symbolIntelligence: SymbolIntelligenceDetail?
+    private(set) var wheelBacktest: WheelBacktestResult?
 
     private(set) var selectedHistoryEvent: EarningsEvent?
     private(set) var earningsDetail: EarningsDetailResponse?
@@ -27,7 +33,7 @@ final class SymbolDepthViewModel {
     }
 
     func loadIfNeeded(_ tab: ResearchTab, force: Bool = false) async {
-        guard tab != .overview else { return }
+        guard tab != .overview, tab != .position else { return }
         if !force, loadedTabs.contains(tab), loadingTab != tab { return }
 
         loadingTab = tab
@@ -40,10 +46,16 @@ final class SymbolDepthViewModel {
 
         do {
             switch tab {
-            case .overview:
+            case .overview, .position:
                 break
             case .earnings:
-                earnings = try await ResearchService.fetchEarningsList(symbol: symbol)
+                guard let accessToken = auth.accessToken else {
+                    throw APIError.missingToken
+                }
+                earnings = try await ResearchService.fetchEarningsList(
+                    symbol: symbol,
+                    accessToken: accessToken
+                )
                 if selectedHistoryEvent == nil {
                     selectedHistoryEvent = earnings?.history.first
                 }
@@ -51,10 +63,17 @@ final class SymbolDepthViewModel {
                 guard let accessToken = auth.accessToken else {
                     throw APIError.missingToken
                 }
-                news = try await ResearchService.fetchPressReleases(
+                async let releases = ResearchService.fetchPressReleases(
                     symbol: symbol,
                     accessToken: accessToken
                 )
+                async let coverage = ResearchService.fetchCompanyNews(
+                    symbol: symbol,
+                    accessToken: accessToken
+                )
+                let (official, market) = try await (releases, coverage)
+                news = official
+                companyNews = market
             case .dividends:
                 guard let accessToken = auth.accessToken else {
                     throw APIError.missingToken
@@ -63,7 +82,7 @@ final class SymbolDepthViewModel {
                     symbol: symbol,
                     accessToken: accessToken
                 )
-            case .fundamentals:
+            case .fundamentals, .financials:
                 guard let accessToken = auth.accessToken else {
                     throw APIError.missingToken
                 }
@@ -71,10 +90,61 @@ final class SymbolDepthViewModel {
                     symbol: symbol,
                     accessToken: accessToken
                 )
+            case .composition:
+                guard let accessToken = auth.accessToken else {
+                    throw APIError.missingToken
+                }
+                etfHoldings = try await ResearchService.fetchEtfHoldings(
+                    symbol: symbol,
+                    accessToken: accessToken
+                )
+            case .business:
+                guard let accessToken = auth.accessToken else {
+                    throw APIError.missingToken
+                }
+                business = try await ResearchService.fetchBusinessDetails(
+                    symbol: symbol,
+                    accessToken: accessToken
+                )
+            case .options:
+                guard let accessToken = auth.accessToken else {
+                    throw APIError.missingToken
+                }
+                symbolIntelligence = try await ResearchService.fetchSymbolIntelligence(
+                    symbol: symbol,
+                    accessToken: accessToken
+                )
+            case .wheelBacktest:
+                guard let accessToken = auth.accessToken else {
+                    throw APIError.missingToken
+                }
+                wheelBacktest = try await ResearchService.fetchWheelBacktest(
+                    query: WheelBacktestQuery(symbol: symbol),
+                    accessToken: accessToken
+                )
             }
             loadedTabs.insert(tab)
         } catch {
             tabErrors[tab] = (error as? APIError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+
+    func analyzeCompanyNews(refresh: Bool = false) async {
+        guard let accessToken = auth.accessToken else { return }
+        if companyNewsAnalyzing { return }
+
+        companyNewsAnalyzing = true
+        tabErrors[.news] = nil
+        defer { companyNewsAnalyzing = false }
+
+        do {
+            companyNews = try await ResearchService.analyzeCompanyNews(
+                symbol: symbol,
+                accessToken: accessToken,
+                refresh: refresh
+            )
+        } catch {
+            tabErrors[.news] = (error as? APIError)?.errorDescription ?? error.localizedDescription
         }
     }
 
@@ -113,9 +183,42 @@ final class SymbolDepthViewModel {
             earningsDetail = nil
             selectedHistoryEvent = nil
         }
+        if tab == .news {
+            companyNews = nil
+        }
         await loadIfNeeded(tab, force: true)
         if tab == .earnings, let event = earnings?.history.first {
             selectedHistoryEvent = event
+        }
+    }
+
+    func loadDividendSnowball(
+        projectYears: Int = 10,
+        reinvestDividends: Bool = true,
+        priceCagrPct: Double? = nil,
+        annualContributionUsd: Double = 0,
+        shares: Double = 100
+    ) async {
+        guard let accessToken = auth.accessToken else { return }
+        loadingTab = .dividends
+        tabErrors[.dividends] = nil
+        defer {
+            if loadingTab == .dividends { loadingTab = nil }
+        }
+
+        do {
+            dividends = try await ResearchService.fetchDividendHistory(
+                symbol: symbol,
+                accessToken: accessToken,
+                shares: shares,
+                projectYears: projectYears,
+                reinvestDividends: reinvestDividends,
+                priceCagrPct: priceCagrPct,
+                annualContributionUsd: annualContributionUsd
+            )
+            loadedTabs.insert(.dividends)
+        } catch {
+            tabErrors[.dividends] = (error as? APIError)?.errorDescription ?? error.localizedDescription
         }
     }
 }

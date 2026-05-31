@@ -17,7 +17,7 @@ struct RootView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(AppColors.background.ignoresSafeArea())
+        .appCanvasBackground()
     }
 }
 

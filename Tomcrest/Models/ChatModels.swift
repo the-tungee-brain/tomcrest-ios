@@ -46,7 +46,33 @@ enum AnalyzeChatPayloadBuilder {
             body["chat_session_id"] = chatSessionId
         }
 
-        return try JSONSerialization.data(withJSONObject: body)
+        return try JSONBodyEncoding.data(from: body)
+    }
+
+    static func buildStructuredAnalyzeBody(
+        account: JSONPassThrough,
+        positions: JSONPassThrough,
+        symbol: String?,
+        userDisplayMessage: String,
+        model: String = ChatConfig.defaultModel
+    ) throws -> Data {
+        let accountObject = try JSONSerialization.jsonObject(with: account.data)
+        let positionsObject = try JSONSerialization.jsonObject(with: positions.data)
+
+        let body: [String: Any] = [
+            "account": accountObject,
+            "positions": positionsObject,
+            "symbol": symbol ?? NSNull(),
+            "action": "free-form",
+            "prompt": NSNull(),
+            "user_display_message": userDisplayMessage,
+            "response_format": StructuredAnalysisSupport.schema,
+            "analysis_instructions": StructuredAnalysisSupport.instructions,
+            "model": model,
+            "new_chat_session": true,
+        ]
+
+        return try JSONBodyEncoding.data(from: body)
     }
 }
 
@@ -69,6 +95,6 @@ enum ResearchChatPayloadBuilder {
             body["chat_session_id"] = chatSessionId
         }
 
-        return try JSONSerialization.data(withJSONObject: body)
+        return try JSONBodyEncoding.data(from: body)
     }
 }

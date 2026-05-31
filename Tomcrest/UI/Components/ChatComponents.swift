@@ -68,7 +68,7 @@ struct AppChatPanelContent: View {
                         ChatMessageList(messages: messages)
                     }
                 }
-                .transition(.opacity.combined(with: .move(edge: .top)))
+                .transition(.opacity)
 
                 if isLoading {
                     HStack(spacing: 8) {
@@ -105,8 +105,9 @@ struct AppChatPanelContent: View {
                 )
             }
         }
+        .clipped()
         .appPanel(subtle: true)
-        .animation(.spring(response: 0.32, dampingFraction: 0.86), value: isExpanded)
+        .animation(.easeInOut(duration: 0.22), value: isExpanded)
     }
 }
 

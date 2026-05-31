@@ -57,6 +57,35 @@ enum PortfolioService {
         )
     }
 
+    static func fetchPortfolioNews(
+        accessToken: String,
+        api: APIClient = .shared
+    ) async throws -> PortfolioNewsResponse {
+        try await api.get("/portfolio/news", accessToken: accessToken)
+    }
+
+    static func fetchRecentOrders(
+        accessToken: String,
+        symbol: String? = nil,
+        daysBack: Int = 30,
+        limit: Int = 25,
+        offset: Int = 0,
+        refresh: Bool = false,
+        api: APIClient = .shared
+    ) async throws -> RecentOrdersResponse {
+        try await api.get(
+            "/recent-orders",
+            query: [
+                "symbol": symbol,
+                "days_back": String(daysBack),
+                "limit": String(limit),
+                "offset": String(offset),
+                "refresh": refresh ? "true" : nil,
+            ],
+            accessToken: accessToken
+        )
+    }
+
     static func dismissAlert(
         alertId: String,
         accessToken: String,
@@ -93,6 +122,61 @@ enum PortfolioService {
             onChunk: onChunk
         )
     }
+
+    static func fetchStructuredPortfolioAnalysis(
+        account: JSONPassThrough,
+        positions: JSONPassThrough,
+        accessToken: String,
+        model: String = ChatConfig.defaultModel,
+        onStatus: (@Sendable (String) -> Void)? = nil
+    ) async throws -> StructuredAnalyzeResponse {
+        let bodyData = try AnalyzeChatPayloadBuilder.buildStructuredAnalyzeBody(
+            account: account,
+            positions: positions,
+            symbol: nil,
+            userDisplayMessage: StructuredAnalysisSupport.portfolioDisplayMessage,
+            model: model
+        )
+
+        var accumulated = ""
+        _ = try await StreamingAPIClient.streamPost(
+            path: "/analyze-positions-by-symbol",
+            bodyData: bodyData,
+            accessToken: accessToken
+        ) { chunk in
+            accumulated += chunk
+            onStatus?(chunk)
+        }
+        return StructuredAnalysisSupport.parseResponse(accumulated)
+    }
+
+    static func fetchStructuredSymbolAnalysis(
+        account: JSONPassThrough,
+        positions: JSONPassThrough,
+        symbol: String,
+        accessToken: String,
+        model: String = ChatConfig.defaultModel,
+        onStatus: (@Sendable (String) -> Void)? = nil
+    ) async throws -> StructuredAnalyzeResponse {
+        let bodyData = try AnalyzeChatPayloadBuilder.buildStructuredAnalyzeBody(
+            account: account,
+            positions: positions,
+            symbol: symbol.uppercased(),
+            userDisplayMessage: StructuredAnalysisSupport.symbolDisplayMessage(symbol),
+            model: model
+        )
+
+        var accumulated = ""
+        _ = try await StreamingAPIClient.streamPost(
+            path: "/analyze-positions-by-symbol",
+            bodyData: bodyData,
+            accessToken: accessToken
+        ) { chunk in
+            accumulated += chunk
+            onStatus?(chunk)
+        }
+        return StructuredAnalysisSupport.parseResponse(accumulated)
+    }
 }
 
 enum PortfolioBriefText {
@@ -111,6 +195,17 @@ enum PortfolioBriefText {
             return signal.message
         }
         return nil
+    }
+
+    static func formatSectorLabel(_ sector: String) -> String {
+        sector
+            .split(separator: "_")
+            .map { part in
+                part.count <= 3
+                    ? part.uppercased()
+                    : part.prefix(1).uppercased() + part.dropFirst().lowercased()
+            }
+            .joined(separator: " ")
     }
 }
 

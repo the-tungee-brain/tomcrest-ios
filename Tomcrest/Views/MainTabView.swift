@@ -10,29 +10,30 @@ struct MainTabView: View {
     @Environment(AuthSession.self) private var auth
     @Environment(AccountContext.self) private var account
     @State private var selectedTab: AppTab = .portfolio
+    @State private var settingsFocus: SettingsFocus?
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            PortfolioView(selectedTab: $selectedTab)
+            PortfolioView(selectedTab: $selectedTab, settingsFocus: $settingsFocus)
                 .tabItem {
-                    Label("Portfolio", systemImage: "chart.pie")
+                    Label("Portfolio", systemImage: selectedTab == .portfolio ? "chart.pie.fill" : "chart.pie")
                 }
                 .tag(AppTab.portfolio)
 
             ResearchView()
                 .tabItem {
-                    Label("Research", systemImage: "magnifyingglass")
+                    Label("Research", systemImage: selectedTab == .research ? "magnifyingglass.circle.fill" : "magnifyingglass")
                 }
                 .tag(AppTab.research)
 
-            SettingsView()
+            SettingsView(settingsFocus: $settingsFocus)
                 .tabItem {
-                    Label("Settings", systemImage: "gearshape")
+                    Label("Settings", systemImage: selectedTab == .settings ? "gearshape.fill" : "gearshape")
                 }
                 .tag(AppTab.settings)
         }
+        .tint(BrandPrimary.color)
         .appMainTabBarChrome()
-        .background(AppColors.background)
         .task(id: auth.accessToken) {
             guard let accessToken = auth.accessToken else { return }
             await account.loadPlan(accessToken: accessToken)

@@ -40,6 +40,7 @@ struct UserInvestmentProfile: Decodable {
     let wheel: WheelStrategyConfig?
     let dividend: DividendStrategyConfig?
     let etfCore: EtfCoreStrategyConfig?
+    let onboardingCompletedAt: String?
 }
 
 struct UserInvestmentProfileUpdate: Encodable {
@@ -50,6 +51,27 @@ struct UserInvestmentProfileUpdate: Encodable {
     let wheel: WheelStrategyConfigUpdate?
     let dividend: DividendStrategyConfigUpdate?
     let etfCore: EtfCoreStrategyConfigUpdate?
+    let completeOnboarding: Bool?
+
+    init(
+        primaryStrategy: String? = nil,
+        riskTolerance: String? = nil,
+        optionsExperience: String? = nil,
+        incomeVsGrowth: String? = nil,
+        wheel: WheelStrategyConfigUpdate? = nil,
+        dividend: DividendStrategyConfigUpdate? = nil,
+        etfCore: EtfCoreStrategyConfigUpdate? = nil,
+        completeOnboarding: Bool? = nil
+    ) {
+        self.primaryStrategy = primaryStrategy
+        self.riskTolerance = riskTolerance
+        self.optionsExperience = optionsExperience
+        self.incomeVsGrowth = incomeVsGrowth
+        self.wheel = wheel
+        self.dividend = dividend
+        self.etfCore = etfCore
+        self.completeOnboarding = completeOnboarding
+    }
 }
 
 struct WheelStrategyConfigUpdate: Encodable {
@@ -93,6 +115,47 @@ struct UserStrategyJourney: Decodable {
 
 struct JourneyStepUpdate: Encodable {
     let status: String
+}
+
+struct StrategyReadiness: Decodable {
+    let schwabLinked: Bool
+    let hasPositions: Bool
+    let cashAvailable: Double?
+    let approvedSymbols: [String]?
+}
+
+struct StrategyNextAction: Decodable, Identifiable {
+    let type: String
+    let title: String
+    let reason: String
+    let symbol: String?
+    let actionId: String?
+
+    var id: String {
+        actionId ?? "\(type)-\(symbol ?? title)"
+    }
+}
+
+struct StrategySymbolStatus: Decodable, Identifiable {
+    var id: String { symbol }
+    let symbol: String
+    let held: Bool
+    let portfolioWeightPct: Double?
+    let wheelPhase: String?
+    let statusLabel: String
+    let nextAction: StrategyNextAction?
+    let priority: Int?
+}
+
+struct StrategyRecommendations: Decodable {
+    let strategy: String
+    let currentStep: JourneyStep?
+    let wheelPhase: String?
+    let readiness: StrategyReadiness
+    let symbol: String?
+    let symbolStatuses: [StrategySymbolStatus]?
+    let nextActions: [StrategyNextAction]
+    let screenerSummary: String?
 }
 
 enum StrategyFormSupport {
@@ -163,7 +226,8 @@ enum StrategyFormSupport {
             incomeVsGrowth: incomeVsGrowth,
             wheel: wheel,
             dividend: dividend,
-            etfCore: etfCore
+            etfCore: etfCore,
+            completeOnboarding: nil
         )
     }
 

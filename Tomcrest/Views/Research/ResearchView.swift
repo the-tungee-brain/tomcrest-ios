@@ -9,43 +9,44 @@ struct ResearchView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: Layout.sectionSpacing) {
-                    if let viewModel {
-                        AppSearchField(
-                            placeholder: "Search tickers",
-                            text: Binding(
-                                get: { viewModel.query },
-                                set: { viewModel.updateQuery($0) }
-                            ),
-                            isLoading: viewModel.isSearching,
-                            onSubmit: {
-                                if let first = viewModel.results.first {
-                                    selectedSymbol = first
-                                }
-                            }
-                        )
-
-                        searchResults(viewModel)
-
-                        if viewModel.query.isEmpty {
-                            examplesSection
-                        }
-                    } else {
-                        AppSearchField(
-                            placeholder: "Search tickers",
-                            text: .constant(""),
-                            isLoading: true
+            AppScrollScreen {
+                if let viewModel {
+                    if !OnboardingStorage.isResearchOnboardingDismissed() {
+                        ResearchOnboardingCard(
+                            openedSymbol: selectedSymbol != nil,
+                            usedChat: false,
+                            onDismiss: { OnboardingStorage.dismissResearchOnboarding() }
                         )
                     }
+
+                    AppSearchField(
+                        placeholder: "Search tickers",
+                        text: Binding(
+                            get: { viewModel.query },
+                            set: { viewModel.updateQuery($0) }
+                        ),
+                        isLoading: viewModel.isSearching,
+                        onSubmit: {
+                            if let first = viewModel.results.first {
+                                selectedSymbol = first
+                            }
+                        }
+                    )
+
+                    searchResults(viewModel)
+
+                    if viewModel.query.isEmpty {
+                        examplesSection
+                    }
+                } else {
+                    AppSearchField(
+                        placeholder: "Search tickers",
+                        text: .constant(""),
+                        isLoading: true
+                    )
                 }
-                .padding(.horizontal, Layout.horizontalPadding)
-                .padding(.bottom, 24)
-                .appContentWidth()
             }
-            .background(AppColors.background)
-            .navigationTitle("Research")
-            .navigationBarTitleDisplayMode(.large)
+            .appRootNavigation("Research")
             .navigationDestination(item: $selectedSymbol) { item in
                 SymbolResearchView(symbol: item.symbol, auth: auth)
             }
@@ -69,7 +70,6 @@ struct ResearchView: View {
                 tone: .neutral
             )
         } else if !viewModel.results.isEmpty {
-            // No section header — search field already frames results; list speaks for itself.
             AppGroupedList {
                 ForEach(Array(viewModel.results.prefix(12).enumerated()), id: \.element.id) { index, item in
                     Button {
@@ -117,11 +117,11 @@ private struct SymbolSearchRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.symbol)
                     .font(AppTypography.cardTitle)
-                    .foregroundStyle(AppColors.label)
+                    .foregroundStyle(Token.textPrimary)
                 if !subtitle.isEmpty {
                     Text(subtitle)
                         .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.secondaryLabel)
+                        .foregroundStyle(Token.textSecondary)
                         .lineLimit(1)
                 }
             }
@@ -130,7 +130,7 @@ private struct SymbolSearchRow: View {
 
             Image(systemName: "chevron.right")
                 .font(.caption2.weight(.semibold))
-                .foregroundStyle(AppColors.tertiaryLabel)
+                .foregroundStyle(Token.textTertiary)
                 .accessibilityHidden(true)
         }
         .padding(.horizontal, 16)

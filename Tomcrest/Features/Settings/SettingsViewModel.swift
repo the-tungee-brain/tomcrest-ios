@@ -192,6 +192,15 @@ final class SettingsViewModel {
         return !StrategyFormSupport.parseSymbols(watchlistSymbolsText).isEmpty
     }
 
+    func addSymbolToWatchlist(_ symbol: String) async {
+        var symbols = StrategyFormSupport.parseSymbols(watchlistSymbolsText)
+        let upper = symbol.uppercased()
+        guard !symbols.contains(upper) else { return }
+        symbols.append(upper)
+        watchlistSymbolsText = symbols.joined(separator: ", ")
+        await saveStrategy()
+    }
+
     func saveStrategy() async {
         guard let accessToken = auth.accessToken,
               let strategyId = selectedStrategyId,

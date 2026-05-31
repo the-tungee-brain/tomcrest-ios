@@ -5,6 +5,38 @@ struct JSONPassThrough: Sendable {
     let data: Data
 }
 
+/// `JSONSerialization` only accepts Foundation types. Swift `Bool` in `[String: Any]` crashes.
+enum JSONBodyEncoding {
+    static func data(from object: Any) throws -> Data {
+        try JSONSerialization.data(withJSONObject: foundationObject(object))
+    }
+
+    private static func foundationObject(_ value: Any) -> Any {
+        switch value {
+        case let bool as Bool:
+            return NSNumber(value: bool)
+        case let number as Int:
+            return NSNumber(value: number)
+        case let number as Int64:
+            return NSNumber(value: number)
+        case let number as Double:
+            return NSNumber(value: number)
+        case let number as Float:
+            return NSNumber(value: number)
+        case let string as String:
+            return string
+        case is NSNull:
+            return NSNull()
+        case let dictionary as [String: Any]:
+            return dictionary.mapValues { foundationObject($0) }
+        case let array as [Any]:
+            return array.map { foundationObject($0) }
+        default:
+            return value
+        }
+    }
+}
+
 struct PortfolioFetchResult {
     let response: AccountPositionsResponse
     let accountPayload: JSONPassThrough

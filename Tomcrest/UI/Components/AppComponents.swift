@@ -31,7 +31,7 @@ struct AppPrimaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.body.weight(.semibold))
-            .foregroundStyle(Color.white)
+            .foregroundStyle(foregroundColor)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
             .frame(minHeight: Layout.minTouchTarget)
@@ -39,8 +39,12 @@ struct AppPrimaryButtonStyle: ButtonStyle {
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
+    private var foregroundColor: Color {
+        destructive ? Color(hex: 0xffe4e6) : Token.onPrimary
+    }
+
     private var backgroundColor: Color {
-        destructive ? AppColors.error : AppColors.accent
+        destructive ? Token.error : Token.primary
     }
 }
 
@@ -87,14 +91,21 @@ struct AppChip: View {
         Button(action: action) {
             Text(title)
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(isSelected ? Color.white : AppColors.label)
+                .foregroundStyle(isSelected ? Token.onPrimary : Token.textPrimary)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
                 .frame(minHeight: Layout.minTouchTarget)
-                .background(isSelected ? AppColors.accent : AppColors.secondaryFill)
+                .background(isSelected ? Token.primary : Token.surfaceFillSecondary)
                 .clipShape(Capsule())
+                .overlay {
+                    if isSelected {
+                        Capsule()
+                            .stroke(Token.primary.opacity(0.35), lineWidth: 1)
+                    }
+                }
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 
@@ -208,6 +219,66 @@ struct AppFeatureChecklist: View {
     }
 }
 
+// MARK: - News headline row (Research news + earnings lists)
+
+/// Compact headline row — title, metadata, optional external link.
+struct AppNewsHeadlineRow: View {
+    let item: NewsHeadline
+
+    var body: some View {
+        if let url = item.url.flatMap(URL.init(string:)) {
+            Link(destination: url) {
+                rowContent
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        } else {
+            rowContent
+        }
+    }
+
+    private var rowContent: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(item.headline)
+                .font(AppTypography.bodySecondary.weight(.medium))
+                .foregroundStyle(AppColors.label)
+                .lineSpacing(3)
+                .lineLimit(3)
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            HStack(spacing: 6) {
+                if !item.source.isEmpty {
+                    Text(item.source)
+                        .lineLimit(1)
+                }
+                if !item.source.isEmpty, !item.datetime.isEmpty {
+                    Text("·")
+                }
+                if !item.datetime.isEmpty {
+                    Text(DateFormatters.abbreviatedDay(from: item.datetime))
+                }
+                if item.url != nil {
+                    Spacer(minLength: 0)
+                    Image(systemName: "arrow.up.right")
+                        .font(.caption2.weight(.semibold))
+                }
+            }
+            .font(AppTypography.caption)
+            .foregroundStyle(AppColors.secondaryLabel)
+
+            if item.url == nil, let summary = item.summary, !summary.isEmpty {
+                Text(summary)
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.tertiaryLabel)
+                    .lineLimit(1)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+    }
+}
+
 // MARK: - Inline banners
 
 struct AppInlineBanner: View {
@@ -250,7 +321,7 @@ struct AppGroupedList<Content: View>: View {
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(AppColors.separator, lineWidth: 1)
+                .stroke(AppColors.panelBorder, lineWidth: 1)
         }
     }
 }
@@ -293,9 +364,10 @@ struct AppDisclosureSection<Content: View>: View {
 
             if isExpanded {
                 content()
-                    .transition(.opacity.combined(with: .move(edge: .top)))
+                    .transition(.opacity)
             }
         }
+        .clipped()
     }
 }
 
@@ -536,7 +608,7 @@ struct AppAuthScreen<Actions: View>: View {
         .padding(24)
         .appCenteredContentWidth()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(AppColors.background.ignoresSafeArea())
+        .appCanvasBackground()
     }
 }
 
@@ -554,7 +626,7 @@ struct AppAuthActionPanel<Content: View>: View {
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(AppColors.separator, lineWidth: 1)
+                .stroke(AppColors.panelBorder, lineWidth: 1)
         }
     }
 }

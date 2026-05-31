@@ -7,6 +7,7 @@ struct SignInView: View {
     var body: some View {
         AppAuthScreen(
             systemImage: "chart.line.uptrend.xyaxis.circle.fill",
+            iconColor: BrandPrimary.color,
             title: AppConfig.brandName,
             message: AppConfig.brandTagline
         ) {

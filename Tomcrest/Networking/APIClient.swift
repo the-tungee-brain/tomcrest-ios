@@ -45,9 +45,10 @@ actor APIClient {
 
     func postNoBody<T: Decodable>(
         _ path: String,
+        query: [String: String?] = [:],
         accessToken: String? = nil
     ) async throws -> T {
-        let url = try config.url(path: path)
+        let url = try config.url(path: path, query: query)
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         applyHeaders(&request, accessToken: accessToken)
