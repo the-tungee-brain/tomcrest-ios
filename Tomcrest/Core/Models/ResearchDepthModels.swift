@@ -190,6 +190,29 @@ struct EtfHoldingItem: Decodable, Identifiable {
     let marketCap: String?
     let piotroskiF: Int?
     let altmanZ: Double?
+
+    enum CodingKeys: String, CodingKey {
+        case ticker, name, sector
+        case weightPct
+        case weightPctSnake = "weight_pct"
+        case marketCap
+        case marketCapSnake = "market_cap"
+        case piotroskiF
+        case altmanZ
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        ticker = try container.decodeIfPresent(String.self, forKey: .ticker)
+        name = try container.decode(String.self, forKey: .name)
+        weightPct = try container.decodeIfPresent(Double.self, forKey: .weightPct)
+            ?? container.decode(Double.self, forKey: .weightPctSnake)
+        sector = try container.decodeIfPresent(String.self, forKey: .sector)
+        marketCap = try container.decodeIfPresent(String.self, forKey: .marketCap)
+            ?? container.decodeIfPresent(String.self, forKey: .marketCapSnake)
+        piotroskiF = try container.decodeIfPresent(Int.self, forKey: .piotroskiF)
+        altmanZ = try container.decodeIfPresent(Double.self, forKey: .altmanZ)
+    }
 }
 
 struct EtfHoldingsContext: Decodable {
@@ -203,6 +226,50 @@ struct EtfHoldingsContext: Decodable {
     let dividendYield: String?
     let expenseRatio: String?
     let dataAsOf: String?
+
+    enum CodingKeys: String, CodingKey {
+        case ticker, aum, holdings
+        case totalHoldings
+        case totalHoldingsSnake = "total_holdings"
+        case sectorBreakdown
+        case sectorBreakdownSnake = "sector_breakdown"
+        case strongestHoldings
+        case weakestHoldings
+        case dividendYield
+        case dividendYieldSnake = "dividend_yield"
+        case expenseRatio
+        case expenseRatioSnake = "expense_ratio"
+        case dataAsOf
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        ticker = try container.decode(String.self, forKey: .ticker)
+        totalHoldings = try container.decodeIfPresent(Int.self, forKey: .totalHoldings)
+            ?? container.decode(Int.self, forKey: .totalHoldingsSnake)
+        aum = try container.decodeIfPresent(String.self, forKey: .aum)
+        sectorBreakdown = try container.decodeIfPresent(
+            [String: Double].self,
+            forKey: .sectorBreakdown
+        ) ?? container.decodeIfPresent(
+            [String: Double].self,
+            forKey: .sectorBreakdownSnake
+        ) ?? [:]
+        holdings = try container.decodeIfPresent([EtfHoldingItem].self, forKey: .holdings) ?? []
+        strongestHoldings = try container.decodeIfPresent(
+            [EtfHoldingItem].self,
+            forKey: .strongestHoldings
+        ) ?? []
+        weakestHoldings = try container.decodeIfPresent(
+            [EtfHoldingItem].self,
+            forKey: .weakestHoldings
+        ) ?? []
+        dividendYield = try container.decodeIfPresent(String.self, forKey: .dividendYield)
+            ?? container.decodeIfPresent(String.self, forKey: .dividendYieldSnake)
+        expenseRatio = try container.decodeIfPresent(String.self, forKey: .expenseRatio)
+            ?? container.decodeIfPresent(String.self, forKey: .expenseRatioSnake)
+        dataAsOf = try container.decodeIfPresent(String.self, forKey: .dataAsOf)
+    }
 }
 
 struct AnalystPriceTargets: Decodable {

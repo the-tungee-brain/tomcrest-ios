@@ -1,5 +1,4 @@
 import SwiftUI
-import Charts
 
 struct ResearchStockChartSection: View {
     let symbol: String
@@ -22,16 +21,7 @@ struct ResearchStockChartSection: View {
                     ProgressView()
                         .frame(maxWidth: .infinity, minHeight: 160)
                 } else if let chart = viewModel.stockChart, !chart.data.isEmpty {
-                    Chart(chart.data) { point in
-                        LineMark(
-                            x: .value("Date", parsedDate(point.date)),
-                            y: .value("Close", point.close)
-                        )
-                        .foregroundStyle(AppColors.accent)
-                        .interpolationMethod(.catmullRom)
-                    }
-                    .chartXAxis(.hidden)
-                    .frame(height: 180)
+                    InteractiveStockPriceChart(points: chart.data)
                 } else if let error = viewModel.chartError {
                     AppInlineBanner(message: error, tone: .error)
                 } else {
@@ -43,12 +33,6 @@ struct ResearchStockChartSection: View {
         .task {
             await viewModel.loadStockChartIfNeeded()
         }
-    }
-
-    private func parsedDate(_ raw: String) -> Date {
-        ISO8601DateFormatter().date(from: raw)
-            ?? ISO8601DateFormatter().date(from: raw + "T00:00:00Z")
-            ?? Date()
     }
 }
 

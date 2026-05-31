@@ -48,5 +48,6 @@ struct MainTabView: View {
             .environment(AuthSession())
             .environment(AccountContext())
             .environment(AssistantPresenter())
+            .environment(AppBrowserRouter())
     }
 }

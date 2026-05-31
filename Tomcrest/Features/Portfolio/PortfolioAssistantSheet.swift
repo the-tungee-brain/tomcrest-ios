@@ -3,6 +3,7 @@ import SwiftUI
 struct PortfolioAssistantSheet: View {
     @Environment(AccountContext.self) private var account
     @Environment(AssistantPresenter.self) private var assistant
+    @Environment(AppBrowserRouter.self) private var browser
     @Bindable var viewModel: PortfolioViewModel
 
     private let suggestedPrompts = [
@@ -62,6 +63,7 @@ struct PortfolioAssistantSheet: View {
                 }
             }
         }
+        .appInAppBrowser(browser)
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
         .sheet(isPresented: $viewModel.showChatHistory) {

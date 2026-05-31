@@ -7,6 +7,22 @@ struct IdentifiableURL: Identifiable, Hashable {
     var id: String { url.absoluteString }
 }
 
+@MainActor
+@Observable
+final class AppBrowserRouter {
+    var presentedURL: IdentifiableURL?
+
+    func open(_ url: URL) {
+        AppExternalURLPolicy.open(url) { presented in
+            presentedURL = IdentifiableURL(url: presented)
+        }
+    }
+
+    func dismiss() {
+        presentedURL = nil
+    }
+}
+
 enum AppExternalURLPolicy {
     static func shouldOpenInApp(_ url: URL) -> Bool {
         guard let scheme = url.scheme?.lowercased() else { return false }
@@ -52,11 +68,11 @@ struct AppExternalLink<Label: View>: View {
     let url: URL
     @ViewBuilder var label: () -> Label
 
-    @Environment(\.openExternalURL) private var openExternalURL
+    @Environment(AppBrowserRouter.self) private var browser
 
     var body: some View {
         Button {
-            openExternalURL(url)
+            browser.open(url)
         } label: {
             label()
         }
@@ -64,23 +80,77 @@ struct AppExternalLink<Label: View>: View {
     }
 }
 
-struct AppInAppBrowserHostModifier: ViewModifier {
-    @Binding var browserURL: IdentifiableURL?
+/// App-wide link routing — apply once at the root (TomcrestApp / AppShell).
+struct AppBrowserHostModifier: ViewModifier {
+    @Bindable var browser: AppBrowserRouter
 
     func body(content: Content) -> some View {
         content
             .environment(\.openExternalURL, OpenExternalURLAction { url in
-                AppExternalURLPolicy.open(url) { browserURL = IdentifiableURL(url: $0) }
+                browser.open(url)
             })
-            .navigationDestination(item: $browserURL) { item in
-                InAppBrowserScreen(url: item.url)
-            }
+            .environment(\.openURL, OpenURLAction { url in
+                if AppExternalURLPolicy.shouldOpenInApp(url) {
+                    browser.open(url)
+                    return .handled
+                }
+                return .systemAction
+            })
+            .appInAppBrowserSheet(browser)
     }
 }
 
 extension View {
-    func appInAppBrowser(_ browserURL: Binding<IdentifiableURL?>) -> some View {
-        modifier(AppInAppBrowserHostModifier(browserURL: browserURL))
+    func appBrowserHost(_ browser: AppBrowserRouter) -> some View {
+        modifier(AppBrowserHostModifier(browser: browser))
+    }
+}
+
+struct AppInAppBrowserHostModifier: ViewModifier {
+    @Bindable var browser: AppBrowserRouter
+
+    func body(content: Content) -> some View {
+        content
+            .environment(\.openExternalURL, OpenExternalURLAction { url in
+                browser.open(url)
+            })
+            .environment(\.openURL, OpenURLAction { url in
+                if AppExternalURLPolicy.shouldOpenInApp(url) {
+                    browser.open(url)
+                    return .handled
+                }
+                return .systemAction
+            })
+    }
+}
+
+extension View {
+    func appInAppBrowser(_ browser: AppBrowserRouter) -> some View {
+        modifier(AppInAppBrowserHostModifier(browser: browser))
+    }
+
+    func appInAppBrowserSheet(_ browser: AppBrowserRouter) -> some View {
+        modifier(AppInAppBrowserSheetModifier(browser: browser))
+    }
+}
+
+private struct AppInAppBrowserSheetModifier: ViewModifier {
+    @Bindable var browser: AppBrowserRouter
+
+    func body(content: Content) -> some View {
+        content
+            .fullScreenCover(item: $browser.presentedURL) { item in
+                NavigationStack {
+                    InAppBrowserScreen(url: item.url)
+                        .toolbar {
+                            ToolbarItem(placement: .topBarLeading) {
+                                Button("Done") {
+                                    browser.dismiss()
+                                }
+                            }
+                        }
+                }
+            }
     }
 }
 
@@ -217,6 +287,19 @@ private struct AppWebView: UIViewRepresentable {
         func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
             isLoading = false
             canGoBack = webView.canGoBack
+        }
+
+        func webView(
+            _ webView: WKWebView,
+            decidePolicyFor navigationAction: WKNavigationAction,
+            decisionHandler: @escaping (WKNavigationActionPolicy) -> Void
+        ) {
+            if navigationAction.targetFrame == nil, let url = navigationAction.request.url {
+                webView.load(URLRequest(url: url))
+                decisionHandler(.cancel)
+                return
+            }
+            decisionHandler(.allow)
         }
     }
 }

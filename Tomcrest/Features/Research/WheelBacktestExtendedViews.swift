@@ -1,5 +1,4 @@
 import SwiftUI
-import Charts
 
 struct WheelBacktestExtendedPanel: View {
     let result: WheelBacktestResult
@@ -27,22 +26,7 @@ struct WheelBacktestExtendedPanel: View {
 
             if !result.equityCurve.isEmpty {
                 AppScreenSection(title: "Equity curve") {
-                    Chart(result.equityCurve) { point in
-                        LineMark(
-                            x: .value("Date", point.date),
-                            y: .value("Equity", point.equityUsd)
-                        )
-                        .foregroundStyle(AppColors.accent)
-                        if let buyHold = point.buyAndHoldEquityUsd {
-                            LineMark(
-                                x: .value("Date", point.date),
-                                y: .value("Buy & hold", buyHold)
-                            )
-                            .foregroundStyle(AppColors.secondaryLabel.opacity(0.7))
-                        }
-                    }
-                    .chartXAxis(.hidden)
-                    .frame(height: 180)
+                    InteractiveEquityCurveChart(points: result.equityCurve)
                 }
             }
 

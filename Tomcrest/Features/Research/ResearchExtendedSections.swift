@@ -1,5 +1,4 @@
 import SwiftUI
-import Charts
 
 struct SecFilingsSectionView: View {
     let filings: SecFilingsResponse?
@@ -195,15 +194,8 @@ struct DividendHistoryChartSection: View {
     var body: some View {
         if !dividends.annualIncome.isEmpty {
             AppScreenSection(title: "Annual dividend income") {
-                Chart(dividends.annualIncome) { row in
-                    BarMark(
-                        x: .value("Year", String(row.year)),
-                        y: .value("Income", row.incomeOnShares)
-                    )
-                    .foregroundStyle(AppColors.accent)
-                }
-                .frame(height: 160)
-                .appPanel(subtle: true)
+                InteractiveAnnualBarChart(rows: dividends.annualIncome)
+                    .appPanel(subtle: true)
             }
         }
     }

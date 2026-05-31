@@ -45,7 +45,7 @@ enum AppChrome {
 // MARK: - Navigation stack with canvas (iOS 17-safe; replaces iOS 18 containerBackground)
 
 struct AppNavigationCanvasStack<Content: View>: View {
-    @State private var browserURL: IdentifiableURL?
+    @Environment(AppBrowserRouter.self) private var browser
     @ViewBuilder private var content: () -> Content
 
     init(@ViewBuilder content: @escaping () -> Content) {
@@ -59,7 +59,7 @@ struct AppNavigationCanvasStack<Content: View>: View {
 
             NavigationStack {
                 content()
-                    .appInAppBrowser($browserURL)
+                    .appInAppBrowser(browser)
             }
             .appClearUIKitBackground()
         }
@@ -68,7 +68,7 @@ struct AppNavigationCanvasStack<Content: View>: View {
 
 struct AppRoutedNavigationCanvasStack<Data, Content: View>: View where Data: Hashable {
     @Binding private var path: [Data]
-    @State private var browserURL: IdentifiableURL?
+    @Environment(AppBrowserRouter.self) private var browser
     @ViewBuilder private var content: () -> Content
 
     init(path: Binding<[Data]>, @ViewBuilder content: @escaping () -> Content) {
@@ -83,7 +83,7 @@ struct AppRoutedNavigationCanvasStack<Data, Content: View>: View where Data: Has
 
             NavigationStack(path: $path) {
                 content()
-                    .appInAppBrowser($browserURL)
+                    .appInAppBrowser(browser)
             }
             .appClearUIKitBackground()
         }

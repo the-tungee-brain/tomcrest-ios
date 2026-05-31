@@ -10,12 +10,6 @@ struct LegalSettingsScreen: View {
                 SettingsGroupDivider()
                 SettingsLinkRow(title: "Terms of Service", url: AppConfig.termsURL)
             }
-
-            Text("These pages open in your browser. They describe how Tomcrest handles your data and keeps your account secure.")
-                .font(.caption)
-                .foregroundStyle(AppColors.secondaryLabel)
-                .lineSpacing(3)
-                .padding(.horizontal, 4)
         }
     }
 }

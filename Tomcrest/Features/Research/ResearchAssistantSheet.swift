@@ -3,6 +3,7 @@ import SwiftUI
 struct ResearchAssistantSheet: View {
     @Environment(AccountContext.self) private var account
     @Environment(AssistantPresenter.self) private var assistant
+    @Environment(AppBrowserRouter.self) private var browser
     @Bindable var viewModel: SymbolOverviewViewModel
 
     var body: some View {
@@ -57,6 +58,7 @@ struct ResearchAssistantSheet: View {
                 }
             }
         }
+        .appInAppBrowser(browser)
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
         .sheet(isPresented: $viewModel.showChatHistory) {
