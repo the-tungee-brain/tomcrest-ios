@@ -10,7 +10,7 @@ enum PdfExportSupport {
             "Lookback: \(result.lookbackYears) years",
             "Delta: \(String(format: "%.2f", query.targetDeltaMin))–\(String(format: "%.2f", query.targetDeltaMax))",
             "DTE: \(query.dteDays) days",
-            "Period: \(result.startDate) → \(result.endDate)",
+            "Period: \(DateFormatters.display(from: result.startDate)) → \(DateFormatters.display(from: result.endDate))",
             "",
             "Total return: \(CurrencyFormatter.percent(result.totalReturnPct))",
             "CAGR: \(CurrencyFormatter.percent(result.cagrPct ?? 0))",
@@ -44,7 +44,7 @@ enum PdfExportSupport {
         lines.append("Trade log")
         for trade in result.trades.prefix(80) {
             let cycle = trade.wheelCycle.map { "C\($0)" } ?? ""
-            lines.append("\(trade.date) \(cycle) \(trade.action) \(trade.label ?? "")")
+            lines.append("\(DateFormatters.display(from: trade.date)) \(cycle) \(trade.action) \(trade.label ?? "")")
         }
 
         if let assumptions = result.assumptions, !assumptions.isEmpty {

@@ -49,19 +49,7 @@ enum RecentOrderFormatters {
 
     static func formatFillTime(_ value: String?) -> String {
         guard let value, !value.isEmpty else { return "—" }
-
-        let iso = ISO8601DateFormatter()
-        iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let date = iso.date(from: value) {
-            return date.formatted(.dateTime.month(.abbreviated).day().hour().minute())
-        }
-
-        iso.formatOptions = [.withInternetDateTime]
-        if let date = iso.date(from: value) {
-            return date.formatted(.dateTime.month(.abbreviated).day().hour().minute())
-        }
-
-        return DateFormatters.abbreviatedDay(from: value)
+        return DateFormatters.display(from: value)
     }
 
     static func formatContractLabel(_ order: RecentOrderEntry) -> String? {

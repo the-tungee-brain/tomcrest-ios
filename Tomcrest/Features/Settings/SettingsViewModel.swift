@@ -26,9 +26,6 @@ final class SettingsViewModel {
     var strategySavedMessage: String?
     var updatingJourneyStepId: String?
 
-    private(set) var isRefreshing = false
-    private(set) var hasLoadedOnce = false
-
     private var bannerDismissTask: Task<Void, Never>?
 
     var selectedStrategyId: String?
@@ -52,15 +49,6 @@ final class SettingsViewModel {
     }
 
     func load() async {
-        let backgroundRefresh = hasLoadedOnce
-        if backgroundRefresh {
-            isRefreshing = true
-        }
-        defer {
-            isRefreshing = false
-            hasLoadedOnce = true
-        }
-
         await refreshSchwabStatus()
         await refreshAccountPlan()
         await refreshStrategy()

@@ -35,25 +35,3 @@ struct AppScreenSection<Content: View>: View {
         }
     }
 }
-
-/// Non-blocking refresh feedback — shared by Portfolio and Research.
-struct AppRefreshBanner: View {
-    let text: String
-
-    var body: some View {
-        HStack(spacing: 8) {
-            ProgressView()
-                .controlSize(.small)
-                .tint(AppColors.accent)
-            Text(text)
-                .font(AppTypography.captionEmphasis)
-                .foregroundStyle(AppColors.label)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 10)
-        .background(AppColors.secondaryBackground.opacity(0.95))
-        .overlay(alignment: .bottom) {
-            Divider().overlay(AppColors.separator.opacity(0.5))
-        }
-    }
-}

@@ -1,0 +1,222 @@
+import SwiftUI
+import WebKit
+
+struct IdentifiableURL: Identifiable, Hashable {
+    let url: URL
+
+    var id: String { url.absoluteString }
+}
+
+enum AppExternalURLPolicy {
+    static func shouldOpenInApp(_ url: URL) -> Bool {
+        guard let scheme = url.scheme?.lowercased() else { return false }
+        return scheme == "http" || scheme == "https"
+    }
+
+    static func open(_ url: URL, inApp: (URL) -> Void) {
+        if shouldOpenInApp(url) {
+            inApp(url)
+        } else {
+            UIApplication.shared.open(url)
+        }
+    }
+}
+
+struct OpenExternalURLAction {
+    private let handler: (URL) -> Void
+
+    init(_ handler: @escaping (URL) -> Void) {
+        self.handler = handler
+    }
+
+    func callAsFunction(_ url: URL) {
+        handler(url)
+    }
+}
+
+private struct OpenExternalURLKey: EnvironmentKey {
+    static let defaultValue = OpenExternalURLAction { url in
+        AppExternalURLPolicy.open(url, inApp: { UIApplication.shared.open($0) })
+    }
+}
+
+extension EnvironmentValues {
+    var openExternalURL: OpenExternalURLAction {
+        get { self[OpenExternalURLKey.self] }
+        set { self[OpenExternalURLKey.self] = newValue }
+    }
+}
+
+/// Opens http(s) links in the in-app browser; mailto/tel still use the system handler.
+struct AppExternalLink<Label: View>: View {
+    let url: URL
+    @ViewBuilder var label: () -> Label
+
+    @Environment(\.openExternalURL) private var openExternalURL
+
+    var body: some View {
+        Button {
+            openExternalURL(url)
+        } label: {
+            label()
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+struct AppInAppBrowserHostModifier: ViewModifier {
+    @Binding var browserURL: IdentifiableURL?
+
+    func body(content: Content) -> some View {
+        content
+            .environment(\.openExternalURL, OpenExternalURLAction { url in
+                AppExternalURLPolicy.open(url) { browserURL = IdentifiableURL(url: $0) }
+            })
+            .navigationDestination(item: $browserURL) { item in
+                InAppBrowserScreen(url: item.url)
+            }
+    }
+}
+
+extension View {
+    func appInAppBrowser(_ browserURL: Binding<IdentifiableURL?>) -> some View {
+        modifier(AppInAppBrowserHostModifier(browserURL: browserURL))
+    }
+}
+
+struct InAppBrowserScreen: View {
+    let url: URL
+
+    @State private var isLoading = true
+    @State private var canGoBack = false
+    @State private var pageTitle: String?
+
+    var body: some View {
+        AppWebView(
+            url: url,
+            isLoading: $isLoading,
+            canGoBack: $canGoBack,
+            pageTitle: $pageTitle
+        )
+        .overlay(alignment: .top) {
+            if isLoading {
+                ProgressView()
+                    .tint(AppColors.accent)
+                    .padding(.top, 8)
+            }
+        }
+        .navigationTitle(pageTitle ?? displayHost)
+        .navigationBarTitleDisplayMode(.inline)
+        .appPushedScreenCanvas()
+        .toolbar {
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                if canGoBack {
+                    Button {
+                        NotificationCenter.default.post(name: .appWebViewGoBack, object: nil)
+                    } label: {
+                        Image(systemName: "chevron.left")
+                    }
+                    .accessibilityLabel("Back")
+                }
+
+                Menu {
+                    Button("Open in Safari") {
+                        UIApplication.shared.open(url)
+                    }
+                    Button("Copy link") {
+                        UIPasteboard.general.url = url
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                }
+                .accessibilityLabel("Browser actions")
+            }
+        }
+    }
+
+    private var displayHost: String {
+        url.host?.replacingOccurrences(of: "www.", with: "") ?? "Web"
+    }
+}
+
+extension Notification.Name {
+    fileprivate static let appWebViewGoBack = Notification.Name("appWebViewGoBack")
+}
+
+private struct AppWebView: UIViewRepresentable {
+    let url: URL
+    @Binding var isLoading: Bool
+    @Binding var canGoBack: Bool
+    @Binding var pageTitle: String?
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(isLoading: $isLoading, canGoBack: $canGoBack, pageTitle: $pageTitle)
+    }
+
+    func makeUIView(context: Context) -> WKWebView {
+        let webView = WKWebView(frame: .zero, configuration: WKWebViewConfiguration())
+        webView.navigationDelegate = context.coordinator
+        webView.allowsBackForwardNavigationGestures = true
+        webView.load(URLRequest(url: url))
+        context.coordinator.webView = webView
+        context.coordinator.observeBackNotification()
+        return webView
+    }
+
+    func updateUIView(_ uiView: WKWebView, context: Context) {}
+
+    static func dismantleUIView(_ uiView: WKWebView, coordinator: Coordinator) {
+        coordinator.stopObservingBackNotification()
+    }
+
+    final class Coordinator: NSObject, WKNavigationDelegate {
+        @Binding var isLoading: Bool
+        @Binding var canGoBack: Bool
+        @Binding var pageTitle: String?
+        weak var webView: WKWebView?
+        private var backObserver: NSObjectProtocol?
+
+        init(isLoading: Binding<Bool>, canGoBack: Binding<Bool>, pageTitle: Binding<String?>) {
+            _isLoading = isLoading
+            _canGoBack = canGoBack
+            _pageTitle = pageTitle
+        }
+
+        func observeBackNotification() {
+            backObserver = NotificationCenter.default.addObserver(
+                forName: .appWebViewGoBack,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                self?.webView?.goBack()
+            }
+        }
+
+        func stopObservingBackNotification() {
+            if let backObserver {
+                NotificationCenter.default.removeObserver(backObserver)
+            }
+        }
+
+        func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+            isLoading = true
+            canGoBack = webView.canGoBack
+        }
+
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            isLoading = false
+            canGoBack = webView.canGoBack
+            pageTitle = webView.title
+        }
+
+        func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+            isLoading = false
+            canGoBack = webView.canGoBack
+        }
+
+        func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+            isLoading = false
+            canGoBack = webView.canGoBack
+        }
+    }
+}

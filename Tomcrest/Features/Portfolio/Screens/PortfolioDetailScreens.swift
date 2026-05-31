@@ -3,6 +3,7 @@ import SwiftUI
 // MARK: - Today (brief, attention, playbook, analysis, chat)
 
 struct PortfolioTodayScreen: View {
+    @Environment(AssistantPresenter.self) private var assistant
     @Bindable var viewModel: PortfolioViewModel
     @Binding var selectedTab: AppTab
     @Binding var settingsFocus: SettingsFocus?
@@ -53,7 +54,12 @@ struct PortfolioTodayScreen: View {
                     onDismiss: { item in
                         Task { await viewModel.dismissAttentionItem(item) }
                     },
-                    onQuickAction: { viewModel.runQuickAction($0) }
+                    onQuickAction: { actionId in
+                        assistant.openPortfolio(
+                            prompt: viewModel.runQuickAction(actionId),
+                            sendImmediately: true
+                        )
+                    }
                 )
 
                 if viewModel.showStrategyPlaybook, let strategyId = viewModel.primaryStrategyId {
@@ -66,7 +72,10 @@ struct PortfolioTodayScreen: View {
                             settingsFocus = .strategy
                             selectedTab = .settings
                         },
-                        onRunAction: { viewModel.runPlaybookAction($0) },
+                        onRunAction: { action in
+                            assistant.openPortfolio()
+                            viewModel.runPlaybookAction(action)
+                        },
                         onConnectSchwab: { Task { await viewModel.connectSchwabFromPlaybook() } },
                         onOpenSymbol: onSymbolTap,
                         isConnectingSchwab: viewModel.isConnectingSchwab,
@@ -84,7 +93,12 @@ struct PortfolioTodayScreen: View {
                     progressiveDisclosure: true
                 )
 
-                PortfolioChatPanel(viewModel: viewModel)
+                AssistantLauncherRow(
+                    title: "Ask Tomcrest",
+                    subtitle: "Portfolio assistant — holdings, risk, and cash"
+                ) {
+                    assistant.openPortfolio()
+                }
             }
         }
         .navigationTitle("Today")

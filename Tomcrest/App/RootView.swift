@@ -2,6 +2,7 @@ import SwiftUI
 
 struct RootView: View {
     @Environment(AuthSession.self) private var auth
+    @State private var browserURL: IdentifiableURL?
 
     var body: some View {
         ZStack {
@@ -13,9 +14,15 @@ struct RootView: View {
                 case .loading:
                     AppLoadingState(message: "Loading…")
                 case .signedOut:
-                    SignInView()
+                    NavigationStack {
+                        SignInView()
+                    }
+                    .appInAppBrowser($browserURL)
                 case .waitlist:
-                    WaitlistView()
+                    NavigationStack {
+                        WaitlistView()
+                    }
+                    .appInAppBrowser($browserURL)
                 case .signedIn:
                     MainTabView()
                 }

@@ -77,9 +77,11 @@ struct WaitlistView: View {
             message: "Tomcrest is invite-only. Join the waitlist, then return after you're approved."
         ) {
             VStack(spacing: 16) {
-                Link("tomcrest.com/waitlist", destination: URL(string: "https://tomcrest.com/waitlist")!)
-                    .font(.headline)
-                    .foregroundStyle(AppColors.accent)
+                AppExternalLink(url: URL(string: "https://tomcrest.com/waitlist")!) {
+                    Text("tomcrest.com/waitlist")
+                        .font(.headline)
+                        .foregroundStyle(AppColors.accent)
+                }
 
                 Button("Back to sign in") {
                     auth.signOut()

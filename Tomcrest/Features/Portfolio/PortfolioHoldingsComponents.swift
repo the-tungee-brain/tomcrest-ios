@@ -135,6 +135,8 @@ struct PortfolioHoldingsTable: View {
                             onSymbolTap?(summary.symbol)
                         } label: {
                             PortfolioHoldingsRow(summary: summary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
                         .disabled(onSymbolTap == nil)

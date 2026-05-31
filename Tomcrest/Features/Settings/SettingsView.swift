@@ -114,11 +114,6 @@ struct SettingsView: View {
             .buttonStyle(AppSecondaryButtonStyle(destructive: true))
             .padding(.top, 4)
         }
-        .safeAreaInset(edge: .top, spacing: 0) {
-            if viewModel.isRefreshing {
-                AppRefreshBanner(text: "Refreshing…")
-            }
-        }
     }
 
     @ViewBuilder

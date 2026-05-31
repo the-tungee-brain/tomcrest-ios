@@ -157,8 +157,18 @@ final class SymbolOverviewViewModel {
 
     func sendChatMessage(model: String = ChatConfig.defaultModel) async {
         let prompt = chatInput.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !prompt.isEmpty,
-              !chatLoading,
+        guard !prompt.isEmpty else { return }
+        await sendChatPrompt(prompt, model: model)
+    }
+
+    func sendFollowUpPrompt(_ prompt: String, model: String = ChatConfig.defaultModel) async {
+        let trimmed = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        await sendChatPrompt(trimmed, model: model)
+    }
+
+    private func sendChatPrompt(_ prompt: String, model: String) async {
+        guard !chatLoading,
               let accessToken = auth.accessToken else { return }
 
         let userMessage = ChatMessage(

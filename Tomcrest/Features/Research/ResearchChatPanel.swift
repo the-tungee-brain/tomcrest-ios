@@ -24,10 +24,9 @@ struct ResearchChatPanel: View {
             onSend: {
                 Task { await viewModel.sendChatMessage(model: account.effectiveChatModel) }
             },
-            onSelectPrompt: { label in
-                if let prompt = viewModel.suggestedPrompt(for: label) {
-                    viewModel.updateChatInput(prompt)
-                }
+            onSendPrompt: { label in
+                let prompt = viewModel.suggestedPrompt(for: label) ?? label
+                Task { await viewModel.sendFollowUpPrompt(prompt, model: account.effectiveChatModel) }
             },
             onNewChat: { viewModel.startNewChat() },
             onShowHistory: {
@@ -37,5 +36,6 @@ struct ResearchChatPanel: View {
                 }
             }
         )
+        .appChatScrollAnchor()
     }
 }

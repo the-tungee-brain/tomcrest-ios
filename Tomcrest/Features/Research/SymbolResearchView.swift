@@ -4,6 +4,7 @@ struct SymbolResearchView: View {
     @Environment(AccountContext.self) private var account
     @Environment(AuthSession.self) private var auth
     @Environment(ResearchSymbolBookmarks.self) private var bookmarks
+    @Environment(AssistantPresenter.self) private var assistant
     @State private var overviewVM: SymbolOverviewViewModel
     @State private var depthVM: SymbolDepthViewModel
     @State private var positionVM: SymbolPositionViewModel
@@ -64,7 +65,7 @@ struct SymbolResearchView: View {
                         profileSymbols: profileSymbols,
                         onRunAction: { action in
                             guard let primaryStrategy else { return }
-                            selectedTab = .overview
+                            assistant.openSymbol(overviewVM.symbol)
                             Task {
                                 await overviewVM.sendPlaybookAsk(action: action, strategyId: primaryStrategy)
                             }
@@ -101,11 +102,6 @@ struct SymbolResearchView: View {
                         Task { await refreshCurrentTab() }
                     }
                 }
-            }
-        }
-        .safeAreaInset(edge: .top, spacing: 0) {
-            if showsRefreshBanner {
-                AppRefreshBanner(text: refreshBannerText)
             }
         }
         .task {
@@ -149,6 +145,23 @@ struct SymbolResearchView: View {
             ensureValidTabSelection()
         }
         .appPushedScreenCanvas()
+        .overlay(alignment: .bottomTrailing) {
+            FloatingAssistantButton {
+                assistant.openSymbol(overviewVM.symbol)
+            }
+            .padding(.trailing, 20)
+            .padding(.bottom, 16)
+        }
+        .sheet(isPresented: researchAssistantPresented) {
+            ResearchAssistantSheet(viewModel: overviewVM)
+        }
+    }
+
+    private var researchAssistantPresented: Binding<Bool> {
+        Binding(
+            get: { assistant.isSymbolPresented(overviewVM.symbol) },
+            set: { if !$0 { assistant.dismiss() } }
+        )
     }
 
     @ViewBuilder
@@ -160,15 +173,14 @@ struct SymbolResearchView: View {
                 positionViewModel: positionVM,
                 bundle: overviewVM.bundle
             ) { prompt in
-                overviewVM.openChatWithPrompt(prompt)
+                assistant.openSymbol(overviewVM.symbol, prompt: prompt, sendImmediately: true)
             }
         case .position:
             SymbolPositionTab(viewModel: positionVM) { prompt in
                 if prompt == "__open_options_tab__" {
                     selectedTab = .options
                 } else {
-                    selectedTab = .overview
-                    overviewVM.openChatWithPrompt(prompt)
+                    assistant.openSymbol(overviewVM.symbol, prompt: prompt, sendImmediately: true)
                 }
             }
         case .options:
@@ -180,8 +192,7 @@ struct SymbolResearchView: View {
                     symbol: overviewVM.symbol
                 )
             ) { prompt in
-                selectedTab = .overview
-                overviewVM.openChatWithPrompt(prompt)
+                assistant.openSymbol(overviewVM.symbol, prompt: prompt, sendImmediately: true)
             }
         case .earnings:
             SymbolEarningsTab(viewModel: depthVM)
@@ -213,14 +224,6 @@ struct SymbolResearchView: View {
             return depthVM.loadingTab == .options || positionVM.isLoading
         }
         return depthVM.loadingTab == selectedTab
-    }
-
-    private var showsRefreshBanner: Bool {
-        selectedTab == .overview && overviewVM.isLoading && overviewVM.bundle != nil
-    }
-
-    private var refreshBannerText: String {
-        "Updating overview…"
     }
 
     private func loadStrategyContext() async {
@@ -280,5 +283,6 @@ struct SymbolResearchView: View {
         .environment(AuthSession())
         .environment(AccountContext())
         .environment(ResearchSymbolBookmarks())
+        .environment(AssistantPresenter())
     }
 }

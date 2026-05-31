@@ -18,6 +18,8 @@ enum AppChrome {
         UITableView.appearance().backgroundColor = .clear
         UICollectionView.appearance().backgroundColor = .clear
         UIScrollView.appearance().backgroundColor = .clear
+
+        UIRefreshControl.appearance().tintColor = UIColor(red: 0.176, green: 0.831, blue: 0.749, alpha: 1)
     }
 
     static func clearTabBarController(_ tabBarController: UITabBarController) {
@@ -43,6 +45,7 @@ enum AppChrome {
 // MARK: - Navigation stack with canvas (iOS 17-safe; replaces iOS 18 containerBackground)
 
 struct AppNavigationCanvasStack<Content: View>: View {
+    @State private var browserURL: IdentifiableURL?
     @ViewBuilder private var content: () -> Content
 
     init(@ViewBuilder content: @escaping () -> Content) {
@@ -56,6 +59,7 @@ struct AppNavigationCanvasStack<Content: View>: View {
 
             NavigationStack {
                 content()
+                    .appInAppBrowser($browserURL)
             }
             .appClearUIKitBackground()
         }
@@ -64,6 +68,7 @@ struct AppNavigationCanvasStack<Content: View>: View {
 
 struct AppRoutedNavigationCanvasStack<Data, Content: View>: View where Data: Hashable {
     @Binding private var path: [Data]
+    @State private var browserURL: IdentifiableURL?
     @ViewBuilder private var content: () -> Content
 
     init(path: Binding<[Data]>, @ViewBuilder content: @escaping () -> Content) {
@@ -78,6 +83,7 @@ struct AppRoutedNavigationCanvasStack<Data, Content: View>: View where Data: Has
 
             NavigationStack(path: $path) {
                 content()
+                    .appInAppBrowser($browserURL)
             }
             .appClearUIKitBackground()
         }

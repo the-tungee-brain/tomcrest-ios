@@ -126,7 +126,10 @@ struct ComparePathOption: Decodable, Identifiable {
 }
 
 struct HeldOptionOutcomes: Decodable, Identifiable {
-    var id: String { "\(currentLeg.strike)-\(currentLeg.expiration)" }
+    var id: String {
+        let side = (currentLeg.side ?? currentLeg.putCall ?? "option").lowercased()
+        return "\(side)-\(currentLeg.strike)-\(currentLeg.expiration)"
+    }
     let currentLeg: OptionLegOutcome
     let comparePaths: [ComparePathOption]
     let roll: RollPathOutcome?

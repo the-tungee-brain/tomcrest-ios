@@ -83,15 +83,20 @@ enum StructuredAnalysisSupport {
     }
 
     private static func decodePortfolioPrecomputed(from value: Any?) -> PortfolioAnalysisPrecomputed? {
-        guard let value,
-              let data = try? JSONBodyEncoding.data(from: value) else { return nil }
+        guard let dictionary = jsonDictionary(from: value),
+              let data = try? JSONBodyEncoding.data(from: dictionary) else { return nil }
         return try? JSONDecoder().decode(PortfolioAnalysisPrecomputed.self, from: data)
     }
 
     private static func decodeSymbolPrecomputed(from value: Any?) -> SymbolAnalysisPrecomputed? {
-        guard let value,
-              let data = try? JSONBodyEncoding.data(from: value) else { return nil }
+        guard let dictionary = jsonDictionary(from: value),
+              let data = try? JSONBodyEncoding.data(from: dictionary) else { return nil }
         return try? JSONDecoder().decode(SymbolAnalysisPrecomputed.self, from: data)
+    }
+
+    private static func jsonDictionary(from value: Any?) -> [String: Any]? {
+        guard let value, !(value is NSNull) else { return nil }
+        return value as? [String: Any]
     }
 
     static func hasComparePaths(_ precomputed: SymbolAnalysisPrecomputed?) -> Bool {
@@ -111,6 +116,22 @@ enum StructuredAnalysisSupport {
     private static func extractJSONCandidate(from raw: String) -> String? {
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }
+
+        if let regex = try? NSRegularExpression(
+            pattern: #"```(?:json)?\s*([\s\S]*?)```"#,
+            options: [.caseInsensitive]
+        ),
+           let match = regex.firstMatch(in: trimmed, range: NSRange(trimmed.startIndex..., in: trimmed)),
+           match.numberOfRanges > 1,
+           let capture = Range(match.range(at: 1), in: trimmed) {
+            let fenced = String(trimmed[capture]).trimmingCharacters(in: .whitespacesAndNewlines)
+            if let start = fenced.firstIndex(of: "{"),
+               let end = fenced.lastIndex(of: "}"),
+               start < end {
+                return String(fenced[start ... end])
+            }
+        }
+
         if let start = trimmed.firstIndex(of: "{"),
            let end = trimmed.lastIndex(of: "}"),
            start < end {

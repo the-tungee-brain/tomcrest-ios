@@ -17,6 +17,11 @@ enum Layout {
     static let minTouchTarget: CGFloat = 44
 }
 
+/// Scroll targets for `AppScrollScreen` — matches web `#assistant-chat`.
+enum AppScrollAnchor {
+    static let chat = "tomcrest.scroll.chat"
+}
+
 private struct AppContentWidth: ViewModifier {
     let maxWidth: CGFloat
 

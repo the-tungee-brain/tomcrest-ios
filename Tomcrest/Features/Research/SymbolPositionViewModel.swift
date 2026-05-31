@@ -129,6 +129,9 @@ final class SymbolPositionViewModel {
             structuredAnalysis = response.analysis
             symbolPrecomputed = response.symbolPrecomputed
             symbolAnalysisStatus = nil
+            if response.analysis == nil {
+                symbolAnalysisError = "Could not read the analysis response. Try again."
+            }
             auth.clearError()
         } catch {
             symbolAnalysisError = (error as? APIError)?.errorDescription ?? error.localizedDescription

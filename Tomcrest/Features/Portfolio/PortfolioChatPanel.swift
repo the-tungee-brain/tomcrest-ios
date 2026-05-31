@@ -30,7 +30,9 @@ struct PortfolioChatPanel: View {
             onSend: {
                 Task { await viewModel.sendChatMessage(model: account.effectiveChatModel) }
             },
-            onSelectPrompt: { viewModel.updateChatInput($0) },
+            onSendPrompt: { prompt in
+                Task { await viewModel.sendFollowUpPrompt(prompt, model: account.effectiveChatModel) }
+            },
             onNewChat: { viewModel.startNewChat() },
             onShowHistory: {
                 Task {
@@ -39,6 +41,7 @@ struct PortfolioChatPanel: View {
                 }
             }
         )
+        .appChatScrollAnchor()
         .sheet(isPresented: $viewModel.showChatHistory) {
             AppNavigationCanvasStack {
                 ChatSessionHistorySheet(

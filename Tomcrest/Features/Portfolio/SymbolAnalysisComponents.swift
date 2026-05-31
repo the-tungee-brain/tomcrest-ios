@@ -82,64 +82,11 @@ struct SymbolAnalysisSection: View {
 
     @ViewBuilder
     private func symbolAnalysisContent(_ analysis: StructuredAnalysis) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(analysis.summary)
-                .font(AppTypography.bodySecondary)
-                .foregroundStyle(AppColors.label)
-                .lineSpacing(4)
-
-            if let action = analysis.recommendedAction {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Recommended next step")
-                        .font(.caption2.weight(.medium))
-                        .foregroundStyle(AppColors.tertiaryLabel)
-                        .textCase(.uppercase)
-                    Text(action.title)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(AppColors.label)
-                    Text(action.reason)
-                        .font(.caption)
-                        .foregroundStyle(AppColors.secondaryLabel)
-                        .lineSpacing(2)
-
-                    if let onAskFollowUp {
-                        Button("Ask follow-up in chat") {
-                            onAskFollowUp(
-                                "Follow up on my \(symbol) position analysis: \(action.title). \(action.reason)"
-                            )
-                        }
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(AppColors.accentHighlight)
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(12)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(AppColors.accentMuted.opacity(0.35))
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-            }
-
-            ForEach(analysis.sections) { section in
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(section.title)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(AppColors.label)
-                    if let body = section.body, !body.isEmpty {
-                        Text(body)
-                            .font(.caption)
-                            .foregroundStyle(AppColors.secondaryLabel)
-                            .lineSpacing(2)
-                    }
-                    if let bullets = section.bullets {
-                        ForEach(bullets, id: \.self) { bullet in
-                            Text("• \(bullet)")
-                                .font(.caption)
-                                .foregroundStyle(AppColors.secondaryLabel)
-                        }
-                    }
-                }
-            }
-        }
+        StructuredAnalysisView(
+            analysis: analysis,
+            followUpSymbol: symbol,
+            onAskFollowUp: onAskFollowUp
+        )
     }
 }
 
@@ -158,13 +105,13 @@ struct ComparePathsCard: View {
                 .font(.caption2)
                 .foregroundStyle(AppColors.secondaryLabel)
 
-            ForEach(outcomes) { outcome in
+            ForEach(Array(outcomes.enumerated()), id: \.offset) { outcomeIndex, outcome in
                 VStack(alignment: .leading, spacing: 8) {
                     Text(legLabel(outcome.currentLeg))
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(AppColors.label)
 
-                    ForEach(sortedPaths(outcome.comparePaths), id: \.path) { path in
+                    ForEach(Array(sortedPaths(outcome.comparePaths).enumerated()), id: \.offset) { _, path in
                         VStack(alignment: .leading, spacing: 4) {
                             HStack {
                                 Text(path.title)
@@ -184,7 +131,7 @@ struct ComparePathsCard: View {
                                         .clipShape(Capsule())
                                 }
                             }
-                            ForEach(path.lines, id: \.self) { line in
+                            ForEach(Array(path.lines.enumerated()), id: \.offset) { _, line in
                                 Text("• \(line)")
                                     .font(.caption2)
                                     .foregroundStyle(AppColors.secondaryLabel)
@@ -194,6 +141,8 @@ struct ComparePathsCard: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(AppColors.secondaryBackground.opacity(0.55))
                         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel("\(path.title) path for leg \(outcomeIndex + 1)")
                     }
                 }
             }
@@ -205,7 +154,7 @@ struct ComparePathsCard: View {
 
     private func legLabel(_ leg: OptionLegOutcome) -> String {
         let side = (leg.side ?? leg.putCall ?? "option").uppercased()
-        return "\(side) \(CurrencyFormatter.usd(leg.strike)) · exp \(leg.expiration.prefix(10))"
+        return "\(side) \(CurrencyFormatter.usd(leg.strike)) · exp \(DateFormatters.display(from: leg.expiration))"
     }
 
     private func sortedPaths(_ paths: [ComparePathOption]) -> [ComparePathOption] {

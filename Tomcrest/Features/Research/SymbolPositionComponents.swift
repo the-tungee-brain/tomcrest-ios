@@ -491,6 +491,8 @@ struct SymbolRecentActivitySection: View {
 
                 Spacer(minLength: 0)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 16)
             .padding(.vertical, 12)
             .background(AppColors.secondaryBackground.opacity(0.5))
             .overlay(alignment: .bottom) {
@@ -500,19 +502,24 @@ struct SymbolRecentActivitySection: View {
             }
 
             if let errorMessage {
-                AppInlineBanner(message: errorMessage, tone: .error)
-                    .padding(.top, 12)
+                sectionItem {
+                    AppInlineBanner(message: errorMessage, tone: .error)
+                }
+                .padding(.top, 12)
             }
 
             if isLoading, orders.isEmpty {
-                AppLoadingState(message: "Loading recent trades…")
-                    .padding(.vertical, 16)
+                sectionItem {
+                    AppLoadingState(message: "Loading recent trades…")
+                }
+                .padding(.vertical, 16)
             } else if orders.isEmpty {
-                Text("No filled orders in the last 30 days.")
-                    .font(AppTypography.bodySecondary)
-                    .foregroundStyle(AppColors.secondaryLabel)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.vertical, 16)
+                sectionItem {
+                    Text("No filled orders in the last 30 days.")
+                        .font(AppTypography.bodySecondary)
+                        .foregroundStyle(AppColors.secondaryLabel)
+                }
+                .padding(.vertical, 16)
             } else {
                 VStack(spacing: 0) {
                     ForEach(Array(displayGroups.enumerated()), id: \.element.id) { index, group in
@@ -522,12 +529,15 @@ struct SymbolRecentActivitySection: View {
                                 Text(label)
                                     .font(.caption2.weight(.semibold))
                                     .foregroundStyle(AppColors.accentHighlight)
-                                    .padding(.vertical, 8)
                                     .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 8)
                                     .background(AppColors.accentMuted.opacity(0.35))
 
                                 ForEach(Array(rollOrders.enumerated()), id: \.element.id) { rollIndex, order in
-                                    PortfolioActivityOrderRow(order: order, showRollBadge: false)
+                                    sectionItem {
+                                        PortfolioActivityOrderRow(order: order, showRollBadge: false)
+                                    }
                                     if rollIndex < rollOrders.count - 1 {
                                         activityDivider
                                     }
@@ -535,7 +545,9 @@ struct SymbolRecentActivitySection: View {
                             }
 
                         case let .single(order):
-                            PortfolioActivityOrderRow(order: order, showRollBadge: true)
+                            sectionItem {
+                                PortfolioActivityOrderRow(order: order, showRollBadge: true)
+                            }
                         }
 
                         if index < displayGroups.count - 1 {
@@ -550,13 +562,27 @@ struct SymbolRecentActivitySection: View {
             }
 
             if errorMessage != nil, orders.isEmpty {
-                Button("Retry", action: onRetry)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(AppColors.accentHighlight)
-                    .padding(.vertical, 16)
+                sectionItem {
+                    Button("Retry", action: onRetry)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(AppColors.accentHighlight)
+                }
+                .padding(.vertical, 16)
             }
         }
-        .appPanel()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(AppColors.secondaryBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(AppColors.panelBorder, lineWidth: 1)
+        }
+    }
+
+    private func sectionItem<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        content()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 16)
     }
 
     private var activityDivider: some View {

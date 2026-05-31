@@ -44,7 +44,7 @@ struct AppChatPanelContent: View {
     let isLoading: Bool
     let onToggle: () -> Void
     let onSend: () -> Void
-    let onSelectPrompt: (String) -> Void
+    let onSendPrompt: (String) -> Void
     var onNewChat: (() -> Void)? = nil
     var onShowHistory: (() -> Void)? = nil
 
@@ -82,7 +82,11 @@ struct AppChatPanelContent: View {
                             .lineSpacing(3)
                             .padding(.vertical, 4)
                     } else {
-                        ChatMessageList(messages: messages)
+                        ChatMessageList(
+                            messages: messages,
+                            isLoading: isLoading,
+                            onSendPrompt: onSendPrompt
+                        )
                     }
                 }
                 .transition(.opacity)
@@ -104,10 +108,7 @@ struct AppChatPanelContent: View {
                     SuggestedPromptChips(
                         prompts: suggestedPrompts,
                         disabled: isLoading,
-                        onSelect: { prompt in
-                            onSelectPrompt(prompt)
-                            inputFocused = true
-                        }
+                        onSelect: onSendPrompt
                     )
                 }
 
@@ -172,11 +173,27 @@ struct ChatComposerBar: View {
 
 struct ChatMessageList: View {
     let messages: [ChatMessage]
+    let isLoading: Bool
+    let onSendPrompt: (String) -> Void
+
+    private var lastAssistantIndex: Int? {
+        messages.lastIndex(where: { $0.role == .assistant })
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            ForEach(messages) { message in
-                ChatBubble(message: message)
+            ForEach(Array(messages.enumerated()), id: \.element.id) { index, message in
+                ChatBubble(
+                    message: message,
+                    isStreaming: isLoading && index == lastAssistantIndex && message.role == .assistant,
+                    isLoading: isLoading,
+                    showFollowUps: ChatFollowUpSuggestions.shouldShowFollowUps(
+                        messages: messages,
+                        messageIndex: index,
+                        isLoading: isLoading
+                    ),
+                    onSendPrompt: onSendPrompt
+                )
             }
         }
     }
@@ -184,27 +201,78 @@ struct ChatMessageList: View {
 
 struct ChatBubble: View {
     let message: ChatMessage
+    var isStreaming = false
+    var isLoading = false
+    var showFollowUps = false
+    let onSendPrompt: (String) -> Void
+
+    private var followUpSuggestions: [ChatFollowUpSuggestion] {
+        showFollowUps ? ChatFollowUpSuggestions.parseFollowUps(message.content) : []
+    }
 
     var body: some View {
         HStack(alignment: .top) {
             if message.role == .user { Spacer(minLength: 32) }
-            VStack(alignment: message.role == .user ? .trailing : .leading, spacing: 4) {
-                if message.role == .assistant {
-                    MarkdownText(content: message.content.isEmpty ? "…" : message.content)
-                        .multilineTextAlignment(.leading)
-                } else {
-                    Text(message.content.isEmpty ? "…" : message.content)
-                        .font(.subheadline)
-                        .foregroundStyle(AppColors.label)
-                        .multilineTextAlignment(.trailing)
+            VStack(alignment: message.role == .user ? .trailing : .leading, spacing: 8) {
+                Group {
+                    if message.role == .assistant {
+                        ConversationalMarkdownText(
+                            content: message.content,
+                            isStreaming: isStreaming
+                        )
+                    } else {
+                        Text(message.content.isEmpty ? "…" : message.content)
+                            .font(.subheadline)
+                            .foregroundStyle(AppColors.label)
+                            .multilineTextAlignment(.trailing)
+                    }
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background(message.role == .user ? AppColors.accent.opacity(0.18) : AppColors.secondaryFill)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+
+                if message.role == .assistant, showFollowUps {
+                    ChatFollowUpChips(
+                        suggestions: followUpSuggestions,
+                        disabled: isLoading,
+                        onSelect: onSendPrompt
+                    )
                 }
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(message.role == .user ? AppColors.accent.opacity(0.18) : AppColors.secondaryFill)
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             .layoutPriority(1)
             if message.role == .assistant { Spacer(minLength: 32) }
+        }
+    }
+}
+
+struct ChatFollowUpChips: View {
+    let suggestions: [ChatFollowUpSuggestion]
+    var disabled = false
+    let onSelect: (String) -> Void
+
+    var body: some View {
+        if !suggestions.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Follow up")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(AppColors.secondaryLabel)
+                    .textCase(.uppercase)
+
+                LazyVGrid(
+                    columns: [GridItem(.adaptive(minimum: 148), spacing: 8)],
+                    alignment: .leading,
+                    spacing: 8
+                ) {
+                    ForEach(suggestions) { suggestion in
+                        AppChip(title: suggestion.label) {
+                            onSelect(suggestion.prompt)
+                        }
+                        .disabled(disabled)
+                        .opacity(disabled ? 0.5 : 1)
+                    }
+                }
+            }
         }
     }
 }

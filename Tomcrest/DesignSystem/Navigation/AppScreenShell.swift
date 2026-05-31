@@ -7,6 +7,8 @@ struct AppScrollScreen<Content: View>: View {
     var maxWidth: CGFloat = Layout.contentMaxWidth
     var topPadding: CGFloat = 0
     var refresh: (() async -> Void)?
+    var scrollToToken: Binding<Int>?
+    var scrollAnchor: String = AppScrollAnchor.chat
     private let content: () -> Content
 
     @State private var viewportWidth: CGFloat = 0
@@ -16,35 +18,54 @@ struct AppScrollScreen<Content: View>: View {
         maxWidth: CGFloat = Layout.contentMaxWidth,
         topPadding: CGFloat = 0,
         refresh: (() async -> Void)? = nil,
+        scrollToToken: Binding<Int>? = nil,
+        scrollAnchor: String = AppScrollAnchor.chat,
         @ViewBuilder content: @escaping () -> Content
     ) {
         self.spacing = spacing
         self.maxWidth = maxWidth
         self.topPadding = topPadding
         self.refresh = refresh
+        self.scrollToToken = scrollToToken
+        self.scrollAnchor = scrollAnchor
         self.content = content
     }
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: true) {
-            VStack(alignment: .leading, spacing: spacing) {
-                content()
+        ScrollViewReader { proxy in
+            ScrollView(.vertical, showsIndicators: true) {
+                VStack(alignment: .leading, spacing: spacing) {
+                    content()
+                }
+                .appScreenContent(maxWidth: maxWidth, topPadding: topPadding)
+                .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
+                .frame(width: viewportWidth > 0 ? viewportWidth : nil, alignment: .leading)
+                .background(AppOuterScrollBehavior())
             }
-            .appScreenContent(maxWidth: maxWidth, topPadding: topPadding)
-            .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
-            .frame(width: viewportWidth > 0 ? viewportWidth : nil, alignment: .leading)
-            .background(AppOuterScrollBehavior())
-        }
-        .scrollBounceBehavior(.basedOnSize, axes: .vertical)
-        .background {
-            GeometryReader { proxy in
-                Color.clear
-                    .preference(key: ScrollViewportWidthKey.self, value: proxy.size.width)
+            .scrollBounceBehavior(.basedOnSize, axes: .vertical)
+            .background {
+                GeometryReader { proxy in
+                    Color.clear
+                        .preference(key: ScrollViewportWidthKey.self, value: proxy.size.width)
+                }
+            }
+            .onPreferenceChange(ScrollViewportWidthKey.self) { viewportWidth = $0 }
+            .onChange(of: scrollToToken?.wrappedValue ?? 0) { _, token in
+                guard token > 0 else { return }
+                scrollToChat(using: proxy)
             }
         }
-        .onPreferenceChange(ScrollViewportWidthKey.self) { viewportWidth = $0 }
         .appCanvasScreen()
         .modifier(RefreshableModifier(refresh: refresh))
+    }
+
+    private func scrollToChat(using proxy: ScrollViewProxy) {
+        // Brief delay so tab switches and chat expand layout finish before scrolling.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+            withAnimation(.easeInOut(duration: 0.35)) {
+                proxy.scrollTo(scrollAnchor, anchor: UnitPoint(x: 0.5, y: 0.12))
+            }
+        }
     }
 }
 
@@ -156,6 +177,11 @@ private struct AppOuterScrollBehavior: UIViewRepresentable {
 }
 
 extension View {
+    /// Anchor for scroll-to-chat — pair with `AppScrollScreen(scrollToToken:)`.
+    func appChatScrollAnchor() -> some View {
+        id(AppScrollAnchor.chat)
+    }
+
     /// Horizontal padding + max content width used inside scroll stacks.
     func appScreenContent(
         maxWidth: CGFloat = Layout.contentMaxWidth,

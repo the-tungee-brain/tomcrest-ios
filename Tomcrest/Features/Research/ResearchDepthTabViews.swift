@@ -5,6 +5,7 @@ import Charts
 
 struct SymbolOverviewTab: View {
     @Environment(AccountContext.self) private var account
+    @Environment(AssistantPresenter.self) private var assistant
     @Bindable var viewModel: SymbolOverviewViewModel
     @Bindable var positionViewModel: SymbolPositionViewModel
     let bundle: ResearchOverviewBundle?
@@ -25,22 +26,6 @@ struct SymbolOverviewTab: View {
         }
         .task {
             await positionViewModel.loadIfNeeded()
-        }
-        .sheet(isPresented: $viewModel.showChatHistory) {
-            AppNavigationCanvasStack {
-                ChatSessionHistorySheet(
-                    sessions: viewModel.chatSessions.filter {
-                        ($0.title ?? "").hasPrefix("Research:\(viewModel.symbol.uppercased()):")
-                    },
-                    isLoading: viewModel.chatSessionsLoading,
-                    onSelect: { session in
-                        Task { await viewModel.openChatSession(session) }
-                    },
-                    onDelete: { session in
-                        await viewModel.deleteChatSession(session)
-                    }
-                )
-            }
         }
     }
 
@@ -89,7 +74,7 @@ struct SymbolOverviewTab: View {
         }
 
         SymbolIntelligenceOverviewPanel(signals: bundle.intelligence.signals) { prompt in
-            viewModel.openChatWithPrompt(prompt)
+            assistant.openSymbol(viewModel.symbol, prompt: prompt, sendImmediately: true)
         }
 
         AppScreenSection(title: "Company snapshot") {
@@ -104,7 +89,12 @@ struct SymbolOverviewTab: View {
             .appPanel(subtle: true)
         }
 
-        ResearchChatPanel(viewModel: viewModel)
+        AssistantLauncherRow(
+            title: "Ask about \(viewModel.symbol)",
+            subtitle: "Research assistant — quality, risks, and valuation"
+        ) {
+            assistant.openSymbol(viewModel.symbol)
+        }
     }
 
     private func snapshotRow(_ label: String, _ value: String) -> some View {
@@ -739,7 +729,7 @@ struct SymbolDividendsTab: View {
                             AppGroupedList {
                                 ForEach(Array(context.recentPayments.prefix(8).enumerated()), id: \.element.id) { index, payment in
                                     AppListRow {
-                                        Text(payment.date)
+                                        Text(DateFormatters.display(from: payment.date))
                                             .font(AppTypography.bodySecondary)
                                             .foregroundStyle(AppColors.label)
                                     } trailing: {
@@ -864,7 +854,10 @@ struct SymbolOptionsTab: View {
                 }
 
                 if let chain = intelligence?.optionChainPreview, !chain.rows.isEmpty {
-                    AppScreenSection(title: "Option chain preview", footnote: chain.expiration) {
+                    AppScreenSection(
+                        title: "Option chain preview",
+                        footnote: chain.expiration.map { DateFormatters.display(from: $0) }
+                    ) {
                         VStack(spacing: 8) {
                             ForEach(chain.rows.prefix(8)) { row in
                                 HStack {
@@ -928,7 +921,7 @@ struct SymbolOptionsTab: View {
                 .textCase(.uppercase)
             ForEach(candidates.prefix(4)) { candidate in
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("\(CurrencyFormatter.usd(candidate.strike)) · \(candidate.expiration)")
+                    Text("\(CurrencyFormatter.usd(candidate.strike)) · \(DateFormatters.display(from: candidate.expiration))")
                         .font(.caption.weight(.semibold))
                     Text(candidate.rationale)
                         .font(.caption2)

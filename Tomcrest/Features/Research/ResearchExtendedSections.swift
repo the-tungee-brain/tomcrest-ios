@@ -17,12 +17,12 @@ struct SecFilingsSectionView: View {
                                 .padding(.vertical, 2)
                                 .background(AppColors.accentMuted.opacity(0.45))
                                 .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
-                            Text("Filed \(filing.filingDate)")
+                            Text("Filed \(DateFormatters.display(from: filing.filingDate))")
                                 .font(.caption2)
                                 .foregroundStyle(AppColors.secondaryLabel)
                         }
                         if !filing.reportDate.isEmpty {
-                            Text("Report \(filing.reportDate)")
+                            Text("Report \(DateFormatters.display(from: filing.reportDate))")
                                 .font(.caption2)
                                 .foregroundStyle(AppColors.tertiaryLabel)
                         }
@@ -275,7 +275,7 @@ struct ChatSessionHistorySheet: View {
                             Text(session.title ?? "Untitled chat")
                                 .font(.caption.weight(.semibold))
                                 .foregroundStyle(AppColors.label)
-                            Text(session.updatedAt)
+                            Text(DateFormatters.display(from: session.updatedAt))
                                 .font(.caption2)
                                 .foregroundStyle(AppColors.tertiaryLabel)
                         }

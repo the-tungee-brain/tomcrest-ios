@@ -47,5 +47,6 @@ struct MainTabView: View {
         MainTabView()
             .environment(AuthSession())
             .environment(AccountContext())
+            .environment(AssistantPresenter())
     }
 }

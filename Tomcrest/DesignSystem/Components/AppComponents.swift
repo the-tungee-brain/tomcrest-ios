@@ -227,7 +227,7 @@ struct AppNewsHeadlineRow: View {
 
     var body: some View {
         if let url = item.url.flatMap(URL.init(string:)) {
-            Link(destination: url) {
+            AppExternalLink(url: url) {
                 rowContent
             }
             .frame(maxWidth: .infinity, alignment: .leading)

@@ -378,11 +378,6 @@ enum EarningsFormatters {
     }
 
     static func formatReportDate(_ iso: String) -> String {
-        let parser = ISO8601DateFormatter()
-        parser.formatOptions = [.withFullDate, .withDashSeparatorInDate]
-        if let date = parser.date(from: String(iso.prefix(10))) {
-            return date.formatted(date: .abbreviated, time: .omitted)
-        }
-        return iso
+        DateFormatters.display(from: iso)
     }
 }

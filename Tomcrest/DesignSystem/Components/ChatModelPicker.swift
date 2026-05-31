@@ -15,11 +15,11 @@ struct ChatModelPicker: View {
                             account.selectChatModel(option.id)
                         } label: {
                             if locked {
-                                Label(option.label, systemImage: "lock.fill")
+                                Label(optionMenuTitle(option), systemImage: "lock.fill")
                             } else if option.id == account.effectiveChatModel {
-                                Label(option.label, systemImage: "checkmark")
+                                Label(optionMenuTitle(option), systemImage: "checkmark")
                             } else {
-                                Text(option.label)
+                                Text(optionMenuTitle(option))
                             }
                         }
                         .disabled(locked)
@@ -29,7 +29,7 @@ struct ChatModelPicker: View {
         } label: {
             if compact {
                 HStack(spacing: 4) {
-                    Text("Model · \(account.selectedChatModelLabel)")
+                    Text(account.selectedChatModelLabel)
                         .font(.caption2)
                         .lineLimit(1)
                     Image(systemName: "chevron.down")
@@ -52,5 +52,9 @@ struct ChatModelPicker: View {
             }
         }
         .accessibilityLabel("Chat model, \(account.selectedChatModelLabel)")
+    }
+
+    private func optionMenuTitle(_ option: ChatModelDefinition) -> String {
+        "\(option.id) · \(option.description)"
     }
 }

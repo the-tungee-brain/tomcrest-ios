@@ -122,12 +122,16 @@ enum ChatModelSupport {
     }
 
     static func displayLabel(for modelId: String, plan: AccountPlanResponse?) -> String {
+        let tier = tierLabel(for: modelId, plan: plan)
+        return "\(tier) · \(modelId)"
+    }
+
+    static func tierLabel(for modelId: String, plan: AccountPlanResponse?) -> String {
         let options = plan?.chatModels?.isEmpty == false ? plan!.chatModels! : fallbackOptions
         guard let match = options.first(where: { $0.id == modelId }) else {
-            return "Balanced"
+            return "Standard"
         }
-        let tier = tierLabels.first(where: { $0.id == match.tier })?.label ?? "Standard"
-        return "\(tier) · \(match.label)"
+        return tierLabels.first(where: { $0.id == match.tier })?.label ?? "Standard"
     }
 
     static func requiresPro(modelId: String, plan: AccountPlanResponse?) -> Bool {

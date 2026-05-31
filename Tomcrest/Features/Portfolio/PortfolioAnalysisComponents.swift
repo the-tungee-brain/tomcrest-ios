@@ -111,53 +111,7 @@ struct PortfolioAnalysisSection: View {
 
     @ViewBuilder
     private func analysisContent(_ analysis: StructuredAnalysis) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(analysis.summary)
-                .font(AppTypography.bodySecondary)
-                .foregroundStyle(AppColors.label)
-                .lineSpacing(4)
-
-            if let action = analysis.recommendedAction {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Recommended next step")
-                        .font(.caption2.weight(.medium))
-                        .foregroundStyle(AppColors.tertiaryLabel)
-                        .textCase(.uppercase)
-                    Text(action.title)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(AppColors.label)
-                    Text(action.reason)
-                        .font(.caption)
-                        .foregroundStyle(AppColors.secondaryLabel)
-                        .lineSpacing(2)
-                }
-                .padding(12)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(AppColors.accentMuted.opacity(0.35))
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-            }
-
-            ForEach(analysis.sections) { section in
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(section.title)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(AppColors.label)
-                    if let body = section.body, !body.isEmpty {
-                        Text(body)
-                            .font(.caption)
-                            .foregroundStyle(AppColors.secondaryLabel)
-                            .lineSpacing(2)
-                    }
-                    if let bullets = section.bullets {
-                        ForEach(bullets, id: \.self) { bullet in
-                            Text("• \(bullet)")
-                                .font(.caption)
-                                .foregroundStyle(AppColors.secondaryLabel)
-                        }
-                    }
-                }
-            }
-        }
+        StructuredAnalysisView(analysis: analysis)
     }
 }
 

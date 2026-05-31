@@ -8,7 +8,15 @@ struct JSONPassThrough: Sendable {
 /// `JSONSerialization` only accepts Foundation types. Swift `Bool` in `[String: Any]` crashes.
 enum JSONBodyEncoding {
     static func data(from object: Any) throws -> Data {
-        try JSONSerialization.data(withJSONObject: foundationObject(object))
+        let normalized = foundationObject(object)
+        guard JSONSerialization.isValidJSONObject(normalized) else {
+            throw NSError(
+                domain: "JSONBodyEncoding",
+                code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "Value is not JSON-serializable."]
+            )
+        }
+        return try JSONSerialization.data(withJSONObject: normalized)
     }
 
     private static func foundationObject(_ value: Any) -> Any {

@@ -124,7 +124,7 @@ struct PortfolioNewsRow: View {
     @ViewBuilder
     private var headlineLink: some View {
         if let url = item.url.flatMap(URL.init(string:)) {
-            Link(destination: url) {
+            AppExternalLink(url: url) {
                 headlineText
             }
         } else {
@@ -236,7 +236,7 @@ struct MorningBriefCard: View {
                 Spacer(minLength: 0)
             }
 
-            Text(lead ?? "Pull down to refresh for your morning brief.")
+            Text(lead ?? "No brief yet.")
                 .font(AppTypography.bodySecondary)
                 .foregroundStyle(leadTextColor)
                 .lineSpacing(4)
@@ -369,7 +369,7 @@ struct MorningBriefCard: View {
                                 }
 
                                 if let url = item.url.flatMap(URL.init(string:)) {
-                                    Link(destination: url) {
+                                    AppExternalLink(url: url) {
                                         Text(item.headline)
                                             .font(.caption.weight(.medium))
                                             .foregroundStyle(AppColors.label)
@@ -473,8 +473,9 @@ struct MorningBriefCard: View {
     }
 
     private func freshnessLabel(from iso: String) -> String? {
-        guard let date = ISO8601DateFormatter().date(from: iso) else { return nil }
-        return "Updated \(RelativeDateTimeFormatter().localizedString(for: date, relativeTo: Date()))"
+        let formatted = DateFormatters.display(from: iso)
+        guard formatted != "—" else { return nil }
+        return "Updated \(formatted)"
     }
 
     private func profitTone(_ value: Double) -> Color {

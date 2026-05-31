@@ -146,13 +146,13 @@ struct SettingsLinkRow: View {
     let url: URL
 
     var body: some View {
-        Link(destination: url) {
+        AppExternalLink(url: url) {
             HStack {
                 Text(title)
                     .font(.body)
                     .foregroundStyle(AppColors.label)
                 Spacer()
-                Image(systemName: "arrow.up.right")
+                Image(systemName: "chevron.right")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(AppColors.tertiaryLabel)
             }

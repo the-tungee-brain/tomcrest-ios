@@ -20,7 +20,6 @@ final class PortfolioViewModel {
     private(set) var alerts: [ProactiveAlert] = []
     private(set) var attentionQueue: [AttentionItem] = []
     private(set) var suggestedActions: [SuggestedAnalysisAction] = []
-    private(set) var isRefreshing = false
     private(set) var syncedAtLabel: String?
     private(set) var investmentProfile: UserInvestmentProfile?
     private(set) var strategyCatalog: [StrategyCatalogItem] = []
@@ -120,6 +119,9 @@ final class PortfolioViewModel {
             structuredAnalysis = response.analysis
             portfolioPrecomputed = response.portfolioPrecomputed
             portfolioAnalysisStatus = nil
+            if response.analysis == nil {
+                portfolioAnalysisError = "Could not read the analysis response. Try again."
+            }
             auth.clearError()
         } catch {
             portfolioAnalysisError = (error as? APIError)?.errorDescription ?? error.localizedDescription
@@ -393,16 +395,24 @@ final class PortfolioViewModel {
         chatExpanded = true
     }
 
-    func runQuickAction(_ actionId: String) {
-        openChatWithPrompt(
-            IntelligenceHelpers.quickActionMessage(actionId: actionId, symbol: "my portfolio")
-        )
+    func runQuickAction(_ actionId: String) -> String {
+        IntelligenceHelpers.quickActionMessage(actionId: actionId, symbol: "my portfolio")
     }
 
     func sendChatMessage(model: String = ChatConfig.defaultModel) async {
         let prompt = chatInput.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !prompt.isEmpty,
-              !chatLoading,
+        guard !prompt.isEmpty else { return }
+        await sendChatPrompt(prompt, model: model)
+    }
+
+    func sendFollowUpPrompt(_ prompt: String, model: String = ChatConfig.defaultModel) async {
+        let trimmed = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        await sendChatPrompt(trimmed, model: model)
+    }
+
+    private func sendChatPrompt(_ prompt: String, model: String) async {
+        guard !chatLoading,
               chatAccountPayload != nil,
               chatPositionsPayload != nil,
               !positions.isEmpty,
@@ -564,9 +574,6 @@ final class PortfolioViewModel {
         if !preserveContent {
             screenState = .loading
         }
-        isRefreshing = true
-        defer { isRefreshing = false }
-
         let schwabConnected = await auth.fetchSchwabStatus()
         if schwabConnected == false {
             screenState = .schwabNotConnected
@@ -697,10 +704,7 @@ final class PortfolioViewModel {
         )
 
         if let syncedAt = positionsResponse.dataFreshness?.positionsSyncedAt {
-            syncedAtLabel = RelativeDateTimeFormatter().localizedString(
-                for: ISO8601DateFormatter().date(from: syncedAt) ?? Date(),
-                relativeTo: Date()
-            )
+            syncedAtLabel = DateFormatters.display(from: syncedAt)
         } else {
             syncedAtLabel = nil
         }

@@ -133,7 +133,7 @@ struct WheelBacktestExtendedPanel: View {
 
     private func tradeRow(_ trade: WheelBacktestTrade) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("\(trade.date) · \(trade.action)")
+            Text("\(DateFormatters.display(from: trade.date)) · \(trade.action)")
                 .font(.caption.weight(.semibold))
             if let label = trade.label {
                 Text(label)

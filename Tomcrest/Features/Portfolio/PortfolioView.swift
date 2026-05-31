@@ -2,6 +2,7 @@ import SwiftUI
 
 struct PortfolioView: View {
     @Environment(AuthSession.self) private var auth
+    @Environment(AssistantPresenter.self) private var assistant
     @Binding var selectedTab: AppTab
     @Binding var settingsFocus: SettingsFocus?
     @State private var viewModel: PortfolioViewModel?
@@ -62,7 +63,28 @@ struct PortfolioView: View {
                     break
                 }
             }
+            .overlay(alignment: .bottomTrailing) {
+                if let viewModel, viewModel.screenState == .content {
+                    FloatingAssistantButton {
+                        assistant.openPortfolio()
+                    }
+                    .padding(.trailing, 20)
+                    .padding(.bottom, 16)
+                }
+            }
+            .sheet(isPresented: portfolioAssistantPresented) {
+                if let viewModel {
+                    PortfolioAssistantSheet(viewModel: viewModel)
+                }
+            }
         }
+    }
+
+    private var portfolioAssistantPresented: Binding<Bool> {
+        Binding(
+            get: { assistant.isPortfolioPresented },
+            set: { if !$0 { assistant.dismiss() } }
+        )
     }
 
     // MARK: - Dashboard (minimal main screen)
@@ -162,11 +184,6 @@ struct PortfolioView: View {
             exploreSection(viewModel)
 
             holdingsPreviewSection(viewModel)
-        }
-        .safeAreaInset(edge: .top, spacing: 0) {
-            if viewModel.isRefreshing {
-                AppRefreshBanner(text: "Refreshing…")
-            }
         }
     }
 
@@ -312,5 +329,6 @@ struct PortfolioView: View {
         PortfolioView(selectedTab: .constant(.portfolio))
             .environment(AuthSession())
             .environment(AccountContext())
+            .environment(AssistantPresenter())
     }
 }

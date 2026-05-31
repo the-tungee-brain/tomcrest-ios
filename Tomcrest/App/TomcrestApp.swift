@@ -5,6 +5,7 @@ struct TomcrestApp: App {
     @State private var auth = AuthSession()
     @State private var account = AccountContext()
     @State private var researchBookmarks = ResearchSymbolBookmarks()
+    @State private var assistant = AssistantPresenter()
 
     init() {
         GoogleSignInCoordinator.configure()
@@ -17,6 +18,7 @@ struct TomcrestApp: App {
                 .environment(auth)
                 .environment(account)
                 .environment(researchBookmarks)
+                .environment(assistant)
                 .preferredColorScheme(.dark)
                 .onOpenURL { url in
                     _ = GoogleSignInCoordinator.handle(url)

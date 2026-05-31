@@ -3,25 +3,18 @@ import SwiftUI
 struct MarkdownText: View {
     let content: String
     var font: Font = .subheadline
+    var lineSpacing: CGFloat = 4
 
     var body: some View {
         Group {
             if content.isEmpty {
                 Text("…")
-            } else if let attributed = try? AttributedString(
-                markdown: content,
-                options: AttributedString.MarkdownParsingOptions(
-                    interpretedSyntax: .full,
-                    failurePolicy: .returnPartiallyParsedIfPossible
-                )
-            ) {
-                Text(attributed)
+                    .font(font)
+                    .foregroundStyle(AppColors.label)
             } else {
-                Text(content)
+                RichMarkdownView(content: content, font: font, lineSpacing: lineSpacing)
             }
         }
-        .font(font)
-        .foregroundStyle(AppColors.label)
         .textSelection(.enabled)
         .multilineTextAlignment(.leading)
         .fixedSize(horizontal: false, vertical: true)
