@@ -16,18 +16,33 @@ final class AccountContext {
     private(set) var plan: AccountPlanResponse?
     private(set) var isLoadingPlan = false
 
-    private static let selectedModelStorageKey = "tomcrest.chatModel"
+    private static let freeModelStorageKey = "tomcrest.chatModel.free"
+    private static let proModelStorageKey = "tomcrest.chatModel.pro"
+    private static let legacyModelStorageKey = "tomcrest.chatModel"
 
-    var selectedChatModel: String = UserDefaults.standard.string(forKey: selectedModelStorageKey)
-        ?? ChatConfig.defaultModel {
+    var selectedChatModel: String = ChatConfig.freeDefaultModel {
         didSet {
-            UserDefaults.standard.set(selectedChatModel, forKey: Self.selectedModelStorageKey)
+            persistSelectedChatModel(selectedChatModel)
+        }
+    }
+
+    init() {
+        migrateLegacySelectionIfNeeded()
+        if let saved = UserDefaults.standard.string(forKey: Self.freeModelStorageKey) {
+            selectedChatModel = saved
+        } else if let legacy = UserDefaults.standard.string(forKey: Self.legacyModelStorageKey) {
+            selectedChatModel = legacy
         }
     }
 
     var defaultChatModel: String {
-        guard let plan else { return ChatConfig.defaultModel }
-        return plan.isPaid ? plan.defaultModel : plan.freeModel
+        guard let plan else { return ChatConfig.freeDefaultModel }
+        if plan.isPaid {
+            let model = plan.defaultModel.trimmingCharacters(in: .whitespacesAndNewlines)
+            return model.isEmpty ? ChatConfig.proDefaultModel : model
+        }
+        let model = plan.freeModel.trimmingCharacters(in: .whitespacesAndNewlines)
+        return model.isEmpty ? ChatConfig.freeDefaultModel : model
     }
 
     var effectiveChatModel: String {
@@ -49,6 +64,7 @@ final class AccountContext {
 
         do {
             plan = try await SettingsService.fetchAccountPlan(accessToken: accessToken)
+            selectedChatModel = loadPersistedChatModel(isPaid: plan?.isPaid == true)
             normalizeSelectedModel()
         } catch {
             plan = nil
@@ -88,10 +104,39 @@ final class AccountContext {
     }
 
     private func normalizeSelectedModel() {
-        let allowed = effectiveChatModel
-        if selectedChatModel != allowed {
-            selectedChatModel = allowed
+        if !ChatModelSupport.isAllowed(modelId: selectedChatModel, plan: plan) {
+            selectedChatModel = defaultChatModel
         }
+    }
+
+    private func storageKey(isPaid: Bool) -> String {
+        isPaid ? Self.proModelStorageKey : Self.freeModelStorageKey
+    }
+
+    private func persistSelectedChatModel(_ model: String) {
+        let isPaid = plan?.isPaid == true
+        UserDefaults.standard.set(model, forKey: storageKey(isPaid: isPaid))
+    }
+
+    private func loadPersistedChatModel(isPaid: Bool) -> String {
+        migrateLegacySelectionIfNeeded()
+
+        if let saved = UserDefaults.standard.string(forKey: storageKey(isPaid: isPaid)) {
+            return saved
+        }
+        return isPaid ? ChatConfig.proDefaultModel : ChatConfig.freeDefaultModel
+    }
+
+    private func migrateLegacySelectionIfNeeded() {
+        guard let legacy = UserDefaults.standard.string(forKey: Self.legacyModelStorageKey) else { return }
+
+        if UserDefaults.standard.string(forKey: Self.freeModelStorageKey) == nil {
+            UserDefaults.standard.set(legacy, forKey: Self.freeModelStorageKey)
+        }
+        if UserDefaults.standard.string(forKey: Self.proModelStorageKey) == nil {
+            UserDefaults.standard.set(ChatConfig.proDefaultModel, forKey: Self.proModelStorageKey)
+        }
+        UserDefaults.standard.removeObject(forKey: Self.legacyModelStorageKey)
     }
 }
 
@@ -99,7 +144,7 @@ enum ChatModelSupport {
     static let fallbackOptions: [ChatModelDefinition] = [
         ChatModelDefinition(id: "gpt-5-nano", label: "Fast", description: "Quick replies for simple questions", tier: "fast"),
         ChatModelDefinition(id: "gpt-4o-mini", label: "Fast", description: "Lightweight and responsive", tier: "fast"),
-        ChatModelDefinition(id: ChatConfig.defaultModel, label: "Balanced", description: "Recommended for most portfolio and research questions", tier: "balanced"),
+        ChatModelDefinition(id: ChatConfig.freeDefaultModel, label: "Balanced", description: "Recommended for most portfolio and research questions", tier: "balanced"),
         ChatModelDefinition(id: "gpt-5.1", label: "Advanced", description: "Strong general-purpose analysis", tier: "advanced"),
         ChatModelDefinition(id: "gpt-4o", label: "Advanced", description: "Reliable depth for everyday use", tier: "advanced"),
         ChatModelDefinition(id: "gpt-5.4", label: "Advanced", description: "Deepest analysis — best for complex questions", tier: "advanced"),

@@ -16,7 +16,10 @@ struct StreamCompletion {
 }
 
 enum ChatConfig {
-    static let defaultModel = "gpt-4.1-mini"
+    static let freeDefaultModel = "gpt-4.1-mini"
+    static let proDefaultModel = "gpt-5.4"
+    /// Fallback before account plan loads; matches free tier default.
+    static let defaultModel = freeDefaultModel
     static let portfolioChatKey = "__PORTFOLIO_CHAT__"
 }
 

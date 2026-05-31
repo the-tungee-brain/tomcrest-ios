@@ -140,8 +140,8 @@ struct AccountPlanCardView: View {
 
     private var planCard: some View {
         let isPaid = plan?.isPaid ?? false
-        let freeModel = plan?.freeModel ?? "gpt-4.1-mini"
-        let backgroundModel = plan?.backgroundModel ?? "gpt-5.4"
+        let freeModel = plan?.freeModel ?? ChatConfig.freeDefaultModel
+        let backgroundModel = plan?.backgroundModel ?? ChatConfig.proDefaultModel
         let features = isPaid ? Self.proFeatures : Self.freeFeatures
 
         return VStack(alignment: .leading, spacing: 12) {
