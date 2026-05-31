@@ -269,21 +269,24 @@ struct PortfolioView: View {
         _ destination: PortfolioDestination,
         viewModel: PortfolioViewModel
     ) -> some View {
-        switch destination {
-        case .today:
-            PortfolioTodayScreen(
-                viewModel: viewModel,
-                selectedTab: $selectedTab,
-                settingsFocus: $settingsFocus,
-                onSymbolTap: { researchSymbol = $0 }
-            )
-        case .holdings:
-            PortfolioHoldingsScreen(viewModel: viewModel, onSymbolTap: { researchSymbol = $0 })
-        case .news:
-            PortfolioNewsScreen(viewModel: viewModel, onSymbolTap: { researchSymbol = $0 })
-        case .activity:
-            PortfolioActivityScreen(viewModel: viewModel, onSymbolTap: { researchSymbol = $0 })
+        Group {
+            switch destination {
+            case .today:
+                PortfolioTodayScreen(
+                    viewModel: viewModel,
+                    selectedTab: $selectedTab,
+                    settingsFocus: $settingsFocus,
+                    onSymbolTap: { researchSymbol = $0 }
+                )
+            case .holdings:
+                PortfolioHoldingsScreen(viewModel: viewModel, onSymbolTap: { researchSymbol = $0 })
+            case .news:
+                PortfolioNewsScreen(viewModel: viewModel, onSymbolTap: { researchSymbol = $0 })
+            case .activity:
+                PortfolioActivityScreen(viewModel: viewModel, onSymbolTap: { researchSymbol = $0 })
+            }
         }
+        .appPushedScreenCanvas()
     }
 
     private func emptyStateScroll<Content: View>(@ViewBuilder content: @escaping () -> Content) -> some View {

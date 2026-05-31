@@ -186,7 +186,7 @@ struct ChatBubble: View {
     let message: ChatMessage
 
     var body: some View {
-        HStack {
+        HStack(alignment: .top) {
             if message.role == .user { Spacer(minLength: 32) }
             VStack(alignment: message.role == .user ? .trailing : .leading, spacing: 4) {
                 if message.role == .assistant {
@@ -203,6 +203,7 @@ struct ChatBubble: View {
             .padding(.vertical, 10)
             .background(message.role == .user ? AppColors.accent.opacity(0.18) : AppColors.secondaryFill)
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .layoutPriority(1)
             if message.role == .assistant { Spacer(minLength: 32) }
         }
     }
@@ -214,15 +215,17 @@ struct SuggestedPromptChips: View {
     let onSelect: (String) -> Void
 
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(prompts, id: \.self) { prompt in
-                    AppChip(title: prompt) {
-                        onSelect(prompt)
-                    }
-                    .disabled(disabled)
-                    .opacity(disabled ? 0.5 : 1)
+        LazyVGrid(
+            columns: [GridItem(.adaptive(minimum: 148), spacing: 8)],
+            alignment: .leading,
+            spacing: 8
+        ) {
+            ForEach(prompts, id: \.self) { prompt in
+                AppChip(title: prompt) {
+                    onSelect(prompt)
                 }
+                .disabled(disabled)
+                .opacity(disabled ? 0.5 : 1)
             }
         }
     }

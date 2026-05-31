@@ -148,6 +148,7 @@ struct SymbolResearchView: View {
         .onChange(of: overviewVM.bundle?.assetType) { _, _ in
             ensureValidTabSelection()
         }
+        .appPushedScreenCanvas()
     }
 
     @ViewBuilder

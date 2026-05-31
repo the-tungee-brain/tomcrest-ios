@@ -158,4 +158,20 @@ extension View {
         scrollContentBackground(.hidden)
             .appNavigationCanvas()
     }
+
+    /// Canvas behind pushed navigation destinations (symbol research, portfolio symbol drill-in).
+    func appPushedScreenCanvas() -> some View {
+        modifier(AppPushedScreenCanvasModifier())
+    }
+}
+
+private struct AppPushedScreenCanvasModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        ZStack {
+            AppCanvasBackground()
+                .ignoresSafeArea()
+            content
+        }
+        .appClearUIKitBackground()
+    }
 }

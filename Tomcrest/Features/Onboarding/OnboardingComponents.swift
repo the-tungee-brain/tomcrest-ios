@@ -177,7 +177,7 @@ struct ResearchOnboardingCard: View {
         }
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AppColors.background.opacity(done ? 0.6 : 0.4))
+        .background(AppColors.insetSurface.opacity(done ? 0.85 : 0.55))
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 10, style: .continuous)

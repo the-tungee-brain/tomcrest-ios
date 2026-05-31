@@ -153,7 +153,7 @@ struct StrategyStockScreenerSheet: View {
                     filterPanel
                         .padding(.horizontal, Layout.horizontalPadding)
                         .padding(.vertical, 10)
-                        .background(AppColors.background.opacity(0.95))
+                        .background(AppColors.secondaryBackground.opacity(0.95))
                 }
             }
             .task {

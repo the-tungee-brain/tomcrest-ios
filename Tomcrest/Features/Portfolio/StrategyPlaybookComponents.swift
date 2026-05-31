@@ -178,7 +178,7 @@ struct StrategyPlaybookCard: View {
                     .foregroundStyle(AppColors.label)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 8)
-                    .background(AppColors.background)
+                    .background(AppColors.insetSurface)
                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                     .overlay {
                         RoundedRectangle(cornerRadius: 8, style: .continuous)
@@ -410,7 +410,11 @@ private struct PlaybookActionButtons: View {
     }
 
     var body: some View {
-        HStack(spacing: 8) {
+        LazyVGrid(
+            columns: [GridItem(.adaptive(minimum: compact ? 120 : 140), spacing: 8)],
+            alignment: .leading,
+            spacing: 8
+        ) {
             if StrategyPlaybookHelpers.playbookActionAskable(action) {
                 Button {
                     onRunAction(action)

@@ -573,21 +573,35 @@ struct AppErrorState: View {
 
 /// Centered auth layout — brand mark, title, body, then actions.
 struct AppAuthScreen<Actions: View>: View {
-    let systemImage: String
+    var systemImage: String?
+    var brandImageName: String?
     var iconColor: Color = AppColors.accent
     let title: String
     let message: String
     @ViewBuilder var actions: () -> Actions
+
+    init(
+        systemImage: String? = nil,
+        brandImageName: String? = nil,
+        iconColor: Color = AppColors.accent,
+        title: String,
+        message: String,
+        @ViewBuilder actions: @escaping () -> Actions
+    ) {
+        self.systemImage = systemImage
+        self.brandImageName = brandImageName
+        self.iconColor = iconColor
+        self.title = title
+        self.message = message
+        self.actions = actions
+    }
 
     var body: some View {
         VStack(spacing: 28) {
             Spacer(minLength: 0)
 
             VStack(spacing: 12) {
-                Image(systemName: systemImage)
-                    .font(.system(size: 52))
-                    .foregroundStyle(iconColor)
-                    .symbolRenderingMode(.hierarchical)
+                brandMark
 
                 Text(title)
                     .font(AppTypography.screenTitle)
@@ -608,6 +622,23 @@ struct AppAuthScreen<Actions: View>: View {
         .padding(24)
         .appCenteredContentWidth()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    @ViewBuilder
+    private var brandMark: some View {
+        if let brandImageName {
+            Image(brandImageName)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 72, height: 72)
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .accessibilityHidden(true)
+        } else if let systemImage {
+            Image(systemName: systemImage)
+                .font(.system(size: 52))
+                .foregroundStyle(iconColor)
+                .symbolRenderingMode(.hierarchical)
+        }
     }
 }
 

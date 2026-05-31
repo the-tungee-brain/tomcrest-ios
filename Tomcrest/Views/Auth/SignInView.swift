@@ -6,8 +6,7 @@ struct SignInView: View {
 
     var body: some View {
         AppAuthScreen(
-            systemImage: "chart.line.uptrend.xyaxis.circle.fill",
-            iconColor: BrandPrimary.color,
+            brandImageName: "BrandLogo",
             title: AppConfig.brandName,
             message: AppConfig.brandTagline
         ) {
@@ -73,8 +72,7 @@ struct WaitlistView: View {
 
     var body: some View {
         AppAuthScreen(
-            systemImage: "hourglass.circle.fill",
-            iconColor: AppColors.warning,
+            brandImageName: "BrandLogo",
             title: "Private beta",
             message: "Tomcrest is invite-only. Join the waitlist, then return after you're approved."
         ) {

@@ -75,7 +75,7 @@ struct PortfolioHeroSummary: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AppColors.background.opacity(0.55))
+        .background(AppColors.insetSurface.opacity(0.85))
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 

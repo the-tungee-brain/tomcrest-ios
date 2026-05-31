@@ -286,7 +286,7 @@ struct SymbolTaxWashSaleStrip: View {
                         .foregroundStyle(AppColors.accentHighlight)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 8)
-                        .background(AppColors.background)
+                        .background(AppColors.insetSurface)
                         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                         .overlay {
                             RoundedRectangle(cornerRadius: 8, style: .continuous)
@@ -360,7 +360,7 @@ struct SymbolAlertStrip: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 10)
-                        .background(AppColors.background)
+                        .background(AppColors.insetSurface)
                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                         .overlay {
                             RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -424,7 +424,7 @@ struct SymbolSuggestedActionChips: View {
                         .padding(.horizontal, 12)
                         .padding(.vertical, 8)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(AppColors.background)
+                        .background(AppColors.insetSurface)
                         .clipShape(Capsule())
                         .overlay {
                             Capsule()

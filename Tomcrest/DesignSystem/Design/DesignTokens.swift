@@ -58,6 +58,8 @@ enum AppColors {
     static var gridLine: Color { Token.gridLine }
     static var fill: Color { Token.surfaceFill }
     static var secondaryFill: Color { Token.surfaceFillSecondary }
+    /// Chips / inset rows — translucent so app canvas shows through.
+    static var insetSurface: Color { Token.surfaceFillSecondary.opacity(0.72) }
 
     static var accent: Color { Token.primary }
     static var accentHighlight: Color { Token.primaryHighlight }

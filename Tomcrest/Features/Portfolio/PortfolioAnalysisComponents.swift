@@ -261,7 +261,7 @@ struct PortfolioAllocationCard: View {
         }
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AppColors.background.opacity(0.55))
+        .background(AppColors.insetSurface.opacity(0.85))
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 

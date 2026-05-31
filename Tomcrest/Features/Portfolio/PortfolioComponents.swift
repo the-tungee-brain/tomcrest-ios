@@ -292,16 +292,18 @@ struct MorningBriefCard: View {
                                         .font(.caption.monospacedDigit())
                                         .foregroundStyle(AppColors.secondaryLabel)
                                 }
-                                GeometryReader { geometry in
-                                    ZStack(alignment: .leading) {
-                                        Capsule()
-                                            .fill(AppColors.secondaryBackground)
+                                Capsule()
+                                    .fill(AppColors.secondaryBackground)
+                                    .overlay(alignment: .leading) {
                                         Capsule()
                                             .fill(AppColors.accentHighlight.opacity(0.85))
-                                            .frame(width: geometry.size.width * min(sector.weightPct / 100, 1))
+                                            .scaleEffect(
+                                                x: min(sector.weightPct / 100, 1),
+                                                y: 1,
+                                                anchor: .leading
+                                            )
                                     }
-                                }
-                                .frame(height: 6)
+                                    .frame(height: 6)
                                 Text(sectorSymbolPreview(sector.symbols))
                                     .font(.caption2)
                                     .foregroundStyle(AppColors.tertiaryLabel)
@@ -313,27 +315,24 @@ struct MorningBriefCard: View {
 
             if let earnings = digest?.earningsThisWeek, !earnings.isEmpty {
                 briefSubsection(title: "Earnings this week", systemImage: "calendar") {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
-                            ForEach(earnings, id: \.self) { symbol in
-                                Button {
-                                    onSymbolTap?(symbol)
-                                } label: {
-                                    Text(symbol)
-                                        .font(.caption2.weight(.semibold).monospaced())
-                                        .foregroundStyle(AppColors.label)
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 6)
-                                        .background(AppColors.background)
-                                        .clipShape(Capsule())
-                                        .overlay {
-                                            Capsule().stroke(AppColors.separator, lineWidth: 1)
-                                        }
+                    AppWrappingChipGrid(items: earnings, minimumChipWidth: 72) { symbol in
+                        Button {
+                            onSymbolTap?(symbol)
+                        } label: {
+                            Text(symbol)
+                                .font(.caption2.weight(.semibold).monospaced())
+                                .foregroundStyle(AppColors.label)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .frame(maxWidth: .infinity)
+                                .background(AppColors.insetSurface)
+                                .clipShape(Capsule())
+                                .overlay {
+                                    Capsule().stroke(AppColors.separator, lineWidth: 1)
                                 }
-                                .buttonStyle(.plain)
-                                .disabled(onSymbolTap == nil)
-                            }
                         }
+                        .buttonStyle(.plain)
+                        .disabled(onSymbolTap == nil)
                     }
                 }
             }
@@ -691,7 +690,7 @@ private struct PortfolioAttentionRow: View {
             }
         }
         .padding(12)
-        .background(AppColors.background)
+        .background(AppColors.insetSurface)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -726,7 +725,7 @@ private struct PortfolioSuggestedActionChips: View {
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(AppColors.background)
+                    .background(AppColors.insetSurface)
                     .clipShape(Capsule())
                     .overlay {
                         Capsule().stroke(AppColors.separator, lineWidth: 1)

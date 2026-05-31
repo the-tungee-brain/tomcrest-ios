@@ -28,7 +28,7 @@ struct WatchlistToggleButton: View {
                 .foregroundStyle(watching ? AppColors.accentHighlight : AppColors.label)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
-                .background(watching ? AppColors.accentMuted : AppColors.background)
+                .background(watching ? AppColors.accentMuted : AppColors.insetSurface)
                 .clipShape(Capsule())
                 .overlay {
                     Capsule()
@@ -113,7 +113,7 @@ private struct ResearchSymbolChipRow: View {
                         .background(
                             style == .watchlist
                                 ? AppColors.accentMuted
-                                : AppColors.background
+                                : AppColors.insetSurface
                         )
                         .clipShape(Capsule())
                         .overlay {
@@ -212,7 +212,7 @@ struct StrategyPlaybookQuickLinksSection: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
             .frame(minWidth: 88, alignment: .leading)
-            .background(needsAttention ? AppColors.accentMuted.opacity(0.35) : AppColors.background)
+            .background(needsAttention ? AppColors.accentMuted.opacity(0.35) : AppColors.insetSurface)
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)

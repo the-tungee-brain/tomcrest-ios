@@ -24,5 +24,6 @@ struct MarkdownText: View {
         .foregroundStyle(AppColors.label)
         .textSelection(.enabled)
         .multilineTextAlignment(.leading)
+        .fixedSize(horizontal: false, vertical: true)
     }
 }

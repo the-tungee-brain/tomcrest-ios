@@ -37,41 +37,42 @@ struct StrategyWheelPhaseStepper: View {
         if steps.isEmpty {
             EmptyView()
         } else {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 0) {
-                    ForEach(Array(steps.enumerated()), id: \.element.id) { index, step in
-                        HStack(spacing: 0) {
-                            VStack(spacing: 4) {
-                                Circle()
-                                    .fill(fillColor(for: index))
-                                    .frame(width: 22, height: 22)
-                                    .overlay {
-                                        if index < activeIndex {
-                                            Image(systemName: "checkmark")
-                                                .font(.system(size: 9, weight: .bold))
-                                                .foregroundStyle(AppColors.onAccent)
-                                        } else {
-                                            Text("\(index + 1)")
-                                                .font(.system(size: 10, weight: .bold))
-                                                .foregroundStyle(index == activeIndex ? AppColors.onAccent : AppColors.secondaryLabel)
-                                        }
+            HStack(spacing: 0) {
+                ForEach(Array(steps.enumerated()), id: \.element.id) { index, step in
+                    HStack(spacing: 0) {
+                        VStack(spacing: 4) {
+                            Circle()
+                                .fill(fillColor(for: index))
+                                .frame(width: 22, height: 22)
+                                .overlay {
+                                    if index < activeIndex {
+                                        Image(systemName: "checkmark")
+                                            .font(.system(size: 9, weight: .bold))
+                                            .foregroundStyle(AppColors.onAccent)
+                                    } else {
+                                        Text("\(index + 1)")
+                                            .font(.system(size: 10, weight: .bold))
+                                            .foregroundStyle(index == activeIndex ? AppColors.onAccent : AppColors.secondaryLabel)
                                     }
-                                Text(step.label)
-                                    .font(.system(size: 9, weight: .medium))
-                                    .foregroundStyle(index <= activeIndex ? AppColors.label : AppColors.tertiaryLabel)
-                            }
+                                }
+                            Text(step.label)
+                                .font(.system(size: 9, weight: .medium))
+                                .foregroundStyle(index <= activeIndex ? AppColors.label : AppColors.tertiaryLabel)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                        }
 
-                            if index < steps.count - 1 {
-                                Rectangle()
-                                    .fill(index < activeIndex ? AppColors.accent : AppColors.separator)
-                                    .frame(width: 18, height: 2)
-                                    .padding(.horizontal, 4)
-                                    .padding(.bottom, 14)
-                            }
+                        if index < steps.count - 1 {
+                            Rectangle()
+                                .fill(index < activeIndex ? AppColors.accent : AppColors.separator)
+                                .frame(width: 18, height: 2)
+                                .padding(.horizontal, 4)
+                                .padding(.bottom, 14)
                         }
                     }
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
@@ -232,7 +233,7 @@ struct StrategySerpentineFlowDiagram: View {
             maxHeight: SerpentineFlowLayout.cardHeight,
             alignment: .topLeading
         )
-        .background(AppColors.background.opacity(0.65))
+        .background(AppColors.insetSurface.opacity(0.9))
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 10, style: .continuous)

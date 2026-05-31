@@ -147,18 +147,21 @@ struct SettingsView: View {
         _ destination: SettingsDestination,
         viewModel: SettingsViewModel
     ) -> some View {
-        switch destination {
-        case .brokerage:
-            BrokerageSettingsScreen(viewModel: viewModel)
-        case .strategy:
-            StrategySettingsScreen(viewModel: viewModel)
-        case .account:
-            AccountSettingsScreen(viewModel: viewModel)
-        case .legal:
-            LegalSettingsScreen()
-        case .about:
-            AboutSettingsScreen()
+        Group {
+            switch destination {
+            case .brokerage:
+                BrokerageSettingsScreen(viewModel: viewModel)
+            case .strategy:
+                StrategySettingsScreen(viewModel: viewModel)
+            case .account:
+                AccountSettingsScreen(viewModel: viewModel)
+            case .legal:
+                LegalSettingsScreen()
+            case .about:
+                AboutSettingsScreen()
+            }
         }
+        .appPushedScreenCanvas()
     }
 
     private func schwabStatusLabel(_ viewModel: SettingsViewModel) -> String {
