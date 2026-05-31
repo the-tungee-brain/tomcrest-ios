@@ -29,7 +29,7 @@ struct AppScrollScreen<Content: View>: View {
             }
             .appScreenContent(maxWidth: maxWidth, topPadding: topPadding)
         }
-        .scrollContentBackground(.hidden)
+        .appCanvasScreen()
         .modifier(RefreshableModifier(refresh: refresh))
     }
 }
@@ -82,10 +82,12 @@ extension View {
     func appRootNavigation(_ title: String) -> some View {
         navigationTitle(title)
             .navigationBarTitleDisplayMode(.large)
+            .appNavigationCanvas()
     }
 
     /// Detail navigation — symbol research, pushed settings rows.
     func appDetailNavigation() -> some View {
         navigationBarTitleDisplayMode(.inline)
+            .appNavigationCanvas()
     }
 }

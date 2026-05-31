@@ -24,7 +24,7 @@ struct StrategyOnboardingWizard: View {
     @State private var errorMessage: String?
 
     var body: some View {
-        NavigationStack {
+        AppNavigationCanvasStack {
             AppScrollScreen {
                 VStack(alignment: .leading, spacing: Layout.sectionSpacing) {
                     progressHeader

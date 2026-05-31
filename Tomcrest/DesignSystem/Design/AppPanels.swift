@@ -76,12 +76,23 @@ extension View {
     }
 
     /// Web `.app-canvas` — dark teal base, subtle grid, top accent glow.
+    /// Uses a `ZStack` so opaque SwiftUI hosts (TabView, sheets) still show the canvas.
     func appCanvasBackground() -> some View {
-        background {
+        modifier(AppCanvasBackgroundModifier())
+    }
+}
+
+private struct AppCanvasBackgroundModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        ZStack {
             AppCanvasBackground()
                 .ignoresSafeArea()
+            content
         }
     }
+}
+
+extension View {
 
     /// Pinned horizontal tab strip — secondary surface + separator (Research symbol screen).
     func appTabBarStrip() -> some View {

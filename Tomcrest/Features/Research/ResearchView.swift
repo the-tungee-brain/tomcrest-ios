@@ -15,7 +15,7 @@ struct ResearchView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        AppNavigationCanvasStack {
             AppScrollScreen {
                 if let viewModel {
                     if !OnboardingStorage.isResearchOnboardingDismissed(),

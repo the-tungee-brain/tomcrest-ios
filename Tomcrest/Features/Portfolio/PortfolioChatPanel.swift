@@ -40,7 +40,7 @@ struct PortfolioChatPanel: View {
             }
         )
         .sheet(isPresented: $viewModel.showChatHistory) {
-            NavigationStack {
+            AppNavigationCanvasStack {
                 ChatSessionHistorySheet(
                     sessions: viewModel.chatSessions.filter {
                         ($0.title ?? "").hasPrefix("Portfolio:")

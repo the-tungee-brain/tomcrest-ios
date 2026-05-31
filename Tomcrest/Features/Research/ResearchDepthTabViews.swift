@@ -27,7 +27,7 @@ struct SymbolOverviewTab: View {
             await positionViewModel.loadIfNeeded()
         }
         .sheet(isPresented: $viewModel.showChatHistory) {
-            NavigationStack {
+            AppNavigationCanvasStack {
                 ChatSessionHistorySheet(
                     sessions: viewModel.chatSessions.filter {
                         ($0.title ?? "").hasPrefix("Research:\(viewModel.symbol.uppercased()):")

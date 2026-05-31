@@ -608,7 +608,6 @@ struct AppAuthScreen<Actions: View>: View {
         .padding(24)
         .appCenteredContentWidth()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .appCanvasBackground()
     }
 }
 

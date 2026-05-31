@@ -11,7 +11,7 @@ struct SettingsView: View {
     }
 
     var body: some View {
-        NavigationStack(path: $path) {
+        AppRoutedNavigationCanvasStack(path: $path) {
             Group {
                 if let viewModel {
                     settingsHub(viewModel)

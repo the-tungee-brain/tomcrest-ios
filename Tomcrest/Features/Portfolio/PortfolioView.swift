@@ -14,7 +14,7 @@ struct PortfolioView: View {
     }
 
     var body: some View {
-        NavigationStack(path: $path) {
+        AppRoutedNavigationCanvasStack(path: $path) {
             Group {
                 if let viewModel {
                     portfolioContent(viewModel)

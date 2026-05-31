@@ -8,6 +8,7 @@ struct TomcrestApp: App {
 
     init() {
         GoogleSignInCoordinator.configure()
+        AppChrome.configure()
     }
 
     var body: some Scene {

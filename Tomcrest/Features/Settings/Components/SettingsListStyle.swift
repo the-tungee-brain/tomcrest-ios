@@ -176,5 +176,6 @@ struct SettingsScreenShell<Content: View>: View {
         }
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.large)
+        .appNavigationCanvas()
     }
 }

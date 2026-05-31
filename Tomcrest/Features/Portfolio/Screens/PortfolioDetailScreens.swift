@@ -89,6 +89,7 @@ struct PortfolioTodayScreen: View {
         }
         .navigationTitle("Today")
         .navigationBarTitleDisplayMode(.large)
+        .appNavigationCanvas()
     }
 }
 
@@ -122,6 +123,7 @@ struct PortfolioHoldingsScreen: View {
         }
         .navigationTitle("Holdings")
         .navigationBarTitleDisplayMode(.large)
+        .appNavigationCanvas()
     }
 }
 
@@ -141,6 +143,7 @@ struct PortfolioNewsScreen: View {
         }
         .navigationTitle("Headlines")
         .navigationBarTitleDisplayMode(.large)
+        .appNavigationCanvas()
         .task {
             await viewModel.loadPortfolioNewsIfNeeded()
         }
@@ -172,6 +175,7 @@ struct PortfolioActivityScreen: View {
         }
         .navigationTitle("Activity")
         .navigationBarTitleDisplayMode(.large)
+        .appNavigationCanvas()
         .task {
             await viewModel.loadRecentOrdersIfNeeded()
         }

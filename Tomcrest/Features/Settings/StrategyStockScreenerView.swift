@@ -113,7 +113,7 @@ struct StrategyStockScreenerSheet: View {
     }
 
     var body: some View {
-        NavigationStack {
+        AppNavigationCanvasStack {
             AppScrollScreen {
                 if viewModel.isLoading, viewModel.result == nil {
                     AppLoadingState(message: "Running screener…")

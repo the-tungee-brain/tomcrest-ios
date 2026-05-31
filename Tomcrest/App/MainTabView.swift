@@ -34,6 +34,7 @@ struct MainTabView: View {
         }
         .tint(BrandPrimary.color)
         .appMainTabBarChrome()
+        .appClearUIKitBackground()
         .task(id: auth.accessToken) {
             guard let accessToken = auth.accessToken else { return }
             await account.loadPlan(accessToken: accessToken)
