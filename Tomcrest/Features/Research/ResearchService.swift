@@ -185,9 +185,13 @@ enum ResearchService {
         symbol: String,
         accessToken: String,
         shares: Double = 100,
+        investmentUsd: Double? = nil,
+        sharePrice: Double? = nil,
         projectYears: Int? = nil,
         reinvestDividends: Bool = false,
         priceCagrPct: Double? = nil,
+        dividendCagrPct: Double? = nil,
+        historyStartYear: Int? = nil,
         annualContributionUsd: Double = 0,
         api: APIClient = .shared
     ) async throws -> DividendHistoryContext {
@@ -199,6 +203,14 @@ enum ResearchService {
         ]
         if let projectYears { query["project_years"] = String(projectYears) }
         if let priceCagrPct { query["price_cagr_pct"] = String(priceCagrPct) }
+        if let dividendCagrPct { query["dividend_cagr_pct"] = String(dividendCagrPct) }
+        if let historyStartYear { query["history_start_year"] = String(historyStartYear) }
+        if let investmentUsd, investmentUsd > 0 {
+            query["investment_usd"] = String(investmentUsd)
+        }
+        if let sharePrice, sharePrice > 0 {
+            query["share_price"] = String(sharePrice)
+        }
         return try await api.get("/research/dividends", query: query, accessToken: accessToken)
     }
 

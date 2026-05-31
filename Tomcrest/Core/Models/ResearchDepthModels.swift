@@ -86,6 +86,7 @@ struct DividendHistoryContext: Decodable {
     let recentPayments: [DividendPaymentItem]
     let dataAsOf: String?
     let scenario: DividendSnowballScenario?
+    let historicalBacktest: DividendHistoricalBacktest?
 }
 
 struct DividendSnowballScenario: Decodable {
@@ -110,6 +111,53 @@ struct DividendAdvancedSnowballScenario: Decodable {
     let portfolioValueLatest: Double
     let totalDividendsReinvested: Double
     let totalAnnualContributionsUsd: Double
+    let usesHistoricalSharePrices: Bool?
+}
+
+struct DividendBacktestYearRow: Decodable, Identifiable {
+    var id: Int { year }
+    let year: Int
+    let dps: Double
+    let shares: Double
+    let dividendIncome: Double
+    let sharePrice: Double
+    let dividendYieldPct: Double
+}
+
+struct DividendHistoricalBacktest: Decodable {
+    let startYear: Int
+    let endYear: Int
+    let initialShares: Double?
+    let cashCollected: Double
+    let cashCollectedAnnual: Double
+    let yearlyBreakdown: [DividendBacktestYearRow]
+    let drip: DividendAdvancedSnowballScenario?
+}
+
+struct DividendBacktestQuery: Equatable {
+    var shares: Double = 100
+    var investmentUsd: Double = 0
+    var reinvestDividends: Bool = true
+    var annualContributionUsd: Double = 0
+    var lookbackYears: Int = 10
+}
+
+enum DividendBacktestSupport {
+    static let lookbackPresets = [5, 10, 15]
+
+    static func completedYears(from context: DividendHistoryContext) -> [Int] {
+        context.annualIncome.map(\.year).sorted()
+    }
+
+    static func historyStartYear(completedYears: [Int], lookbackYears: Int) -> Int? {
+        guard let endYear = completedYears.last, let firstYear = completedYears.first else { return nil }
+        let span = max(1, lookbackYears)
+        return max(firstYear, endYear - (span - 1))
+    }
+
+    static func maxLookbackYears(completedYears: [Int]) -> Int {
+        min(15, max(completedYears.count, 1))
+    }
 }
 
 struct FundamentalMetric: Decodable, Identifiable {

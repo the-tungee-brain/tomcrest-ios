@@ -207,41 +207,50 @@ struct WheelBacktestControlsPanel: View {
     let onRun: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Picker("Lookback", selection: $query.years) {
-                Text("5 years").tag(5)
-                Text("10 years").tag(10)
-                Text("15 years").tag(15)
-            }
-            .pickerStyle(.segmented)
+        VStack(alignment: .leading, spacing: 14) {
+            BacktestControlsShell(title: "Simulation") {
+                VStack(alignment: .leading, spacing: 14) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        BacktestSectionLabel(title: "Lookback")
+                        BacktestChipRow(
+                            options: [(5, "5 years"), (10, "10 years"), (15, "15 years")],
+                            selection: $query.years
+                        )
+                    }
 
-            HStack {
-                Text("DTE")
+                    VStack(alignment: .leading, spacing: 8) {
+                        BacktestSectionLabel(title: "Days to expiration")
+                        BacktestChipRow(
+                            options: [(7, "7 days"), (14, "14 days"), (30, "1 month"), (90, "3 months")],
+                            selection: $query.dteDays
+                        )
+                    }
+
+                    BacktestIntField(
+                        label: "Contracts per leg",
+                        placeholder: "1",
+                        value: $query.contracts,
+                        range: 1 ... 100
+                    )
+
+                    Toggle("Add cash if CSP needs more", isOn: $query.maintainOneLot)
+                        .font(.caption)
+                        .tint(AppColors.accentHighlight)
+
+                    Toggle(
+                        "Calls at/above assign strike",
+                        isOn: Binding(
+                            get: { query.callStrikeMode == "at_or_above_assignment" },
+                            set: { query.callStrikeMode = $0 ? "at_or_above_assignment" : "delta" }
+                        )
+                    )
                     .font(.caption)
-                    .foregroundStyle(AppColors.secondaryLabel)
-                Spacer()
-                Picker("DTE", selection: $query.dteDays) {
-                    Text("21d").tag(21)
-                    Text("30d").tag(30)
-                    Text("45d").tag(45)
-                }
-                .pickerStyle(.segmented)
-                .frame(maxWidth: 220)
-            }
-
-            Toggle("Maintain one lot", isOn: $query.maintainOneLot)
-                .font(.caption)
-
-            Button(action: onRun) {
-                HStack {
-                    if isLoading { ProgressView().controlSize(.small) }
-                    Text(isLoading ? "Running…" : "Run backtest")
+                    .tint(AppColors.accentHighlight)
                 }
             }
-            .buttonStyle(AppPrimaryButtonStyle())
-            .disabled(isLoading)
+
+            BacktestRunButton(isLoading: isLoading, action: onRun)
         }
-        .appPanel(subtle: true)
     }
 }
 

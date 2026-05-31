@@ -19,7 +19,10 @@ final class SymbolDepthViewModel {
     private(set) var secRatios: SecRatiosResponse?
     private(set) var secFinancials: SecFinancialsResponse?
     var wheelBacktestQuery: WheelBacktestQuery
+    var dividendBacktestQuery = DividendBacktestQuery()
     private(set) var wheelBacktestLoading = false
+    private(set) var dividendBacktestLoading = false
+    private(set) var hasRunDividendBacktest = false
 
     private(set) var selectedHistoryEvent: EarningsEvent?
     private(set) var earningsDetail: EarningsDetailResponse?
@@ -165,11 +168,14 @@ final class SymbolDepthViewModel {
                     symbol: symbol,
                     accessToken: accessToken
                 )
-            case .wheelBacktest:
-                await runWheelBacktest()
-                guard wheelBacktest != nil else {
-                    throw APIError.httpStatus(0, message: tabErrors[.wheelBacktest] ?? "Backtest failed.")
+            case .backtest:
+                guard let accessToken = auth.accessToken else {
+                    throw APIError.missingToken
                 }
+                dividends = try await ResearchService.fetchDividendHistory(
+                    symbol: symbol,
+                    accessToken: accessToken
+                )
             }
             loadedTabs.insert(tab)
         } catch {
@@ -270,10 +276,34 @@ final class SymbolDepthViewModel {
         }
     }
 
+    func loadDividendBacktest(historyStartYear: Int) async {
+        guard let accessToken = auth.accessToken else { return }
+        dividendBacktestLoading = true
+        tabErrors[.dividends] = nil
+        defer { dividendBacktestLoading = false }
+
+        let query = dividendBacktestQuery
+        do {
+            dividends = try await ResearchService.fetchDividendHistory(
+                symbol: symbol,
+                accessToken: accessToken,
+                shares: query.shares,
+                investmentUsd: query.investmentUsd > 0 ? query.investmentUsd : nil,
+                reinvestDividends: query.reinvestDividends,
+                historyStartYear: historyStartYear,
+                annualContributionUsd: query.annualContributionUsd
+            )
+            loadedTabs.insert(.dividends)
+            hasRunDividendBacktest = true
+        } catch {
+            tabErrors[.dividends] = (error as? APIError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+
     func runWheelBacktest() async {
         guard let accessToken = auth.accessToken else { return }
         wheelBacktestLoading = true
-        tabErrors[.wheelBacktest] = nil
+        tabErrors[.backtest] = nil
         defer { wheelBacktestLoading = false }
 
         do {
@@ -282,7 +312,7 @@ final class SymbolDepthViewModel {
                 accessToken: accessToken
             )
         } catch {
-            tabErrors[.wheelBacktest] = (error as? APIError)?.errorDescription ?? error.localizedDescription
+            tabErrors[.backtest] = (error as? APIError)?.errorDescription ?? error.localizedDescription
         }
     }
 }

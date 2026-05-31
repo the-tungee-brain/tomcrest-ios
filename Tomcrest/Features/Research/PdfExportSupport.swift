@@ -89,6 +89,52 @@ enum PdfExportSupport {
         return writePdf(title: title, lines: lines, filename: "dividend-\(symbol)-snowball.pdf")
     }
 
+    static func writeDividendBacktestPdf(
+        symbol: String,
+        context: DividendHistoryContext,
+        query: DividendBacktestQuery
+    ) -> URL? {
+        guard let backtest = context.historicalBacktest else { return nil }
+        let title = "Dividend Backtest — \(symbol.uppercased())"
+        var lines: [String] = [
+            title,
+            "",
+            "Window: \(backtest.startYear) → \(backtest.endYear)",
+            "Shares: \(String(format: "%.2f", query.shares))",
+            "DRIP: \(query.reinvestDividends ? "On" : "Off")",
+            "Annual contribution: \(CurrencyFormatter.usd(query.annualContributionUsd, fractionDigits: 0))",
+            "",
+            "Total dividend income: \(CurrencyFormatter.usd(backtest.cashCollected, fractionDigits: 0))",
+        ]
+
+        if let drip = backtest.drip {
+            lines.append("Portfolio value: \(CurrencyFormatter.usd(drip.portfolioValueLatest, fractionDigits: 0))")
+            lines.append("Final shares: \(String(format: "%.2f", drip.finalShares))")
+            lines.append("Reinvested: \(CurrencyFormatter.usd(drip.totalDividendsReinvested, fractionDigits: 0))")
+            lines.append("")
+        }
+
+        if !backtest.yearlyBreakdown.isEmpty {
+            lines.append("Year-by-year")
+            for row in backtest.yearlyBreakdown {
+                lines.append(
+                    "\(row.year): DPS \(String(format: "$%.4f", row.dps)) · \(String(format: "%.2f", row.shares)) sh · \(CurrencyFormatter.usd(row.dividendIncome, fractionDigits: 0)) · \(String(format: "%.2f%%", row.dividendYieldPct)) yield"
+                )
+            }
+        }
+
+        if let dataAsOf = context.dataAsOf, !dataAsOf.isEmpty {
+            lines.append("")
+            lines.append("Data as of \(DateFormatters.display(from: dataAsOf))")
+        }
+
+        return writePdf(
+            title: title,
+            lines: lines,
+            filename: "dividend-backtest-\(symbol.uppercased())-\(backtest.startYear)-\(backtest.endYear).pdf"
+        )
+    }
+
     private static func writePdf(title: String, lines: [String], filename: String) -> URL? {
         let pageRect = CGRect(x: 0, y: 0, width: 612, height: 792)
         let renderer = UIGraphicsPDFRenderer(bounds: pageRect)

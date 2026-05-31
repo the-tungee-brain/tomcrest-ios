@@ -936,40 +936,6 @@ struct SymbolOptionsTab: View {
     }
 }
 
-// MARK: - Wheel backtest tab
-
-struct SymbolWheelBacktestTab: View {
-    @Environment(AccountContext.self) private var account
-    @Bindable var viewModel: SymbolDepthViewModel
-
-    var body: some View {
-        ResearchDepthTabShell(tab: .wheelBacktest, viewModel: viewModel) {
-            if account.hasProFeature(.wheelBacktest) {
-                VStack(alignment: .leading, spacing: Layout.sectionSpacing) {
-                    WheelBacktestControlsPanel(
-                        query: $viewModel.wheelBacktestQuery,
-                        isLoading: viewModel.wheelBacktestLoading,
-                        onRun: {
-                            Task { await viewModel.runWheelBacktest() }
-                        }
-                    )
-
-                    if let result = viewModel.wheelBacktest {
-                        WheelBacktestExtendedPanel(result: result, query: viewModel.wheelBacktestQuery)
-                    } else if !viewModel.wheelBacktestLoading {
-                        AppEmptyMessage(message: "Run a backtest to see results.")
-                    }
-                }
-            } else {
-                AppInlineBanner(
-                    message: "Upgrade to Pro for wheel backtest with trade log and equity curve.",
-                    tone: .neutral
-                )
-            }
-        }
-    }
-}
-
 // MARK: - Business tab
 
 struct SymbolBusinessTab: View {
@@ -1275,7 +1241,7 @@ struct ResearchDepthTabShell<Content: View>: View {
         case .composition: viewModel.etfHoldings == nil
         case .business: viewModel.business == nil
         case .options: viewModel.symbolIntelligence == nil
-        case .wheelBacktest: viewModel.wheelBacktest == nil
+        case .backtest: viewModel.dividends == nil
         }
     }
 }

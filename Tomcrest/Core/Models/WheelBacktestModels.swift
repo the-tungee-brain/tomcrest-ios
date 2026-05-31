@@ -90,7 +90,7 @@ struct WheelBacktestResult: Decodable {
     let endingEquityUsd: Double?
 }
 
-struct WheelBacktestQuery {
+struct WheelBacktestQuery: Equatable {
     var symbol: String
     var years: Int = 5
     var targetDeltaMin: Double = 0.20
@@ -99,6 +99,20 @@ struct WheelBacktestQuery {
     var contracts: Int = 1
     var maintainOneLot: Bool = true
     var callStrikeMode: String = "delta"
+
+    static let allowedDteDays: Set<Int> = [7, 14, 30, 90]
+
+    static func normalizeDteDays(_ days: Int) -> Int {
+        if allowedDteDays.contains(days) { return days }
+        switch days {
+        case 5: return 7
+        case 10: return 14
+        case 21: return 14
+        case 45: return 30
+        case 63: return 90
+        default: return 30
+        }
+    }
 
     var queryItems: [String: String] {
         [

@@ -13,12 +13,25 @@ struct SymbolResearchView: View {
     @State private var strategyCatalogItem: StrategyCatalogItem?
     @State private var strategyRecommendations: StrategyRecommendations?
     @State private var profileSymbols: [String] = []
+    @State private var backtestExploreSection: BacktestExploreSection?
 
-    init(symbol: String, auth: AuthSession, initialTab: ResearchTab = .overview) {
+    private let initialBacktestSection: BacktestExploreSection?
+    private let initialWheelBacktestQuery: WheelBacktestQuery?
+
+    init(
+        symbol: String,
+        auth: AuthSession,
+        initialTab: ResearchTab = .overview,
+        initialBacktestSection: BacktestExploreSection? = nil,
+        initialWheelBacktestQuery: WheelBacktestQuery? = nil
+    ) {
         _overviewVM = State(initialValue: SymbolOverviewViewModel(symbol: symbol, auth: auth))
         _depthVM = State(initialValue: SymbolDepthViewModel(symbol: symbol, auth: auth))
         _positionVM = State(initialValue: SymbolPositionViewModel(symbol: symbol, auth: auth))
         _selectedTab = State(initialValue: initialTab)
+        _backtestExploreSection = State(initialValue: initialBacktestSection)
+        self.initialBacktestSection = initialBacktestSection
+        self.initialWheelBacktestQuery = initialWheelBacktestQuery
     }
 
     private var availableTabs: [ResearchTab] {
@@ -71,7 +84,8 @@ struct SymbolResearchView: View {
                             }
                         },
                         onOpenBacktest: {
-                            selectedTab = .wheelBacktest
+                            backtestExploreSection = .wheel
+                            selectedTab = .backtest
                         }
                     )
 
@@ -105,6 +119,9 @@ struct SymbolResearchView: View {
             }
         }
         .task {
+            if let query = initialWheelBacktestQuery {
+                depthVM.wheelBacktestQuery = query
+            }
             await overviewVM.loadIfNeeded()
             await positionVM.loadIfNeeded()
             await depthVM.prefetchOptionsIntelligenceIfNeeded(
@@ -115,8 +132,16 @@ struct SymbolResearchView: View {
         }
         .onAppear {
             bookmarks.recordRecent(overviewVM.symbol)
+            if selectedTab == .backtest,
+               backtestExploreSection == nil,
+               let initialBacktestSection {
+                backtestExploreSection = initialBacktestSection
+            }
         }
         .onChange(of: selectedTab) { _, tab in
+            if tab != .backtest {
+                backtestExploreSection = nil
+            }
             Task {
                 if tab == .position || tab == .options {
                     await positionVM.loadIfNeeded()
@@ -208,8 +233,12 @@ struct SymbolResearchView: View {
             SymbolFinancialsTab(viewModel: depthVM)
         case .composition:
             SymbolCompositionTab(viewModel: depthVM)
-        case .wheelBacktest:
-            SymbolWheelBacktestTab(viewModel: depthVM)
+        case .backtest:
+            SymbolBacktestTab(
+                exploreSection: $backtestExploreSection,
+                viewModel: depthVM,
+                primaryStrategy: primaryStrategy
+            )
         }
     }
 

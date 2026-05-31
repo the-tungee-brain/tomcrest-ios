@@ -26,6 +26,7 @@ enum AppConfig {
     static let brandName = "Tomcrest"
     static let brandTagline = "AI portfolio intelligence"
     static let supportEmail = "support@tomcrest.com"
+    static var supportEmailURL: URL { URL(string: "mailto:\(supportEmail)")! }
     static let websiteBaseURL = URL(string: "https://tomcrest.com")!
 
     static let securityURL = URL(string: "https://tomcrest.com/security")!
