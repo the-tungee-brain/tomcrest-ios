@@ -5,6 +5,7 @@ struct ResearchView: View {
     @Environment(ResearchSymbolBookmarks.self) private var bookmarks
     @State private var viewModel: ResearchViewModel?
     @State private var selectedSymbol: TickerSymbolItem?
+    @State private var path: [ResearchDestination] = []
 
     private let exampleSymbols = ["NVDA", "SPY", "AAPL", "SCHD"]
 
@@ -15,7 +16,7 @@ struct ResearchView: View {
     }
 
     var body: some View {
-        AppNavigationCanvasStack {
+        AppRoutedNavigationCanvasStack(path: $path) {
             AppScrollScreen {
                 if let viewModel {
                     if !OnboardingStorage.isResearchOnboardingDismissed(),
@@ -47,6 +48,7 @@ struct ResearchView: View {
                     )
 
                     if viewModel.query.isEmpty {
+                        researchExploreSection
                         quickAccessSection
                     }
 
@@ -67,6 +69,14 @@ struct ResearchView: View {
             .navigationDestination(item: $selectedSymbol) { item in
                 SymbolResearchView(symbol: item.symbol, auth: auth)
             }
+            .navigationDestination(for: ResearchDestination.self) { destination in
+                switch destination {
+                case .watchlist:
+                    WatchlistScreen { symbol in
+                        openSymbol(symbol)
+                    }
+                }
+            }
             .task {
                 if viewModel == nil {
                     viewModel = ResearchViewModel(auth: auth)
@@ -76,10 +86,41 @@ struct ResearchView: View {
     }
 
     @ViewBuilder
+    private var researchExploreSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Explore")
+                .font(.caption2.weight(.medium))
+                .foregroundStyle(AppColors.tertiaryLabel)
+                .textCase(.uppercase)
+                .padding(.horizontal, 4)
+
+            NavigationLink(value: ResearchDestination.watchlist) {
+                PortfolioQuickLinkRow(
+                    icon: "star.fill",
+                    title: "Watchlist",
+                    subtitle: bookmarks.watchlist.isEmpty
+                        ? "Save symbols from search"
+                        : "\(bookmarks.watchlist.count) saved for research",
+                    badge: bookmarks.watchlist.count
+                )
+            }
+            .buttonStyle(.plain)
+            .background(AppColors.secondaryBackground)
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(AppColors.panelBorder, lineWidth: 1)
+            }
+        }
+    }
+
+    @ViewBuilder
     private var quickAccessSection: some View {
         if !bookmarks.watchlist.isEmpty {
             ResearchWatchlistSection(symbols: bookmarks.watchlist) { symbol in
                 openSymbol(symbol)
+            } onViewAll: {
+                path.append(.watchlist)
             }
         }
 

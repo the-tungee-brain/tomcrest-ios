@@ -48,10 +48,19 @@ struct WatchlistToggleButton: View {
 struct ResearchWatchlistSection: View {
     let symbols: [String]
     let onSelect: (String) -> Void
+    var onViewAll: (() -> Void)? = nil
 
     var body: some View {
         AppScreenSection(title: "Your watchlist") {
             ResearchSymbolChipRow(symbols: symbols, style: .watchlist, onSelect: onSelect)
+
+            if let onViewAll {
+                Button("View all", action: onViewAll)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(AppColors.accentHighlight)
+                    .buttonStyle(.plain)
+                    .padding(.top, 4)
+            }
         }
     }
 }

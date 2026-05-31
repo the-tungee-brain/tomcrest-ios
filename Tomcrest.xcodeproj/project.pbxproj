@@ -71,6 +71,7 @@
 		8A0596DBD784D5F9F553918A /* SymbolDepthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EDECBD7FA0089B449BCCE6A /* SymbolDepthViewModel.swift */; };
 		8A5438DDB46DEECCFD345694 /* ChatModelPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 601A77F30073C67B8520BC1C /* ChatModelPicker.swift */; };
 		8F0D0A88D68993A27DBDA07F /* SettingsComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = F084935B5A66C1A122711FD9 /* SettingsComponents.swift */; };
+		8F60FC9E3C7F8FB503D6AA75 /* ResearchDestination.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFF0024AA232CC74578FFE62 /* ResearchDestination.swift */; };
 		9594A2A02BF2A12D3AA0412D /* IntelligenceModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E895B081A99DB55BF37C35C /* IntelligenceModels.swift */; };
 		95BFFD728F1449645BAF7D52 /* SettingsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2340213ADCB169F9EAC23961 /* SettingsService.swift */; };
 		965CFFA572463C3B4BF12AC7 /* ResearchService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34B8510EAF3EAF1133A79AE3 /* ResearchService.swift */; };
@@ -128,6 +129,7 @@
 		EF6BFD9AD628D72DF421027C /* FloatingAssistantButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C5FDEE013F469D0988784E6 /* FloatingAssistantButton.swift */; };
 		EFB5B5F68785C84539204E71 /* ResearchDepthTabViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71AC1879AABF6DAB8563AF02 /* ResearchDepthTabViews.swift */; };
 		F03D08600526973151353D3A /* StrategyPlaybookComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = C64F707EE8641127256A1507 /* StrategyPlaybookComponents.swift */; };
+		F096855731F2CCE3BC629794 /* WatchlistScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEEFC7CBBB878138A4DD9FA5 /* WatchlistScreen.swift */; };
 		F0D40091BB3F7AD1FF76D9C4 /* AppSectionHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0100E75ED2C70F0DE6042E2C /* AppSectionHeader.swift */; };
 		F0F02587E4CE7D6603B3B352 /* ResearchModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F3C5456ABAFEB40AF9D358E /* ResearchModels.swift */; };
 		F0F5B8A7D6E473A1400631C7 /* PortfolioComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A4B7E0719E26DF2A730210E /* PortfolioComponents.swift */; };
@@ -263,6 +265,7 @@
 		C919238E6D2E240857FDFB35 /* WheelBacktestModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WheelBacktestModels.swift; sourceTree = "<group>"; };
 		C93FE282066AE69118409A0C /* AuthSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthSession.swift; sourceTree = "<group>"; };
 		CDAC06A77DE8D12B57E598D2 /* Misc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Misc.swift; sourceTree = "<group>"; };
+		CEEFC7CBBB878138A4DD9FA5 /* WatchlistScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchlistScreen.swift; sourceTree = "<group>"; };
 		D18F50F1EBDE7A4E8F8E2FAC /* StrategyFlows.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrategyFlows.swift; sourceTree = "<group>"; };
 		D2F42C3D7177187D862899AA /* RecentOrderFormatters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentOrderFormatters.swift; sourceTree = "<group>"; };
 		D31DC09AD9444E97DEC6FF73 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
@@ -273,6 +276,7 @@
 		E538CE475AB22DE15657A7AA /* ResearchOverviewExtended.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResearchOverviewExtended.swift; sourceTree = "<group>"; };
 		E602487F089A48405CF108D6 /* APIModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIModels.swift; sourceTree = "<group>"; };
 		EC14A291FDFEAE019DBE5329 /* StrategySymbolPlaybookStrip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrategySymbolPlaybookStrip.swift; sourceTree = "<group>"; };
+		EFF0024AA232CC74578FFE62 /* ResearchDestination.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResearchDestination.swift; sourceTree = "<group>"; };
 		F084935B5A66C1A122711FD9 /* SettingsComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsComponents.swift; sourceTree = "<group>"; };
 		F76615E0F81ED29A5CD48F49 /* AccountSettingsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountSettingsScreen.swift; sourceTree = "<group>"; };
 		F8D97015C24BC712031AA10E /* StrategyOnboardingWizard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrategyOnboardingWizard.swift; sourceTree = "<group>"; };
@@ -320,6 +324,8 @@
 				4B20D45BBE945CE64E04DECA /* SymbolPositionViewModel.swift */,
 				53BB8D1046E4B55799793F05 /* SymbolResearchView.swift */,
 				2BEE4D981C233044652FF2F7 /* WheelBacktestExtendedViews.swift */,
+				48A43EC93C2BFEFB3C1200DE /* Navigation */,
+				09732DC69E42E320EADB1706 /* Screens */,
 			);
 			path = Research;
 			sourceTree = "<group>";
@@ -332,6 +338,14 @@
 				DE87F0F0AD0D7297ED22F30E /* AppSegmentedTabBar.swift */,
 			);
 			path = Navigation;
+			sourceTree = "<group>";
+		};
+		09732DC69E42E320EADB1706 /* Screens */ = {
+			isa = PBXGroup;
+			children = (
+				CEEFC7CBBB878138A4DD9FA5 /* WatchlistScreen.swift */,
+			);
+			path = Screens;
 			sourceTree = "<group>";
 		};
 		1A1E23AF38688FCFC49F35CA /* Portfolio */ = {
@@ -384,6 +398,14 @@
 				678C2D2B41F694829D72BC4B /* StreamingAPIClient.swift */,
 			);
 			path = Networking;
+			sourceTree = "<group>";
+		};
+		48A43EC93C2BFEFB3C1200DE /* Navigation */ = {
+			isa = PBXGroup;
+			children = (
+				EFF0024AA232CC74578FFE62 /* ResearchDestination.swift */,
+			);
+			path = Navigation;
 			sourceTree = "<group>";
 		};
 		510EB8DE58317ADAE635F98A /* Models */ = {
@@ -821,6 +843,7 @@
 				23728EDEFEA59356CF52E3DB /* ResearchChatPanel.swift in Sources */,
 				DAC4AEA95BB85849E1FAB8CB /* ResearchDepthModels.swift in Sources */,
 				EFB5B5F68785C84539204E71 /* ResearchDepthTabViews.swift in Sources */,
+				8F60FC9E3C7F8FB503D6AA75 /* ResearchDestination.swift in Sources */,
 				6FE87C706C8D4D98F20DFB5E /* ResearchExtendedSections.swift in Sources */,
 				605DD9D95546BDF948AD9BF5 /* ResearchExtendedTabs.swift in Sources */,
 				88B3BF90EAEF5E1FA47C79D7 /* ResearchFundamentalsComponents.swift in Sources */,
@@ -870,6 +893,7 @@
 				53112FC60664E4D30EC805C8 /* SymbolPositionViewModel.swift in Sources */,
 				A4EE0C975141119CE6DDAD86 /* SymbolResearchView.swift in Sources */,
 				425BE6A48B452F0057E1B460 /* TomcrestApp.swift in Sources */,
+				F096855731F2CCE3BC629794 /* WatchlistScreen.swift in Sources */,
 				E9A03D77A7C3ECA52147034F /* WheelBacktestExtendedViews.swift in Sources */,
 				DD951AC0B31E64ED97EBB1B1 /* WheelBacktestModels.swift in Sources */,
 			);

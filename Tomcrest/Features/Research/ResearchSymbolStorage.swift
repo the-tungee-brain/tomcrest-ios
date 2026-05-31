@@ -32,6 +32,15 @@ enum ResearchSymbolStorage {
         return true
     }
 
+    static func removeFromWatchlist(_ symbol: String) {
+        let upper = normalize(symbol)
+        guard !upper.isEmpty else { return }
+
+        var symbols = watchlist()
+        symbols.removeAll { $0 == upper }
+        writeSymbols(symbols, key: watchlistKey)
+    }
+
     static func recentSymbols() -> [String] {
         readSymbols(key: recentKey)
     }
@@ -88,7 +97,9 @@ final class ResearchSymbolBookmarks {
     }
 
     func isWatchlisted(_ symbol: String) -> Bool {
-        ResearchSymbolStorage.isWatchlisted(symbol)
+        let upper = Self.normalize(symbol)
+        guard !upper.isEmpty else { return false }
+        return watchlist.contains(upper)
     }
 
     @discardableResult
@@ -96,6 +107,11 @@ final class ResearchSymbolBookmarks {
         let added = ResearchSymbolStorage.toggleWatchlist(symbol)
         reload()
         return added
+    }
+
+    func removeFromWatchlist(_ symbol: String) {
+        ResearchSymbolStorage.removeFromWatchlist(symbol)
+        reload()
     }
 
     func recordRecent(_ symbol: String) {
@@ -115,5 +131,9 @@ final class ResearchSymbolBookmarks {
 
     var hasQuickAccess: Bool {
         !watchlist.isEmpty || !recentWithoutWatchlist.isEmpty
+    }
+
+    private static func normalize(_ symbol: String) -> String {
+        symbol.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
     }
 }
