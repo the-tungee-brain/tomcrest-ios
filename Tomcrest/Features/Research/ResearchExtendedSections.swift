@@ -249,6 +249,7 @@ struct ChatSessionHistorySheet: View {
     let sessions: [ChatSessionSummary]
     let isLoading: Bool
     let onSelect: (ChatSessionSummary) -> Void
+    var onNewChat: (() -> Void)? = nil
     var onDelete: ((ChatSessionSummary) async -> Void)?
 
     var body: some View {
@@ -286,5 +287,13 @@ struct ChatSessionHistorySheet: View {
         }
         .navigationTitle("Chat history")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if let onNewChat {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("New chat", action: onNewChat)
+                        .font(.caption.weight(.semibold))
+                }
+            }
+        }
     }
 }

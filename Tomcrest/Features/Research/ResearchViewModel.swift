@@ -377,6 +377,11 @@ final class SymbolOverviewViewModel {
         chatExpanded = true
     }
 
+    func clearChat() {
+        guard !chatMessages.isEmpty, !chatLoading else { return }
+        startNewChat()
+    }
+
     func loadChatSessions() async {
         guard let accessToken = auth.accessToken else { return }
         chatSessionsLoading = true

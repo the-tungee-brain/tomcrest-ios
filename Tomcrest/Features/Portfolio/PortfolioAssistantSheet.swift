@@ -31,7 +31,7 @@ struct PortfolioAssistantSheet: View {
                 onSendPrompt: { prompt in
                     Task { await viewModel.sendFollowUpPrompt(prompt, model: account.effectiveChatModel) }
                 },
-                onNewChat: { viewModel.startNewChat() },
+                onClearChat: { viewModel.clearChat() },
                 onShowHistory: {
                     Task {
                         await viewModel.loadChatSessions()
@@ -55,9 +55,10 @@ struct PortfolioAssistantSheet: View {
                                 viewModel.showChatHistory = true
                             }
                         }
-                        Button("New") {
-                            viewModel.startNewChat()
+                        Button("Clear") {
+                            viewModel.clearChat()
                         }
+                        .disabled(viewModel.chatMessages.isEmpty || viewModel.chatLoading)
                     }
                     .font(.caption.weight(.semibold))
                 }
@@ -75,6 +76,10 @@ struct PortfolioAssistantSheet: View {
                     isLoading: viewModel.chatSessionsLoading,
                     onSelect: { session in
                         Task { await viewModel.openChatSession(session) }
+                    },
+                    onNewChat: {
+                        viewModel.startNewChat()
+                        viewModel.showChatHistory = false
                     },
                     onDelete: { session in
                         await viewModel.deleteChatSession(session)

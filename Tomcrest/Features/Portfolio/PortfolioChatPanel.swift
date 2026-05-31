@@ -33,7 +33,7 @@ struct PortfolioChatPanel: View {
             onSendPrompt: { prompt in
                 Task { await viewModel.sendFollowUpPrompt(prompt, model: account.effectiveChatModel) }
             },
-            onNewChat: { viewModel.startNewChat() },
+            onClearChat: { viewModel.clearChat() },
             onShowHistory: {
                 Task {
                     await viewModel.loadChatSessions()
@@ -51,6 +51,10 @@ struct PortfolioChatPanel: View {
                     isLoading: viewModel.chatSessionsLoading,
                     onSelect: { session in
                         Task { await viewModel.openChatSession(session) }
+                    },
+                    onNewChat: {
+                        viewModel.startNewChat()
+                        viewModel.showChatHistory = false
                     },
                     onDelete: { session in
                         await viewModel.deleteChatSession(session)

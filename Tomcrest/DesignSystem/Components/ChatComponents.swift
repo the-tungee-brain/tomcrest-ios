@@ -45,7 +45,7 @@ struct AppChatPanelContent: View {
     let onToggle: () -> Void
     let onSend: () -> Void
     let onSendPrompt: (String) -> Void
-    var onNewChat: (() -> Void)? = nil
+    var onClearChat: (() -> Void)? = nil
     var onShowHistory: (() -> Void)? = nil
 
     var body: some View {
@@ -58,17 +58,19 @@ struct AppChatPanelContent: View {
                     collapseAccessibilityLabel: collapseAccessibilityLabel,
                     onToggle: onToggle
                 )
-                if onNewChat != nil || onShowHistory != nil {
+                if onClearChat != nil || onShowHistory != nil {
                     Spacer(minLength: 0)
                     if let onShowHistory {
                         Button("History", action: onShowHistory)
                             .font(.caption2.weight(.semibold))
                             .foregroundStyle(AppColors.accentHighlight)
                     }
-                    if let onNewChat {
-                        Button("New", action: onNewChat)
+                    if let onClearChat {
+                        Button("Clear", action: onClearChat)
                             .font(.caption2.weight(.semibold))
                             .foregroundStyle(AppColors.accentHighlight)
+                            .disabled(messages.isEmpty || isLoading)
+                            .opacity(messages.isEmpty || isLoading ? 0.45 : 1)
                     }
                 }
             }

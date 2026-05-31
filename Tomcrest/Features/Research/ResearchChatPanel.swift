@@ -28,7 +28,7 @@ struct ResearchChatPanel: View {
                 let prompt = viewModel.suggestedPrompt(for: label) ?? label
                 Task { await viewModel.sendFollowUpPrompt(prompt, model: account.effectiveChatModel) }
             },
-            onNewChat: { viewModel.startNewChat() },
+            onClearChat: { viewModel.clearChat() },
             onShowHistory: {
                 Task {
                     await viewModel.loadChatSessions()

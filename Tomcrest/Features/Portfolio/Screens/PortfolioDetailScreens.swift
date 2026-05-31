@@ -7,6 +7,7 @@ struct PortfolioTodayScreen: View {
     @Bindable var viewModel: PortfolioViewModel
     @Binding var selectedTab: AppTab
     @Binding var settingsFocus: SettingsFocus?
+    var onGoToPortfolioAnalysis: () -> Void
     var onSymbolTap: (String) -> Void
 
     var body: some View {
@@ -41,7 +42,7 @@ struct PortfolioTodayScreen: View {
                     signals: viewModel.topBriefSignals,
                     isUrgentLead: viewModel.briefIsUrgent,
                     generatedAt: viewModel.morningBrief?.generatedAt,
-                    onGoDeeper: { viewModel.runDiversificationAnalysis() },
+                    onGoDeeper: onGoToPortfolioAnalysis,
                     onSymbolTap: onSymbolTap
                 )
 

@@ -14,7 +14,7 @@ struct AssistantChatScreen: View {
     let isLoading: Bool
     let onSend: () -> Void
     let onSendPrompt: (String) -> Void
-    var onNewChat: (() -> Void)? = nil
+    var onClearChat: (() -> Void)? = nil
     var onShowHistory: (() -> Void)? = nil
 
     var body: some View {

@@ -301,6 +301,10 @@ struct PortfolioView: View {
                     viewModel: viewModel,
                     selectedTab: $selectedTab,
                     settingsFocus: $settingsFocus,
+                    onGoToPortfolioAnalysis: {
+                        path.append(.portfolioAnalysis)
+                        viewModel.runDiversificationAnalysis()
+                    },
                     onSymbolTap: { researchSymbol = $0 }
                 )
             case .portfolioAnalysis:
