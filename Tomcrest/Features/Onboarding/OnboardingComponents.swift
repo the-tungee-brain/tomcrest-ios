@@ -150,7 +150,6 @@ struct ResearchOnboardingCard: View {
                 done: usedChat
             )
         }
-        .padding(14)
         .appPanel(subtle: true)
     }
 
