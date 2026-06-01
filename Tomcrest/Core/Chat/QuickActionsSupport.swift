@@ -90,13 +90,11 @@ enum QuickActionsSupport {
         switch mode {
         case .portfolio:
             return portfolioActions
-        case let .position(symbol):
+        case .position:
             return positionActions
-        case let .options(symbol):
-            _ = symbol
+        case .options:
             return optionsActions
-        case let .research(symbol):
-            _ = symbol
+        case .research:
             return researchActions
         }
     }

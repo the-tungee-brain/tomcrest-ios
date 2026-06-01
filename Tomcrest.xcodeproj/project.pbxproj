@@ -206,7 +206,7 @@
 		0C49ECE4709E4F94A3291A23 /* WatchlistMockData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchlistMockData.swift; sourceTree = "<group>"; };
 		0CB2A83213E68E2642B34B5C /* WatchlistFolderComposition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchlistFolderComposition.swift; sourceTree = "<group>"; };
 		0F18AEC4D6A6D057B8949879 /* StrategySettingsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrategySettingsScreen.swift; sourceTree = "<group>"; };
-		138EC5E42BCE4AE458C46744 /* LICENSE */ = {isa = PBXFileReference; path = LICENSE; sourceTree = "<group>"; };
+		138EC5E42BCE4AE458C46744 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 		13FCA6420633BB5D44B6B041 /* StructuredAnalysisView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StructuredAnalysisView.swift; sourceTree = "<group>"; };
 		1697CBEF68C64E17FD159B09 /* SchwabOAuthCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchwabOAuthCoordinator.swift; sourceTree = "<group>"; };
 		17C5FF5E4B24A4259FAAB0E4 /* ChatModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatModels.swift; sourceTree = "<group>"; };
@@ -296,7 +296,7 @@
 		85EC97728F1993387989923A /* PressAndHorizontalDragGesture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PressAndHorizontalDragGesture.swift; sourceTree = "<group>"; };
 		88F10CD8777A91B62DEE3729 /* ConversationalContentFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationalContentFormatting.swift; sourceTree = "<group>"; };
 		89A7D0E544FB71F7F77D85CB /* BrandTips.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = BrandTips.json; sourceTree = "<group>"; };
-		89DE7F43425C8D390A939AAA /* Tomcrest.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Tomcrest.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		89DE7F43425C8D390A939AAA /* Tomcrest.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Tomcrest.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8CAF69CE630520F776B851F3 /* AnalysisModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalysisModels.swift; sourceTree = "<group>"; };
 		8DCF22399EA739788C7300FC /* TomcrestApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TomcrestApp.swift; sourceTree = "<group>"; };
 		8E895B081A99DB55BF37C35C /* IntelligenceModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntelligenceModels.swift; sourceTree = "<group>"; };
@@ -947,7 +947,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1600;
+				LastUpgradeCheck = 2650;
 				TargetAttributes = {
 					61E91C968E701C7B16098D20 = {
 						DevelopmentTeam = "";
@@ -1222,6 +1222,7 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -1243,6 +1244,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.10;
@@ -1290,6 +1292,7 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -1304,6 +1307,7 @@
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.10;

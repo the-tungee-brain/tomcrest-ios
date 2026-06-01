@@ -123,8 +123,15 @@ enum WatchlistPremiumPalette {
 
     static let swatches: [WatchlistSwatch] = classicSwatches + abstractSwatches
 
+    /// IDs accepted by the Tomcrest API — keep in sync with `app/constants/watchlist_swatches.py`.
+    static let knownIDs: Set<WatchlistSwatch.ID> = Set(swatches.map(\.id))
+
     static func swatch(id: WatchlistSwatch.ID) -> WatchlistSwatch {
         swatches.first { $0.id == id } ?? swatches[0]
+    }
+
+    static func isKnown(id: WatchlistSwatch.ID) -> Bool {
+        knownIDs.contains(id)
     }
 }
 

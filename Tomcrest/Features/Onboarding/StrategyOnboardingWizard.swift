@@ -215,7 +215,7 @@ struct StrategyOnboardingWizard: View {
     }
 
     private func buildUpdate(complete: Bool) -> UserInvestmentProfileUpdate {
-        var update = StrategyFormSupport.buildUpdate(
+        let update = StrategyFormSupport.buildUpdate(
             strategyId: selectedStrategyId ?? "wheel",
             riskTolerance: riskTolerance,
             symbols: StrategyFormSupport.parseSymbols(watchlistText),

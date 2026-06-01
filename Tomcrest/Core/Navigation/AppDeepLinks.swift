@@ -15,7 +15,7 @@ enum AppDeepLinks {
         case "research":
             guard let symbol = pathParts.first, !symbol.isEmpty else { return false }
             let tabName = pathParts.count > 1 ? pathParts[1] : nil
-            var tab = tabName.flatMap(ResearchTab.init(rawValue:))
+            let tab = tabName.flatMap(ResearchTab.init(rawValue:))
 
             if tabName == "wheel-backtest" || tabName == "wheelBacktest" {
                 let query = WheelBacktestShareSupport.parse(url: url, symbol: symbol)

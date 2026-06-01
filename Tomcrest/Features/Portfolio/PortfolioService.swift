@@ -138,16 +138,16 @@ enum PortfolioService {
             model: model
         )
 
-        var accumulated = ""
+        let buffer = StreamingTextBuffer()
         _ = try await StreamingAPIClient.streamPost(
             path: "/analyze-positions-by-symbol",
             bodyData: bodyData,
             accessToken: accessToken
         ) { chunk in
-            accumulated += chunk
+            buffer.append(chunk)
             onStatus?(chunk)
         }
-        return StructuredAnalysisSupport.parseResponse(accumulated)
+        return StructuredAnalysisSupport.parseResponse(buffer.value)
     }
 
     static func fetchStructuredSymbolAnalysis(
@@ -166,16 +166,16 @@ enum PortfolioService {
             model: model
         )
 
-        var accumulated = ""
+        let buffer = StreamingTextBuffer()
         _ = try await StreamingAPIClient.streamPost(
             path: "/analyze-positions-by-symbol",
             bodyData: bodyData,
             accessToken: accessToken
         ) { chunk in
-            accumulated += chunk
+            buffer.append(chunk)
             onStatus?(chunk)
         }
-        return StructuredAnalysisSupport.parseResponse(accumulated)
+        return StructuredAnalysisSupport.parseResponse(buffer.value)
     }
 }
 
@@ -229,4 +229,15 @@ enum PortfolioAlerts {
 
 private struct PortfolioAPIEnvelope<T: Decodable>: Decodable {
     let detail: T?
+}
+
+/// Serial stream chunks into one string without mutating captured locals in `@Sendable` closures.
+private final class StreamingTextBuffer: @unchecked Sendable {
+    private var text = ""
+
+    func append(_ chunk: String) {
+        text += chunk
+    }
+
+    var value: String { text }
 }

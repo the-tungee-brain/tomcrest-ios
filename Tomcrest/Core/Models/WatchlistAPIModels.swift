@@ -71,7 +71,7 @@ enum WatchlistAPIMapping {
             name: dto.name,
             iconName: dto.iconName,
             symbols: dto.symbols.compactMap(mapSymbol),
-            swatchID: dto.swatchID,
+            swatchID: WatchlistPremiumPalette.isKnown(id: dto.swatchID) ? dto.swatchID : WatchlistPremiumPalette.swatches[0].id,
             accentHex: dto.accentHex.map { UInt32($0) },
             isPinned: dto.isPinned,
             isCollapsed: dto.isCollapsed,

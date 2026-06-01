@@ -18,10 +18,16 @@ enum AppKeyboardDoneAccessoryFactory {
 
     private static func makeDoneButton() -> UIButton {
         let button = UIButton(type: .system)
-        button.setTitle("Done", for: .normal)
-        button.titleLabel?.font = .systemFont(ofSize: 17, weight: .semibold)
-        button.setTitleColor(UIColor(AppColors.accentHighlight), for: .normal)
-        button.contentEdgeInsets = UIEdgeInsets(top: 8, left: 16, bottom: 8, right: 16)
+        var config = UIButton.Configuration.plain()
+        config.title = "Done"
+        config.baseForegroundColor = UIColor(AppColors.accentHighlight)
+        config.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16)
+        config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+            var outgoing = incoming
+            outgoing.font = .systemFont(ofSize: 17, weight: .semibold)
+            return outgoing
+        }
+        button.configuration = config
         button.setContentHuggingPriority(.required, for: .horizontal)
         button.setContentCompressionResistancePriority(.required, for: .horizontal)
         button.addAction(

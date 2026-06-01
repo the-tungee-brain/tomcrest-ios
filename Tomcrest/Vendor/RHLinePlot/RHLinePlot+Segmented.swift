@@ -127,7 +127,8 @@ extension RHLinePlot {
                                 pathForSegment(i: i, s: s)
                             }
                             .animation(
-                                .linear(duration: self.rhLinePlotConfig.segmentSelectionAnimationDuration)
+                                .linear(duration: self.rhLinePlotConfig.segmentSelectionAnimationDuration),
+                                value: activeSegment
                             )
                         }
                         .frame(width: largerCanvas.width, height: largerCanvas.height) // Plot in a larger canvas
