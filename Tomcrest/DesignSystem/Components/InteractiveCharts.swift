@@ -29,7 +29,7 @@ private var tomcrestLinePlotConfig: RHLinePlotConfig {
     RHLinePlotConfig.default.custom { config in
         config.plotLineWidth = 2
         config.glowingIndicatorWidth = 10
-        config.valueStickColor = AppColors.accentHighlight
+        config.valueStickColor = AppColors.tertiaryLabel
         config.valueStickTopPadding = 8
         config.valueStickBottomPadding = 8
         config.minimumPressDurationToActivateInteraction = 0.05

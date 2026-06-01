@@ -149,7 +149,13 @@ struct SymbolResearchView: View {
                     await positionVM.loadIfNeeded()
                 }
                 if tab != .overview, tab != .position {
-                    await depthVM.loadIfNeeded(tab)
+                    if tab == .trend {
+                        if account.hasProFeature(.patternTrend) {
+                            await depthVM.loadIfNeeded(tab)
+                        }
+                    } else {
+                        await depthVM.loadIfNeeded(tab)
+                    }
                 }
                 if tab == .earnings {
                     await depthVM.loadEarningsDetail(

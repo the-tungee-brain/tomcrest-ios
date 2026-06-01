@@ -24,10 +24,9 @@ enum StockChartPeriod: String, CaseIterable, Identifiable {
     case oneWeek = "5d"
     case oneMonth = "1mo"
     case threeMonths = "3mo"
-    case sixMonths = "6mo"
     case oneYear = "1y"
-    case twoYears = "2y"
     case fiveYears = "5y"
+    case max = "max"
 
     var id: String { rawValue }
 
@@ -36,6 +35,7 @@ enum StockChartPeriod: String, CaseIterable, Identifiable {
         switch self {
         case .oneDay: "1m"
         case .oneWeek: "15m"
+        case .max: "1mo"
         default: "1d"
         }
     }
@@ -46,10 +46,9 @@ enum StockChartPeriod: String, CaseIterable, Identifiable {
         case .oneWeek: "1W"
         case .oneMonth: "1M"
         case .threeMonths: "3M"
-        case .sixMonths: "6M"
         case .oneYear: "1Y"
-        case .twoYears: "2Y"
         case .fiveYears: "5Y"
+        case .max: "MAX"
         }
     }
 

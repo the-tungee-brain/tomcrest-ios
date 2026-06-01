@@ -8,6 +8,7 @@ enum ProFeature: String {
     case financialStrength = "financial_strength"
     case business = "business"
     case bigPicture = "big_picture"
+    case patternTrend = "pattern_trend"
 }
 
 @MainActor

@@ -12,12 +12,18 @@ struct ResearchStockChartSection: View {
                 : viewModel.chartPeriod.label
         ) {
             VStack(alignment: .leading, spacing: 10) {
-                Picker("Period", selection: $viewModel.chartPeriod) {
-                    ForEach(StockChartPeriod.allCases) { period in
-                        Text(period.label).tag(period)
+                AppHorizontalScrollRow {
+                    HStack(spacing: 8) {
+                        ForEach(StockChartPeriod.allCases) { period in
+                            AppChip(
+                                title: period.label,
+                                isSelected: viewModel.chartPeriod == period
+                            ) {
+                                viewModel.chartPeriod = period
+                            }
+                        }
                     }
                 }
-                .pickerStyle(.segmented)
                 .onChange(of: viewModel.chartPeriod) { _, _ in
                     Task { await viewModel.loadStockChart() }
                 }
