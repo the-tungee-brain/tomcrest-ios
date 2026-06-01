@@ -81,6 +81,10 @@ struct WatchlistHubScreen: View {
             }
         }
         .appPushedScreenCanvas()
+        .task {
+            await watchlistStore.ensureLoaded()
+            await watchlistStore.refreshQuotesIfNeeded()
+        }
         .refreshable {
             guard !isEditingFolderOrder else { return }
             await watchlistStore.refreshQuotesIfNeeded(force: true)

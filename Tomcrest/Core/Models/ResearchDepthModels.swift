@@ -7,6 +7,19 @@ struct NewsHeadline: Decodable, Identifiable {
     let source: String
     let datetime: String
     let url: String?
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        headline = try container.decode(String.self, forKey: .headline)
+        summary = try container.decodeIfPresent(String.self, forKey: .summary)
+        source = try container.decodeIfPresent(String.self, forKey: .source) ?? ""
+        datetime = try container.decodeIfPresent(String.self, forKey: .datetime) ?? ""
+        url = try container.decodeIfPresent(String.self, forKey: .url)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case headline, summary, source, datetime, url
+    }
 }
 
 struct PressReleasesResponse: Decodable {

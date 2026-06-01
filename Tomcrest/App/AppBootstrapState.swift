@@ -53,7 +53,8 @@ final class AppBootstrapState {
         defer { warmUpFinished = true }
 
         async let watchlistLoad: Void = watchlistStore.load(
-            localSymbols: ResearchSymbolStorage.watchlist()
+            localSymbols: ResearchSymbolStorage.watchlist(),
+            includeQuotes: false
         )
 
         guard auth.phase == .signedIn, let accessToken = auth.accessToken else {

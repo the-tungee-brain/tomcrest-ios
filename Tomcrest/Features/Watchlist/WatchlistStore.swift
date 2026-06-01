@@ -29,6 +29,8 @@ final class WatchlistStore {
     @ObservationIgnored private var cachedRegularFolderIDs: [UUID]?
     @ObservationIgnored private var cachedAllTickers: [String]?
     @ObservationIgnored private var lastQuoteRefresh: Date?
+    @ObservationIgnored private var quoteRefreshTask: Task<Void, Never>?
+    @ObservationIgnored private var isRefreshingQuotes = false
     private static let folderSortModeKey = "watchlist.folderSortMode"
     private static let legacySymbolSortModeKey = "watchlist.symbolSortMode"
     private static let quoteRefreshInterval: TimeInterval = 45
@@ -50,6 +52,9 @@ final class WatchlistStore {
     func reset() {
         debounceTask?.cancel()
         debounceTask = nil
+        quoteRefreshTask?.cancel()
+        quoteRefreshTask = nil
+        isRefreshingQuotes = false
         isPersisting = false
         needsSyncAfterPersist = false
         folders = []
@@ -211,7 +216,7 @@ final class WatchlistStore {
 
     // MARK: - Loading / sync
 
-    func load(localSymbols: [String] = []) async {
+    func load(localSymbols: [String] = [], includeQuotes: Bool = false) async {
         guard let auth, let token = auth.accessToken else {
             if !localSymbols.isEmpty, folders.isEmpty {
                 seedFromLocalSymbols(localSymbols)
@@ -229,13 +234,24 @@ final class WatchlistStore {
         }
 
         do {
-            let response = try await WatchlistService.fetchWorkspace(accessToken: token)
-            applyWorkspace(response)
-            lastQuoteRefresh = Date()
+            let response = try await WatchlistService.fetchWorkspace(
+                accessToken: token,
+                includeQuotes: includeQuotes
+            )
+            applyWorkspace(response, includeQuotes: includeQuotes)
+
+            if includeQuotes {
+                lastQuoteRefresh = Date()
+            } else if folders.contains(where: { !$0.symbols.isEmpty }) {
+                scheduleQuoteRefresh(force: true)
+            }
 
             if folders.isEmpty, !localSymbols.isEmpty, migrating {
                 seedFromLocalSymbols(localSymbols)
                 await persistWorkspaceImmediately(applyResponse: true)
+                if !includeQuotes, folders.contains(where: { !$0.symbols.isEmpty }) {
+                    scheduleQuoteRefresh(force: true)
+                }
             }
         } catch {
             if migrating, !localSymbols.isEmpty {
@@ -245,6 +261,14 @@ final class WatchlistStore {
             } else {
                 errorMessage = userFacingError(error)
             }
+        }
+    }
+
+    func scheduleQuoteRefresh(force: Bool = false) {
+        guard auth?.accessToken != nil else { return }
+        quoteRefreshTask?.cancel()
+        quoteRefreshTask = Task { [weak self] in
+            await self?.refreshQuotesIfNeeded(force: force)
         }
     }
 
@@ -259,6 +283,10 @@ final class WatchlistStore {
 
     func refreshQuotes() async {
         guard let auth, let token = auth.accessToken else { return }
+        guard !isRefreshingQuotes else { return }
+
+        isRefreshingQuotes = true
+        defer { isRefreshingQuotes = false }
 
         do {
             let response = try await WatchlistService.fetchWorkspace(
@@ -301,16 +329,28 @@ final class WatchlistStore {
         normalizeSortOrders()
     }
 
-    private func applyWorkspace(_ response: WatchlistWorkspaceResponse) {
+    private func applyWorkspace(_ response: WatchlistWorkspaceResponse, includeQuotes: Bool) {
         var mapped = WatchlistAPIMapping.folders(from: response)
         for index in mapped.indices where mapped[index].createdAt == nil {
             mapped[index].createdAt = folders.first(where: { $0.id == mapped[index].id })?.createdAt
         }
         folders = mapped
-        quoteStore.applyWorkspaceQuotes(WatchlistAPIMapping.quotes(from: response))
+        if includeQuotes {
+            quoteStore.applyWorkspaceQuotes(WatchlistAPIMapping.quotes(from: response))
+        } else {
+            seedQuotePlaceholders()
+        }
         invalidateFolderOrderCache()
         invalidateTickerCache()
         mirrorLocalCache()
+    }
+
+    private func seedQuotePlaceholders() {
+        var placeholders: [UUID: WatchlistQuote] = [:]
+        for symbol in folders.flatMap(\.symbols) {
+            placeholders[symbol.id] = .zero
+        }
+        quoteStore.applyWorkspaceQuotes(placeholders)
     }
 
     private func applyQuotes(from response: WatchlistWorkspaceResponse) {
@@ -349,7 +389,7 @@ final class WatchlistStore {
             let payload = WatchlistAPIMapping.syncRequest(from: folders)
             let response = try await WatchlistService.syncWorkspace(payload, accessToken: token)
             if applyResponse {
-                applyWorkspace(response)
+                applyWorkspace(response, includeQuotes: false)
             }
             errorMessage = nil
         } catch {

@@ -3,7 +3,7 @@ import Foundation
 enum WatchlistService {
     static func fetchWorkspace(
         accessToken: String,
-        includeQuotes: Bool = true,
+        includeQuotes: Bool = false,
         api: APIClient = .shared
     ) async throws -> WatchlistWorkspaceResponse {
         try await api.get(

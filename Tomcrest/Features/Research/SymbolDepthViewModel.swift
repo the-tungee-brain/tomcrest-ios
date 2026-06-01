@@ -90,17 +90,7 @@ final class SymbolDepthViewModel {
                 guard let accessToken = auth.accessToken else {
                     throw APIError.missingToken
                 }
-                async let releases = ResearchService.fetchPressReleases(
-                    symbol: symbol,
-                    accessToken: accessToken
-                )
-                async let coverage = ResearchService.fetchCompanyNews(
-                    symbol: symbol,
-                    accessToken: accessToken
-                )
-                let (official, market) = try await (releases, coverage)
-                news = official
-                companyNews = market
+                try await loadNews(accessToken: accessToken)
             case .dividends:
                 guard let accessToken = auth.accessToken else {
                     throw APIError.missingToken
@@ -180,6 +170,39 @@ final class SymbolDepthViewModel {
             loadedTabs.insert(tab)
         } catch {
             tabErrors[tab] = (error as? APIError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+
+    private func loadNews(accessToken: String) async throws {
+        var errors: [String] = []
+
+        do {
+            news = try await ResearchService.fetchPressReleases(
+                symbol: symbol,
+                accessToken: accessToken
+            )
+        } catch {
+            errors.append("Official releases: \((error as? APIError)?.errorDescription ?? error.localizedDescription)")
+        }
+
+        do {
+            companyNews = try await ResearchService.fetchCompanyNews(
+                symbol: symbol,
+                accessToken: accessToken
+            )
+        } catch {
+            errors.append("Market coverage: \((error as? APIError)?.errorDescription ?? error.localizedDescription)")
+        }
+
+        if news == nil, companyNews == nil {
+            if let first = errors.first {
+                throw APIError.httpStatus(-1, message: first)
+            }
+            throw APIError.httpStatus(-1, message: "Could not load news for this symbol.")
+        }
+
+        if !errors.isEmpty {
+            tabErrors[.news] = errors.joined(separator: " ")
         }
     }
 
