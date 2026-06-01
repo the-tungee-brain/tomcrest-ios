@@ -128,6 +128,7 @@ struct AppSearchField: View {
                 .autocorrectionDisabled()
                 .font(.body)
                 .foregroundStyle(AppColors.label)
+                .submitLabel(.search)
                 .onSubmit { onSubmit?() }
 
             if isLoading {
@@ -377,12 +378,17 @@ struct AppFormField: View {
     let placeholder: String
     @Binding var text: String
 
+    @FocusState private var isFocused: Bool
+
     var body: some View {
         TextField(placeholder, text: $text)
             .textInputAutocapitalization(.characters)
             .autocorrectionDisabled()
             .font(.body)
             .foregroundStyle(AppColors.label)
+            .focused($isFocused)
+            .submitLabel(.done)
+            .onSubmit { isFocused = false }
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
             .frame(minHeight: Layout.minTouchTarget, alignment: .leading)

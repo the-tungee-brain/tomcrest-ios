@@ -21,31 +21,38 @@ private struct AppShell: View {
     @State private var researchBookmarks = ResearchSymbolBookmarks()
     @State private var assistant = AssistantPresenter()
     @State private var browser = AppBrowserRouter()
+    @State private var bootstrap = AppBootstrapState()
 
     var body: some View {
         @Bindable var browser = browser
 
-        RootView()
-            .environment(auth)
-            .environment(account)
-            .environment(researchBookmarks)
-            .environment(assistant)
-            .environment(browser)
-            .appBrowserHost(browser)
-            .preferredColorScheme(.dark)
-            .onOpenURL { url in
-                _ = GoogleSignInCoordinator.handle(url)
+        ZStack {
+            RootView()
+                .environment(auth)
+                .environment(account)
+                .environment(researchBookmarks)
+                .environment(assistant)
+                .environment(browser)
+                .environment(bootstrap)
+                .appBrowserHost(browser)
+                .opacity(bootstrap.showBrandShell ? 0 : 1)
+
+            if bootstrap.showBrandShell {
+                BrandShellView()
+                    .transition(.opacity)
+                    .zIndex(1)
             }
-            .task {
-                auth.bootstrap()
-                let refresh: @Sendable () async -> String? = { [auth] in
-                    await auth.refreshAccessToken()
-                }
-                await APIClient.shared.setTokenRefresher(refresh)
-                StreamingAPIClient.setTokenRefresher(refresh)
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .tomcrestUnauthorized)) { _ in
-                auth.handleUnauthorized()
-            }
+        }
+        .animation(BrandMotion.shellCrossfade, value: bootstrap.showBrandShell)
+        .preferredColorScheme(.dark)
+        .onOpenURL { url in
+            _ = GoogleSignInCoordinator.handle(url)
+        }
+        .task {
+            await bootstrap.run(auth: auth, account: account)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .tomcrestUnauthorized)) { _ in
+            auth.handleUnauthorized()
+        }
     }
 }

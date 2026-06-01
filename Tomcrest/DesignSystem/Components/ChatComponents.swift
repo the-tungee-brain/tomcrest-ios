@@ -159,6 +159,10 @@ struct ChatComposerBar: View {
                             .stroke(AppColors.separator, lineWidth: 1)
                     }
                     .focused(inputFocused)
+                    .submitLabel(.send)
+                    .onSubmit {
+                        if canSend { onSend() }
+                    }
                     .disabled(isLoading)
 
                 Button(action: onSend) {

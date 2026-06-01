@@ -42,6 +42,23 @@ enum AppChrome {
     }
 }
 
+final class AppKeyboardDismissHandler: NSObject {
+    static let shared = AppKeyboardDismissHandler()
+
+    static func dismiss() {
+        shared.dismissKeyboard()
+    }
+
+    @objc func dismissKeyboard() {
+        UIApplication.shared.sendAction(
+            #selector(UIResponder.resignFirstResponder),
+            to: nil,
+            from: nil,
+            for: nil
+        )
+    }
+}
+
 // MARK: - Navigation stack with canvas (iOS 17-safe; replaces iOS 18 containerBackground)
 
 struct AppNavigationCanvasStack<Content: View>: View {
@@ -60,6 +77,7 @@ struct AppNavigationCanvasStack<Content: View>: View {
             NavigationStack {
                 content()
                     .appInAppBrowser(browser)
+                    .appKeyboardDoneToolbar()
             }
             .appClearUIKitBackground()
         }
@@ -84,6 +102,7 @@ struct AppRoutedNavigationCanvasStack<Data, Content: View>: View where Data: Has
             NavigationStack(path: $path) {
                 content()
                     .appInAppBrowser(browser)
+                    .appKeyboardDoneToolbar()
             }
             .appClearUIKitBackground()
         }

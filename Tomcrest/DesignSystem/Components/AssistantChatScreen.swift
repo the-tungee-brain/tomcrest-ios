@@ -59,6 +59,7 @@ struct AssistantChatScreen: View {
                 .padding(.top, 12)
                 .padding(.bottom, 16)
             }
+            .scrollContentBackground(.hidden)
 
             Divider().overlay(AppColors.separator)
 
@@ -74,6 +75,6 @@ struct AssistantChatScreen: View {
             .padding(.vertical, 12)
             .background(AppColors.secondaryBackground.opacity(0.95))
         }
-        .background(AppColors.background)
+        .background(Color.clear)
     }
 }

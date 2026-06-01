@@ -2,6 +2,7 @@ import SwiftUI
 
 struct PortfolioView: View {
     @Environment(AuthSession.self) private var auth
+    @Environment(AppBootstrapState.self) private var bootstrap
     @Environment(AssistantPresenter.self) private var assistant
     @Binding var selectedTab: AppTab
     @Binding var settingsFocus: SettingsFocus?
@@ -49,9 +50,13 @@ struct PortfolioView: View {
             }
             .task {
                 if viewModel == nil {
-                    let model = PortfolioViewModel(auth: auth)
-                    viewModel = model
-                    await model.loadIfNeeded()
+                    if let preloaded = bootstrap.portfolioViewModel {
+                        viewModel = preloaded
+                    } else {
+                        let model = PortfolioViewModel(auth: auth)
+                        viewModel = model
+                        await model.loadIfNeeded()
+                    }
                 }
             }
             .onChange(of: selectedTab) { _, tab in

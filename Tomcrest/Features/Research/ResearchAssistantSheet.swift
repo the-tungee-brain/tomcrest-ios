@@ -3,11 +3,10 @@ import SwiftUI
 struct ResearchAssistantSheet: View {
     @Environment(AccountContext.self) private var account
     @Environment(AssistantPresenter.self) private var assistant
-    @Environment(AppBrowserRouter.self) private var browser
     @Bindable var viewModel: SymbolOverviewViewModel
 
     var body: some View {
-        NavigationStack {
+        AppNavigationCanvasStack {
             AssistantChatScreen(
                 emptyMessage: "Ask about quality, risks, earnings, or valuation.",
                 inputPlaceholder: "Ask about \(viewModel.symbol)…",
@@ -36,6 +35,7 @@ struct ResearchAssistantSheet: View {
             )
             .navigationTitle(viewModel.symbol)
             .navigationBarTitleDisplayMode(.inline)
+            .appNavigationCanvas()
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Close") {
@@ -59,9 +59,9 @@ struct ResearchAssistantSheet: View {
                 }
             }
         }
-        .appInAppBrowser(browser)
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
+        .presentationBackground(.clear)
         .sheet(isPresented: $viewModel.showChatHistory) {
             AppNavigationCanvasStack {
                 ChatSessionHistorySheet(

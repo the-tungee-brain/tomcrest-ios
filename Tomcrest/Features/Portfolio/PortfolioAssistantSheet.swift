@@ -3,7 +3,6 @@ import SwiftUI
 struct PortfolioAssistantSheet: View {
     @Environment(AccountContext.self) private var account
     @Environment(AssistantPresenter.self) private var assistant
-    @Environment(AppBrowserRouter.self) private var browser
     @Bindable var viewModel: PortfolioViewModel
 
     private let suggestedPrompts = [
@@ -13,7 +12,7 @@ struct PortfolioAssistantSheet: View {
     ]
 
     var body: some View {
-        NavigationStack {
+        AppNavigationCanvasStack {
             AssistantChatScreen(
                 emptyMessage: "Ask about holdings, risk, or where to deploy cash.",
                 inputPlaceholder: "Ask about your portfolio…",
@@ -41,6 +40,7 @@ struct PortfolioAssistantSheet: View {
             )
             .navigationTitle("Assistant")
             .navigationBarTitleDisplayMode(.inline)
+            .appNavigationCanvas()
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Close") {
@@ -64,9 +64,9 @@ struct PortfolioAssistantSheet: View {
                 }
             }
         }
-        .appInAppBrowser(browser)
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
+        .presentationBackground(.clear)
         .sheet(isPresented: $viewModel.showChatHistory) {
             AppNavigationCanvasStack {
                 ChatSessionHistorySheet(

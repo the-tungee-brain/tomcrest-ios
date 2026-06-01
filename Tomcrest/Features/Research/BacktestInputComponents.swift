@@ -78,7 +78,7 @@ struct BacktestDecimalField: View {
     var onCommit: ((Double) -> Void)? = nil
 
     @State private var text = ""
-    @FocusState private var focused: Bool
+    @State private var isEditing = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -93,13 +93,12 @@ struct BacktestDecimalField: View {
                         .foregroundStyle(AppColors.tertiaryLabel)
                 }
 
-                TextField(placeholder, text: $text)
-                    .keyboardType(.decimalPad)
-                    .font(.body.monospacedDigit())
-                    .foregroundStyle(AppColors.label)
-                    .focused($focused)
-                    .submitLabel(.done)
-                    .onSubmit { commit() }
+                DecimalPadTextField(
+                    placeholder: placeholder,
+                    text: $text,
+                    isEditing: $isEditing
+                )
+                .frame(minHeight: 22)
 
                 if let suffix {
                     Text(suffix)
@@ -113,16 +112,16 @@ struct BacktestDecimalField: View {
             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .stroke(focused ? AppColors.accentHighlight.opacity(0.55) : AppColors.separator, lineWidth: 1)
+                    .stroke(isEditing ? AppColors.accentHighlight.opacity(0.55) : AppColors.separator, lineWidth: 1)
             }
         }
         .onAppear { syncTextFromValue() }
         .onChange(of: value) { _, _ in
-            guard !focused else { return }
+            guard !isEditing else { return }
             syncTextFromValue()
         }
-        .onChange(of: focused) { _, isFocused in
-            if !isFocused { commit() }
+        .onChange(of: isEditing) { _, editing in
+            if !editing { commit() }
         }
     }
 
@@ -263,7 +262,11 @@ private struct BacktestOptionToggleStyle: ButtonStyle {
 }
 
 struct BacktestRunButton: View {
+    var title = "Run backtest"
+    var loadingTitle = "Running…"
+    var icon = "play.fill"
     let isLoading: Bool
+    var isDisabled = false
     let action: () -> Void
 
     var body: some View {
@@ -275,13 +278,13 @@ struct BacktestRunButton: View {
                             .controlSize(.small)
                             .tint(AppColors.accentHighlight)
                     } else {
-                        Image(systemName: "play.fill")
+                        Image(systemName: icon)
                             .font(.system(size: 10, weight: .bold))
                     }
                 }
                 .frame(width: 14, height: 14)
 
-                Text(isLoading ? "Running…" : "Run backtest")
+                Text(isLoading ? loadingTitle : title)
                     .font(.caption.weight(.semibold))
             }
             .foregroundStyle(isLoading ? AppColors.secondaryLabel : AppColors.accentHighlight)
@@ -298,7 +301,7 @@ struct BacktestRunButton: View {
             }
         }
         .buttonStyle(BacktestRunButtonStyle())
-        .disabled(isLoading)
+        .disabled(isLoading || isDisabled)
     }
 
     /// Divider + left-aligned run action for the bottom of a controls panel.
