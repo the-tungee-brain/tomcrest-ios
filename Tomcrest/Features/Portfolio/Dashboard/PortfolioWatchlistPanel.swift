@@ -157,8 +157,7 @@ struct PortfolioWatchlistPanel: View {
                         LazyVStack(spacing: 8) {
                             ForEach(folder.symbols) { symbol in
                                 WatchlistSymbolRow(
-                                    symbol: symbol,
-                                    folderAccent: accent
+                                    symbol: symbol
                                 ) {
                                     onSelect(symbol.ticker)
                                 }
@@ -197,6 +196,7 @@ struct PortfolioWatchlistPanel: View {
                     Text("\(folder.symbols.count) symbols")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.secondaryLabel)
+                        .fixedSize(horizontal: true, vertical: false)
 
                     WatchlistFolderDayChangeView(folder: folder)
                 }

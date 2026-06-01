@@ -771,8 +771,6 @@ private struct HoldingRow: View {
     var body: some View {
         AppListRow {
             HStack(spacing: 12) {
-                SymbolAvatar(symbol: position.displaySymbol, size: 36)
-
                 VStack(alignment: .leading, spacing: 3) {
                     Text(position.displaySymbol)
                         .font(AppTypography.cardTitle)

@@ -4,7 +4,6 @@ struct WatchlistSymbolRow: View {
     @Environment(WatchlistStore.self) private var watchlistStore
 
     let symbol: WatchlistSymbol
-    var folderAccent: Color = AppColors.accentHighlight
     var isDragging = false
     var onTap: (() -> Void)?
 
@@ -17,8 +16,6 @@ struct WatchlistSymbolRow: View {
             onTap?()
         } label: {
             HStack(spacing: 12) {
-                SymbolAvatar(symbol: symbol.ticker, size: 36, accent: folderAccent)
-
                 VStack(alignment: .leading, spacing: 2) {
                     Text(symbol.ticker)
                         .font(AppTypography.cardTitle)
@@ -106,14 +103,24 @@ struct WatchlistFolderPerformanceSummary: View {
     var body: some View {
         HStack(spacing: 6) {
             WatchlistTrendGlyph(change: percent)
-            Text(CurrencyFormatter.signedUsd(change))
-                .font(AppTypography.monoCaption2Semibold)
-                .foregroundStyle(WatchlistProfitTone.color(for: change))
-            Text("·")
-                .foregroundStyle(AppColors.tertiaryLabel)
-            Text(CurrencyFormatter.percent(percent))
-                .font(AppTypography.monoCaption2)
-                .foregroundStyle(WatchlistProfitTone.color(for: percent))
+                .layoutPriority(1)
+
+            (
+                Text(CurrencyFormatter.signedUsd(change))
+                    .font(AppTypography.monoCaption2Semibold)
+                    .foregroundStyle(WatchlistProfitTone.color(for: change))
+                + Text(" · ")
+                    .font(AppTypography.monoCaption2)
+                    .foregroundStyle(AppColors.tertiaryLabel)
+                + Text(CurrencyFormatter.percent(percent))
+                    .font(AppTypography.monoCaption2)
+                    .foregroundStyle(WatchlistProfitTone.color(for: percent))
+            )
+            .lineLimit(1)
+            .truncationMode(.tail)
+            .minimumScaleFactor(0.85)
+            .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
         }
+        .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
     }
 }

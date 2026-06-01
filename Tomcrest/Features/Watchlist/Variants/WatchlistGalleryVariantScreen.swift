@@ -244,6 +244,7 @@ struct WatchlistGalleryVariantScreen: View {
                     Text("\(folder.symbols.count) symbols")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.secondaryLabel)
+                        .fixedSize(horizontal: true, vertical: false)
 
                     WatchlistFolderDayChangeView(folder: folder)
                 }
@@ -269,13 +270,12 @@ struct WatchlistGalleryVariantScreen: View {
 
         WatchlistSymbolRow(
             symbol: symbol,
-            folderAccent: accent,
             isDragging: isDragging
         ) {
             onSelectSymbol?(symbol.ticker)
         }
         .draggable(payload) {
-            WatchlistSymbolRow(symbol: symbol, folderAccent: accent)
+            WatchlistSymbolRow(symbol: symbol)
                 .frame(width: 320)
         }
     }

@@ -157,7 +157,6 @@ private struct PortfolioHoldingsRow: View {
     var body: some View {
         AppListRow {
             HStack(spacing: 12) {
-                SymbolAvatar(symbol: summary.symbol, size: 36)
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
                         Text(summary.symbol)

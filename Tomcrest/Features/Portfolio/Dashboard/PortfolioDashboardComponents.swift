@@ -239,8 +239,6 @@ private struct PortfolioCompactHoldingRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            SymbolAvatar(symbol: summary.symbol, size: 36)
-
             VStack(alignment: .leading, spacing: 3) {
                 Text(summary.symbol)
                     .font(.body.weight(.semibold))

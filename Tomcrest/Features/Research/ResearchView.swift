@@ -206,8 +206,6 @@ private struct SymbolSearchRowContent: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            SymbolAvatar(symbol: item.symbol, size: 32)
-
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.symbol)
                     .font(AppTypography.cardTitle)

@@ -62,8 +62,6 @@ private struct SavedWatchlistSymbolRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            SymbolAvatar(symbol: symbol, size: 36)
-
             VStack(alignment: .leading, spacing: 2) {
                 Text(symbol)
                     .font(AppTypography.cardTitle)

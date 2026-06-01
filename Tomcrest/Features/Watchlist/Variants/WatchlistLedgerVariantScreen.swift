@@ -117,7 +117,7 @@ struct WatchlistLedgerVariantScreen: View {
             if isExpanded {
                 VStack(spacing: 0) {
                     ForEach(Array(folder.symbols.enumerated()), id: \.element.id) { index, symbol in
-                        WatchlistSymbolRow(symbol: symbol, folderAccent: accent) {
+                        WatchlistSymbolRow(symbol: symbol) {
                             onSelectSymbol?(symbol.ticker)
                         }
                         .draggable(WatchlistSymbolDragPayload(symbolID: symbol.id, sourceFolderID: folder.id))
@@ -194,6 +194,7 @@ struct WatchlistLedgerVariantScreen: View {
                             Text("\(folder.symbols.count) symbols")
                                 .font(AppTypography.caption)
                                 .foregroundStyle(AppColors.tertiaryLabel)
+                                .fixedSize(horizontal: true, vertical: false)
 
                             WatchlistFolderDayChangeView(folder: folder)
                         }

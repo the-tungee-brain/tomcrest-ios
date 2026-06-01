@@ -68,8 +68,6 @@ struct WatchlistSaveSymbolSheet: View {
 
     private var header: some View {
         HStack(spacing: 12) {
-            SymbolAvatar(symbol: ticker, size: 44)
-
             VStack(alignment: .leading, spacing: 2) {
                 Text(ticker)
                     .font(AppTypography.cardTitle)
