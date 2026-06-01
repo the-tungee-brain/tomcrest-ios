@@ -28,7 +28,10 @@ private enum ChartVolumeFormatter {
 private var tomcrestLinePlotConfig: RHLinePlotConfig {
     RHLinePlotConfig.default.custom { config in
         config.plotLineWidth = 2
-        config.glowingIndicatorWidth = 10
+        config.glowingIndicatorWidth = 9
+        config.glowingIndicatorBackgroundScaleEffect = 2.8
+        config.glowingIndicatorGlowAnimationDuration = 0.75
+        config.glowingIndicatorDelayBetweenGlow = 0.4
         config.valueStickColor = AppColors.tertiaryLabel
         config.valueStickTopPadding = 8
         config.valueStickBottomPadding = 8

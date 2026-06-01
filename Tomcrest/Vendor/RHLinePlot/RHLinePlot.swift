@@ -86,11 +86,17 @@ public struct RHLinePlot<Indicator: View>: View {
         // We use a small rectangle as a base (and offset it to the latest plot value).
         // Then we center the indicator on top of this base.
         let ind = self.getGlowingIndicatorLocation(canvasFrame: canvasFrame)
+        let pulseBounds = rhLinePlotConfig.glowingIndicatorWidth
+            * rhLinePlotConfig.glowingIndicatorBackgroundScaleEffect
         return Rectangle()
             .frame(width: 10, height: 10)
             .opacity(0)
-            .overlay(self.customLatestValueIndicator(), alignment: .center)
-            .transformEffect(.init(translationX: ind.width-5, y: ind.height-5))
+            .overlay(
+                self.customLatestValueIndicator()
+                    .frame(width: pulseBounds, height: pulseBounds),
+                alignment: .center
+            )
+            .transformEffect(.init(translationX: ind.width - 5, y: ind.height - 5))
     }
     
     public var body: some View {
