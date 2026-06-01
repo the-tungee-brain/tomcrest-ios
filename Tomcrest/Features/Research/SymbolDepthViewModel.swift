@@ -15,6 +15,8 @@ final class SymbolDepthViewModel {
     private(set) var etfHoldings: EtfHoldingsContext?
     private(set) var symbolIntelligence: SymbolIntelligenceDetail?
     private(set) var wheelBacktest: WheelBacktestResult?
+    private(set) var patternPrediction: PatternPredictionResponse?
+    private(set) var patternModelHealth: PatternPredictionHealthResponse?
     private(set) var secFilings: SecFilingsResponse?
     private(set) var secRatios: SecRatiosResponse?
     private(set) var secFinancials: SecFinancialsResponse?
@@ -166,6 +168,17 @@ final class SymbolDepthViewModel {
                     symbol: symbol,
                     accessToken: accessToken
                 )
+            case .trend:
+                guard let accessToken = auth.accessToken else {
+                    throw APIError.missingToken
+                }
+                async let healthTask = PatternPredictionService.fetchHealth(accessToken: accessToken)
+                async let predictionTask = PatternPredictionService.fetchPrediction(
+                    symbol: symbol,
+                    accessToken: accessToken
+                )
+                patternModelHealth = try await healthTask
+                patternPrediction = try await predictionTask
             }
             loadedTabs.insert(tab)
         } catch {
@@ -262,6 +275,10 @@ final class SymbolDepthViewModel {
         }
         if tab == .news {
             companyNews = nil
+        }
+        if tab == .trend {
+            patternPrediction = nil
+            patternModelHealth = nil
         }
         await loadIfNeeded(tab, force: true)
         if tab == .earnings, let event = earnings?.history.first {

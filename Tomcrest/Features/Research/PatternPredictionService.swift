@@ -1,0 +1,22 @@
+import Foundation
+
+enum PatternPredictionService {
+    static func fetchHealth(
+        accessToken: String,
+        api: APIClient = .shared
+    ) async throws -> PatternPredictionHealthResponse {
+        try await api.get("/pattern/health", accessToken: accessToken)
+    }
+
+    static func fetchPrediction(
+        symbol: String,
+        accessToken: String,
+        api: APIClient = .shared
+    ) async throws -> PatternPredictionResponse {
+        try await api.get(
+            "/pattern/predict",
+            query: ["symbol": symbol.uppercased()],
+            accessToken: accessToken
+        )
+    }
+}

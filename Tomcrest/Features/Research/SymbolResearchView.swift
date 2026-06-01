@@ -235,6 +235,8 @@ struct SymbolResearchView: View {
             SymbolFinancialsTab(viewModel: depthVM)
         case .composition:
             SymbolCompositionTab(viewModel: depthVM)
+        case .trend:
+            SymbolPatternPredictionTab(viewModel: depthVM)
         case .backtest:
             SymbolBacktestTab(
                 exploreSection: $backtestExploreSection,

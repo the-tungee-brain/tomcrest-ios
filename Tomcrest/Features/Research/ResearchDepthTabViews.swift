@@ -1241,6 +1241,7 @@ struct ResearchDepthTabShell<Content: View>: View {
         case .composition: viewModel.etfHoldings == nil
         case .business: viewModel.business == nil
         case .options: viewModel.symbolIntelligence == nil
+        case .trend: viewModel.patternPrediction == nil
         case .backtest: viewModel.dividends == nil
         }
     }

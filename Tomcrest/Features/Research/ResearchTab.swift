@@ -11,6 +11,7 @@ enum ResearchTab: String, CaseIterable, Identifiable, Hashable {
     case fundamentals
     case financials
     case composition
+    case trend
     case backtest
 
     var id: String { rawValue }
@@ -27,6 +28,7 @@ enum ResearchTab: String, CaseIterable, Identifiable, Hashable {
         case .fundamentals: "Fundamentals"
         case .financials: "Financials"
         case .composition: "Composition"
+        case .trend: "5D Trend"
         case .backtest: "Backtest"
         }
     }
@@ -43,6 +45,7 @@ enum ResearchTab: String, CaseIterable, Identifiable, Hashable {
         case .fundamentals: "tablecells.fill"
         case .financials: "doc.text.fill"
         case .composition: "square.stack.3d.up.fill"
+        case .trend: "waveform.path.ecg.rectangle"
         case .backtest: "chart.xyaxis.line"
         }
     }
@@ -58,6 +61,7 @@ enum ResearchTab: String, CaseIterable, Identifiable, Hashable {
         case "ETF", "MUTUAL_FUND", "INDEX":
             result.removeAll { $0 == .options || $0 == .business }
             result.append(.dividends)
+            result.append(.trend)
             result.append(.backtest)
             result.append(.composition)
             result.append(.fundamentals)
@@ -67,11 +71,13 @@ enum ResearchTab: String, CaseIterable, Identifiable, Hashable {
             result.append(.earnings)
             result.append(.fundamentals)
             result.append(.financials)
+            result.append(.trend)
             result.append(.backtest)
         default:
             result.append(.earnings)
             result.append(.dividends)
             result.append(.fundamentals)
+            result.append(.trend)
             result.append(.backtest)
         }
 
