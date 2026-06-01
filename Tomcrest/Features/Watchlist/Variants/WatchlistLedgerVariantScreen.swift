@@ -4,26 +4,29 @@ import SwiftUI
 /// Grouped list with sticky section headers, horizontal pinned chips, and swipe-friendly folder chrome.
 struct WatchlistLedgerVariantScreen: View {
     @Bindable var store: WatchlistStore
+    @Binding var isEditingFolderOrder: Bool
     var onSelectSymbol: ((String) -> Void)?
 
     @State private var folderFormMode: WatchlistFolderFormSheet.Mode?
     @State private var editingFolderID: UUID?
+    @State private var pinnedEditReorder = WatchlistFolderEditReorderController()
+    @State private var regularEditReorder = WatchlistFolderEditReorderController()
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                if !store.pinnedFolders.isEmpty {
-                    pinnedStrip
-                }
-
-                ForEach(store.sortedFolders) { folder in
-                    ledgerSection(folder)
-                }
+        Group {
+            if isEditingFolderOrder {
+                folderReorderList
+            } else {
+                folderBrowseScroll
             }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 96)
         }
-        .id(store.folderSortMode)
+        .animation(.spring(response: 0.35, dampingFraction: 0.86), value: isEditingFolderOrder)
+        .onChange(of: isEditingFolderOrder) { _, editing in
+            if !editing {
+                pinnedEditReorder.cancelReorder()
+                regularEditReorder.cancelReorder()
+            }
+        }
         .sheet(item: $folderFormMode) { mode in
             WatchlistFolderFormSheet(mode: mode) { name, iconName, swatchID, accentHex in
                 switch mode {
@@ -38,6 +41,104 @@ struct WatchlistLedgerVariantScreen: View {
                 }
             }
         }
+    }
+
+    private var folderBrowseScroll: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                if !store.pinnedFolders.isEmpty {
+                    pinnedStrip
+                }
+
+                ForEach(store.sortedFolders) { folder in
+                    ledgerSection(folder)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 96)
+        }
+        .id(store.folderSortMode)
+    }
+
+    private var folderReorderList: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                if !store.pinnedFolders.isEmpty {
+                    WatchlistFolderEditReorderSection(
+                        title: "Pinned",
+                        folders: store.pinnedFolders,
+                        spacing: 12,
+                        controller: pinnedEditReorder,
+                        onCommit: { from, to in
+                            let destination = to > from ? to + 1 : to
+                            store.reorderFolders(inPinnedSection: true, from: IndexSet(integer: from), to: destination)
+                        }
+                    ) { folder in
+                        folderEditRow(folder)
+                    }
+                }
+
+                if !store.regularFolders.isEmpty {
+                    WatchlistFolderEditReorderSection(
+                        title: store.pinnedFolders.isEmpty ? "Folders" : "All folders",
+                        folders: store.regularFolders,
+                        spacing: 12,
+                        controller: regularEditReorder,
+                        onCommit: { from, to in
+                            let destination = to > from ? to + 1 : to
+                            store.reorderFolders(inPinnedSection: false, from: IndexSet(integer: from), to: destination)
+                        }
+                    ) { folder in
+                        folderEditRow(folder)
+                    }
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 96)
+        }
+        .accessibilityLabel("Reorder folders")
+    }
+
+    @ViewBuilder
+    private func folderEditRow(_ folder: WatchlistFolder) -> some View {
+        let swatch = store.swatch(for: folder)
+        let accent = store.accentColor(for: folder)
+
+        HStack(spacing: 12) {
+            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                .fill(accent)
+                .frame(width: 4, height: 36)
+
+            WatchlistFolderIconBadge(symbol: folder.iconName, accent: accent, size: 40, iconScale: .body)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(folder.name)
+                    .font(AppTypography.cardTitle)
+                    .foregroundStyle(AppColors.label)
+
+                Text("\(folder.symbols.count) symbols")
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.tertiaryLabel)
+            }
+
+            Spacer(minLength: 0)
+
+            Image(systemName: "line.3.horizontal")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(AppColors.tertiaryLabel)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background {
+            WatchlistFolderBackground(swatch: swatch, accentOverride: accent)
+                .opacity(0.72)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(accent.opacity(0.22), lineWidth: 1)
+        }
+        .accessibilityHint("Press for a moment, then drag to reorder.")
     }
 
     private var pinnedStrip: some View {

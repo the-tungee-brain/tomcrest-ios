@@ -51,7 +51,7 @@ struct WatchlistHubScreen: View {
                             isEditingFolderOrder = false
                         }
                         .font(AppTypography.cardTitle)
-                    } else if !watchlistStore.folders.isEmpty, watchlistStore.designVariant == .gallery {
+                    } else if !watchlistStore.folders.isEmpty {
                         Button("Reorder") {
                             watchlistStore.folderSortMode = .custom
                             isEditingFolderOrder = true
@@ -117,6 +117,7 @@ struct WatchlistHubScreen: View {
         case .ledger:
             WatchlistLedgerVariantScreen(
                 store: watchlistStore,
+                isEditingFolderOrder: $isEditingFolderOrder,
                 onSelectSymbol: onSelectSymbol
             )
         }
