@@ -23,6 +23,9 @@ enum WatchlistFolderIcons {
         ("target", "Goals"),
         ("briefcase.fill", "Portfolio"),
         ("bitcoinsign.circle.fill", "Crypto"),
+        ("rocket.fill", "Rocket"),
+        ("square.stack.3d.up.fill", "Composition"),
+        ("heart.fill", "Heart"),
     ]
 
     static func label(for symbol: String) -> String {
@@ -55,8 +58,6 @@ struct WatchlistFolderIconPicker: View {
     @Binding var selection: String
     var accent: Color = AppColors.accentHighlight
 
-    private let columns = [GridItem(.adaptive(minimum: 52), spacing: 10)]
-
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Icon")
@@ -64,10 +65,13 @@ struct WatchlistFolderIconPicker: View {
                 .foregroundStyle(AppColors.secondaryLabel)
                 .textCase(.uppercase)
 
-            LazyVGrid(columns: columns, spacing: 10) {
-                ForEach(WatchlistFolderIcons.catalog, id: \.symbol) { item in
-                    iconButton(symbol: item.symbol, label: item.label)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ForEach(WatchlistFolderIcons.catalog, id: \.symbol) { item in
+                        iconButton(symbol: item.symbol, label: item.label)
+                    }
                 }
+                .padding(.horizontal, 2)
             }
         }
     }
