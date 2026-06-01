@@ -8,20 +8,38 @@ struct GoogleSignInRequest: Encodable {
     }
 }
 
-struct GoogleSignInResponse: Decodable {
+/// Accepts snake_case or camelCase auth token payloads from the API.
+struct AuthTokenResponse: Decodable {
     let accessToken: String
     let tokenType: String
 
-    enum CodingKeys: String, CodingKey {
+    init(from decoder: Decoder) throws {
+        if let snake = try? decoder.container(keyedBy: SnakeKeys.self),
+           let token = try? snake.decode(String.self, forKey: .accessToken),
+           !token.isEmpty {
+            accessToken = token
+            tokenType = (try? snake.decode(String.self, forKey: .tokenType)) ?? "bearer"
+            return
+        }
+
+        let camel = try decoder.container(keyedBy: CamelKeys.self)
+        accessToken = try camel.decode(String.self, forKey: .accessToken)
+        tokenType = (try? camel.decode(String.self, forKey: .tokenType)) ?? "bearer"
+    }
+
+    private enum SnakeKeys: String, CodingKey {
         case accessToken = "access_token"
         case tokenType = "token_type"
     }
+
+    private enum CamelKeys: String, CodingKey {
+        case accessToken
+        case tokenType
+    }
 }
 
-struct AuthRefreshResponse: Decodable {
-    let accessToken: String
-    let tokenType: String
-}
+typealias GoogleSignInResponse = AuthTokenResponse
+typealias AuthRefreshResponse = AuthTokenResponse
 
 struct SchwabConnectResponse: Decodable {
     let authURL: String
