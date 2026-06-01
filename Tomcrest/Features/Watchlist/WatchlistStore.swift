@@ -4,13 +4,18 @@ import SwiftUI
 @MainActor
 @Observable
 final class WatchlistStore {
+    let quoteStore = WatchlistQuoteStore()
+
     var folders: [WatchlistFolder] = []
     var editingFolderID: UUID?
     var customizingFolderID: UUID?
     var showingNewFolderSheet = false
     var activeDragSymbol: WatchlistSymbolDragPayload?
     var folderSortMode: WatchlistFolderSortMode {
-        didSet { UserDefaults.standard.set(folderSortMode.rawValue, forKey: Self.folderSortModeKey) }
+        didSet {
+            UserDefaults.standard.set(folderSortMode.rawValue, forKey: Self.folderSortModeKey)
+            invalidateFolderOrderCache()
+        }
     }
     var isLoading = false
     var errorMessage: String?
@@ -20,8 +25,13 @@ final class WatchlistStore {
     private var isPersisting = false
     private var needsSyncAfterPersist = false
     private var hasLoaded = false
+    @ObservationIgnored private var cachedPinnedFolderIDs: [UUID]?
+    @ObservationIgnored private var cachedRegularFolderIDs: [UUID]?
+    @ObservationIgnored private var cachedAllTickers: [String]?
+    @ObservationIgnored private var lastQuoteRefresh: Date?
     private static let folderSortModeKey = "watchlist.folderSortMode"
     private static let legacySymbolSortModeKey = "watchlist.symbolSortMode"
+    private static let quoteRefreshInterval: TimeInterval = 45
 
     init() {
         let storedRaw = UserDefaults.standard.string(forKey: Self.folderSortModeKey)
@@ -50,17 +60,24 @@ final class WatchlistStore {
         isLoading = false
         errorMessage = nil
         hasLoaded = false
+        lastQuoteRefresh = nil
+        quoteStore.reset()
+        invalidateFolderOrderCache()
+        invalidateTickerCache()
         ResearchSymbolStorage.clearAll()
     }
 
     var allTickers: [String] {
-        Array(
+        if let cachedAllTickers { return cachedAllTickers }
+        let tickers = Array(
             Set(
                 folders.flatMap { folder in
                     folder.symbols.map { $0.ticker.uppercased() }
                 }
             )
         ).sorted()
+        cachedAllTickers = tickers
+        return tickers
     }
 
     var hasSymbols: Bool {
@@ -72,15 +89,37 @@ final class WatchlistStore {
     }
 
     var sortedFolders: [WatchlistFolder] {
-        sortFolders(folders.filter(\.isPinned)) + sortFolders(folders.filter { !$0.isPinned })
+        rebuildFolderOrderCacheIfNeeded()
+        let ids = (cachedPinnedFolderIDs ?? []) + (cachedRegularFolderIDs ?? [])
+        return ids.compactMap { id in folders.first { $0.id == id } }
     }
 
     var pinnedFolders: [WatchlistFolder] {
-        sortFolders(folders.filter(\.isPinned))
+        rebuildFolderOrderCacheIfNeeded()
+        return (cachedPinnedFolderIDs ?? []).compactMap { id in folders.first { $0.id == id } }
     }
 
     var regularFolders: [WatchlistFolder] {
-        sortFolders(folders.filter { !$0.isPinned })
+        rebuildFolderOrderCacheIfNeeded()
+        return (cachedRegularFolderIDs ?? []).compactMap { id in folders.first { $0.id == id } }
+    }
+
+    private func rebuildFolderOrderCacheIfNeeded() {
+        if cachedPinnedFolderIDs == nil {
+            cachedPinnedFolderIDs = sortFolders(folders.filter(\.isPinned)).map(\.id)
+        }
+        if cachedRegularFolderIDs == nil {
+            cachedRegularFolderIDs = sortFolders(folders.filter { !$0.isPinned }).map(\.id)
+        }
+    }
+
+    private func invalidateFolderOrderCache() {
+        cachedPinnedFolderIDs = nil
+        cachedRegularFolderIDs = nil
+    }
+
+    private func invalidateTickerCache() {
+        cachedAllTickers = nil
     }
 
     private func sortFolders(_ folders: [WatchlistFolder]) -> [WatchlistFolder] {
@@ -118,8 +157,9 @@ final class WatchlistStore {
 
     func folderDayChange(_ folder: WatchlistFolder) -> (value: Double, percent: Double) {
         guard !folder.symbols.isEmpty else { return (0, 0) }
-        let total = folder.symbols.reduce(0) { $0 + $1.dayChange }
-        let avgPct = folder.symbols.reduce(0) { $0 + $1.dayChangePercent } / Double(folder.symbols.count)
+        let quotes = folder.symbols.map { quoteStore.quote(for: $0.id) }
+        let total = quotes.reduce(0) { $0 + $1.dayChange }
+        let avgPct = quotes.reduce(0) { $0 + $1.dayChangePercent } / Double(quotes.count)
         return (total, avgPct)
     }
 
@@ -143,17 +183,15 @@ final class WatchlistStore {
               let index = folders.firstIndex(where: { $0.id == folderID }),
               !folders[index].symbols.contains(where: { $0.ticker == upper }) else { return }
 
-        folders[index].symbols.append(
-            WatchlistSymbol(
-                id: UUID(),
-                ticker: upper,
-                companyName: companyName?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty ?? upper,
-                price: 0,
-                dayChange: 0,
-                dayChangePercent: 0,
-                createdAt: Date()
-            )
+        let symbol = WatchlistSymbol(
+            id: UUID(),
+            ticker: upper,
+            companyName: companyName?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty ?? upper,
+            createdAt: Date()
         )
+        folders[index].symbols.append(symbol)
+        quoteStore.setZero(for: symbol.id)
+        invalidateTickerCache()
         mirrorLocalCache()
         scheduleSync()
     }
@@ -163,7 +201,10 @@ final class WatchlistStore {
         guard !upper.isEmpty,
               let index = folders.firstIndex(where: { $0.id == folderID }) else { return }
 
+        let removedIDs = folders[index].symbols.filter { $0.ticker == upper }.map(\.id)
         folders[index].symbols.removeAll { $0.ticker == upper }
+        removedIDs.forEach { quoteStore.removeQuote(for: $0) }
+        invalidateTickerCache()
         mirrorLocalCache()
         scheduleSync()
     }
@@ -190,6 +231,7 @@ final class WatchlistStore {
         do {
             let response = try await WatchlistService.fetchWorkspace(accessToken: token)
             applyWorkspace(response)
+            lastQuoteRefresh = Date()
 
             if folders.isEmpty, !localSymbols.isEmpty, migrating {
                 seedFromLocalSymbols(localSymbols)
@@ -206,6 +248,15 @@ final class WatchlistStore {
         }
     }
 
+    func refreshQuotesIfNeeded(force: Bool = false) async {
+        if !force,
+           let lastQuoteRefresh,
+           Date().timeIntervalSince(lastQuoteRefresh) < Self.quoteRefreshInterval {
+            return
+        }
+        await refreshQuotes()
+    }
+
     func refreshQuotes() async {
         guard let auth, let token = auth.accessToken else { return }
 
@@ -215,6 +266,7 @@ final class WatchlistStore {
                 includeQuotes: true
             )
             applyQuotes(from: response)
+            lastQuoteRefresh = Date()
         } catch {
             errorMessage = userFacingError(error)
         }
@@ -226,9 +278,6 @@ final class WatchlistStore {
                 id: UUID(),
                 ticker: ticker.uppercased(),
                 companyName: ticker.uppercased(),
-                price: 0,
-                dayChange: 0,
-                dayChangePercent: 0,
                 createdAt: Date()
             )
         }
@@ -246,6 +295,9 @@ final class WatchlistStore {
                 sortOrder: 0
             ),
         ]
+        items.forEach { quoteStore.setZero(for: $0.id) }
+        invalidateFolderOrderCache()
+        invalidateTickerCache()
         normalizeSortOrders()
     }
 
@@ -255,30 +307,14 @@ final class WatchlistStore {
             mapped[index].createdAt = folders.first(where: { $0.id == mapped[index].id })?.createdAt
         }
         folders = mapped
+        quoteStore.applyWorkspaceQuotes(WatchlistAPIMapping.quotes(from: response))
+        invalidateFolderOrderCache()
+        invalidateTickerCache()
         mirrorLocalCache()
     }
 
     private func applyQuotes(from response: WatchlistWorkspaceResponse) {
-        let quotesByID: [String: WatchlistSymbolDTO] = Dictionary(
-            uniqueKeysWithValues: response.folders
-                .flatMap(\.symbols)
-                .map { ($0.id, $0) }
-        )
-
-        for folderIndex in folders.indices {
-            for symbolIndex in folders[folderIndex].symbols.indices {
-                let symbolID = folders[folderIndex].symbols[symbolIndex].id.uuidString
-                guard let dto = quotesByID[symbolID] else { continue }
-                folders[folderIndex].symbols[symbolIndex].companyName = dto.companyName
-                folders[folderIndex].symbols[symbolIndex].price = dto.price ?? 0
-                folders[folderIndex].symbols[symbolIndex].dayChange = dto.dayChange ?? 0
-                folders[folderIndex].symbols[symbolIndex].dayChangePercent = dto.dayChangePercent ?? 0
-                if folders[folderIndex].symbols[symbolIndex].createdAt == nil,
-                   let createdAt = dto.createdAt.flatMap(DateFormatters.parse) {
-                    folders[folderIndex].symbols[symbolIndex].createdAt = createdAt
-                }
-            }
-        }
+        quoteStore.mergeQuotes(WatchlistAPIMapping.quotes(from: response))
     }
 
     private func scheduleSync() {
@@ -377,6 +413,7 @@ final class WatchlistStore {
             folders[index].isPinned.toggle()
             normalizeSortOrders()
         }
+        invalidateFolderOrderCache()
         scheduleSync()
     }
 
@@ -388,10 +425,15 @@ final class WatchlistStore {
     }
 
     func deleteFolder(id: UUID) {
+        if let folder = folders.first(where: { $0.id == id }) {
+            folder.symbols.forEach { quoteStore.removeQuote(for: $0.id) }
+        }
         withAnimation(.spring(response: 0.35, dampingFraction: 0.88)) {
             folders.removeAll { $0.id == id }
             normalizeSortOrders()
         }
+        invalidateFolderOrderCache()
+        invalidateTickerCache()
         mirrorLocalCache()
         scheduleSync()
     }
@@ -413,6 +455,7 @@ final class WatchlistStore {
         withAnimation(.spring(response: 0.4, dampingFraction: 0.84)) {
             folders.append(folder)
         }
+        invalidateFolderOrderCache()
         scheduleSync()
     }
 
@@ -434,12 +477,14 @@ final class WatchlistStore {
         guard let targetIndex = folders.firstIndex(where: { $0.id == targetID }) else {
             folders.append(dragged)
             normalizeSortOrders()
+            invalidateFolderOrderCache()
             scheduleSync()
             return
         }
         dragged.sortOrder = target.sortOrder
         folders.insert(dragged, at: targetIndex)
         normalizeSortOrders()
+        invalidateFolderOrderCache()
         scheduleSync()
     }
 
@@ -454,6 +499,7 @@ final class WatchlistStore {
                 folders[index].sortOrder = offset + (inPinnedSection ? 0 : pinnedSectionCount)
             }
         }
+        invalidateFolderOrderCache()
         scheduleSync()
     }
 
@@ -475,6 +521,7 @@ final class WatchlistStore {
                 folders[index].sortOrder = offset + pinned.count
             }
         }
+        invalidateFolderOrderCache()
     }
 
     // MARK: - Symbol actions
@@ -489,6 +536,7 @@ final class WatchlistStore {
         withAnimation(.spring(response: 0.38, dampingFraction: 0.84)) {
             folders[destIndex].symbols.append(symbol)
         }
+        invalidateTickerCache()
         mirrorLocalCache()
         scheduleSync()
     }
@@ -502,6 +550,8 @@ final class WatchlistStore {
     func removeSymbol(folderID: UUID, symbolID: UUID) {
         guard let index = folders.firstIndex(where: { $0.id == folderID }) else { return }
         folders[index].symbols.removeAll { $0.id == symbolID }
+        quoteStore.removeQuote(for: symbolID)
+        invalidateTickerCache()
         mirrorLocalCache()
         scheduleSync()
     }

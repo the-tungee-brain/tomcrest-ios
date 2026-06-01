@@ -114,10 +114,9 @@ struct WatchlistGalleryVariantScreen: View {
     private func folderEditRow(_ folder: WatchlistFolder) -> some View {
         let swatch = store.swatch(for: folder)
         let accent = store.accentColor(for: folder)
-        let performance = store.folderDayChange(folder)
 
-        folderHeader(folder, accent: accent, performance: performance, allowsCollapseTap: false)
-            .watchlistFolderChrome(swatch: swatch, accent: accent)
+        folderHeader(folder, accent: accent, allowsCollapseTap: false)
+            .watchlistFolderChrome(swatch: swatch, accent: accent, accentHex: folder.accentHex)
             .accessibilityHint("Long press, then drag to reorder")
     }
 
@@ -135,14 +134,12 @@ struct WatchlistGalleryVariantScreen: View {
     private func folderCard(_ folder: WatchlistFolder, allowsInteraction: Bool) -> some View {
         let swatch = store.swatch(for: folder)
         let accent = store.accentColor(for: folder)
-        let performance = store.folderDayChange(folder)
         let isDropTarget = targetedDropFolderID == folder.id
 
         VStack(alignment: .leading, spacing: 0) {
             folderHeader(
                 folder,
                 accent: accent,
-                performance: performance,
                 allowsCollapseTap: allowsInteraction
             )
             .zIndex(1)
@@ -167,7 +164,7 @@ struct WatchlistGalleryVariantScreen: View {
                 }
             }
         }
-        .watchlistFolderChrome(swatch: swatch, accent: accent, isTargeted: isDropTarget)
+        .watchlistFolderChrome(swatch: swatch, accent: accent, accentHex: folder.accentHex, isTargeted: isDropTarget)
         .dropDestination(for: WatchlistSymbolDragPayload.self) { items, _ in
             guard allowsInteraction, let payload = items.first else { return false }
             store.moveSymbol(payload, to: folder.id)
@@ -182,7 +179,6 @@ struct WatchlistGalleryVariantScreen: View {
     private func folderHeader(
         _ folder: WatchlistFolder,
         accent: Color,
-        performance: (value: Double, percent: Double),
         allowsCollapseTap: Bool
     ) -> some View {
         HStack(alignment: .top, spacing: 12) {
@@ -194,7 +190,6 @@ struct WatchlistGalleryVariantScreen: View {
                         headerMainContent(
                             folder: folder,
                             accent: accent,
-                            performance: performance,
                             showChevron: true
                         )
                     }
@@ -203,7 +198,6 @@ struct WatchlistGalleryVariantScreen: View {
                     headerMainContent(
                         folder: folder,
                         accent: accent,
-                        performance: performance,
                         showChevron: false
                     )
                 }
@@ -228,7 +222,6 @@ struct WatchlistGalleryVariantScreen: View {
     private func headerMainContent(
         folder: WatchlistFolder,
         accent: Color,
-        performance: (value: Double, percent: Double),
         showChevron: Bool
     ) -> some View {
         HStack(alignment: .top, spacing: 12) {
@@ -252,9 +245,7 @@ struct WatchlistGalleryVariantScreen: View {
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.secondaryLabel)
 
-                    if !folder.symbols.isEmpty {
-                        WatchlistFolderPerformanceSummary(change: performance.value, percent: performance.percent)
-                    }
+                    WatchlistFolderDayChangeView(folder: folder)
                 }
             }
 

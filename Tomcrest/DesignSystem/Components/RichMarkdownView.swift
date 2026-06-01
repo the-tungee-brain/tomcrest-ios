@@ -5,19 +5,28 @@ struct RichMarkdownView: View {
     var font: Font = .subheadline
     var lineSpacing: CGFloat = 4
 
-    var body: some View {
-        let blocks = MarkdownBlockParser.parse(content)
+    @State private var blocks: [MarkdownBlock] = []
 
-        if blocks.isEmpty {
-            Text("…")
-                .font(font)
-                .foregroundStyle(AppColors.label)
-        } else {
-            VStack(alignment: .leading, spacing: 10) {
-                ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in
-                    blockView(block)
+    var body: some View {
+        Group {
+            if blocks.isEmpty {
+                Text("…")
+                    .font(font)
+                    .foregroundStyle(AppColors.label)
+                    .redacted(reason: content.isEmpty ? [] : .placeholder)
+            } else {
+                VStack(alignment: .leading, spacing: 10) {
+                    ForEach(blocks, id: \.renderID) { block in
+                        blockView(block)
+                    }
                 }
             }
+        }
+        .task(id: content) {
+            let parsed = await Task.detached(priority: .userInitiated) {
+                MarkdownBlockParser.parse(content)
+            }.value
+            blocks = parsed
         }
     }
 
@@ -39,14 +48,14 @@ struct RichMarkdownView: View {
 
         case let .bulletList(items):
             VStack(alignment: .leading, spacing: 6) {
-                ForEach(Array(items.enumerated()), id: \.offset) { _, item in
+                ForEach(Array(items.enumerated()), id: \.element) { _, item in
                     listRow(prefix: "•", text: item)
                 }
             }
 
         case let .numberedList(items):
             VStack(alignment: .leading, spacing: 6) {
-                ForEach(Array(items.enumerated()), id: \.offset) { index, item in
+                ForEach(Array(items.enumerated()), id: \.element) { index, item in
                     listRow(prefix: "\(index + 1).", text: item)
                 }
             }
@@ -90,5 +99,20 @@ struct RichMarkdownView: View {
             return Text(attributed)
         }
         return Text(verbatim: text)
+    }
+}
+
+private extension MarkdownBlock {
+    var renderID: String {
+        switch self {
+        case let .heading(level, text):
+            return "h\(level):\(text)"
+        case let .paragraph(text):
+            return "p:\(text)"
+        case let .bulletList(items):
+            return "ul:\(items.joined(separator: "\u{1F}"))"
+        case let .numberedList(items):
+            return "ol:\(items.enumerated().map { "\($0.offset):\($0.element)" }.joined(separator: "\u{1F}"))"
+        }
     }
 }

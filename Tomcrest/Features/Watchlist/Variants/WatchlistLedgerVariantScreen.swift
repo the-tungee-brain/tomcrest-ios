@@ -97,11 +97,10 @@ struct WatchlistLedgerVariantScreen: View {
         let swatch = store.swatch(for: folder)
         let accent = store.accentColor(for: folder)
         let isExpanded = !folder.isCollapsed
-        let performance = store.folderDayChange(folder)
         let isEditing = editingFolderID == folder.id
 
         VStack(alignment: .leading, spacing: 0) {
-            sectionHeader(folder, swatch: swatch, accent: accent, performance: performance, isExpanded: isExpanded)
+            sectionHeader(folder, swatch: swatch, accent: accent, isExpanded: isExpanded)
 
             if isEditing {
                 WatchlistPremiumColorPicker(
@@ -173,7 +172,6 @@ struct WatchlistLedgerVariantScreen: View {
         _ folder: WatchlistFolder,
         swatch: WatchlistSwatch,
         accent: Color,
-        performance: (value: Double, percent: Double),
         isExpanded: Bool
     ) -> some View {
         HStack(spacing: 12) {
@@ -197,9 +195,7 @@ struct WatchlistLedgerVariantScreen: View {
                                 .font(AppTypography.caption)
                                 .foregroundStyle(AppColors.tertiaryLabel)
 
-                            if !folder.symbols.isEmpty {
-                                WatchlistFolderPerformanceSummary(change: performance.value, percent: performance.percent)
-                            }
+                            WatchlistFolderDayChangeView(folder: folder)
                         }
                     }
 

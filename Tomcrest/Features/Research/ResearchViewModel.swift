@@ -101,6 +101,7 @@ final class SymbolOverviewViewModel {
 
     private var chatSessionId: String?
     private var chatHistoryHydrated = false
+    @ObservationIgnored private var chatStreamThrottler: ChatStreamThrottler
 
     private let auth: AuthSession
     private let api: APIClient
@@ -133,6 +134,12 @@ final class SymbolOverviewViewModel {
         self.symbol = symbol.uppercased()
         self.auth = auth
         self.api = api
+        self.chatStreamThrottler = ChatStreamThrottler()
+        self.chatStreamThrottler.apply = { [weak self] assistantId, chunk in
+            guard let self,
+                  let index = self.chatMessages.firstIndex(where: { $0.id == assistantId }) else { return }
+            self.chatMessages[index].content += chunk
+        }
     }
 
     func suggestedPrompt(for label: String) -> String? {
@@ -180,6 +187,10 @@ final class SymbolOverviewViewModel {
         chatInput = ""
         chatLoading = true
         chatExpanded = true
+        defer {
+            chatStreamThrottler.flushAll()
+            chatLoading = false
+        }
 
         let assistantId = "assistant-\(Date().timeIntervalSince1970)"
         chatMessages.append(ChatMessage(id: assistantId, role: .assistant, content: ""))
@@ -222,8 +233,6 @@ final class SymbolOverviewViewModel {
             )
             auth.setError((error as? APIError)?.errorDescription ?? error.localizedDescription)
         }
-
-        chatLoading = false
     }
 
     func sendPlaybookAsk(action: StrategyNextAction, strategyId: String) async {
@@ -236,6 +245,10 @@ final class SymbolOverviewViewModel {
         ))
         chatLoading = true
         chatExpanded = true
+        defer {
+            chatStreamThrottler.flushAll()
+            chatLoading = false
+        }
 
         let assistantId = "assistant-\(Date().timeIntervalSince1970)"
         chatMessages.append(ChatMessage(id: assistantId, role: .assistant, content: ""))
@@ -264,14 +277,10 @@ final class SymbolOverviewViewModel {
             )
             auth.setError((error as? APIError)?.errorDescription ?? error.localizedDescription)
         }
-
-        chatLoading = false
     }
 
     private func appendAssistantChunk(_ chunk: String, assistantId: String) {
-        guard !chunk.isEmpty,
-              let index = chatMessages.firstIndex(where: { $0.id == assistantId }) else { return }
-        chatMessages[index].content += chunk
+        chatStreamThrottler.append(chunk, assistantId: assistantId)
     }
 
     func hydrateChatHistoryIfNeeded(force: Bool = false) async {

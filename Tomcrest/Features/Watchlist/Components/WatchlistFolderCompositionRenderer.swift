@@ -121,9 +121,37 @@ struct WatchlistFolderCompositionRenderer: View {
 
 struct WatchlistSwatchPreviewFill: View {
     let swatch: WatchlistSwatch
+    var useLitePreview = true
 
     var body: some View {
-        WatchlistFolderCompositionRenderer(swatch: swatch, accent: swatch.accentColor)
+        if useLitePreview {
+            WatchlistSwatchLitePreview(swatch: swatch)
+        } else {
+            WatchlistFolderCompositionRenderer(swatch: swatch, accent: swatch.accentColor)
+        }
+    }
+}
+
+struct WatchlistSwatchLitePreview: View {
+    let swatch: WatchlistSwatch
+
+    var body: some View {
+        ZStack {
+            swatch.gradient
+
+            RadialGradient(
+                colors: [swatch.accentColor.opacity(0.28), .clear],
+                center: .topTrailing,
+                startRadius: 4,
+                endRadius: 72
+            )
+
+            LinearGradient(
+                colors: [Color.white.opacity(0.08), .clear],
+                startPoint: .top,
+                endPoint: .center
+            )
+        }
     }
 }
 

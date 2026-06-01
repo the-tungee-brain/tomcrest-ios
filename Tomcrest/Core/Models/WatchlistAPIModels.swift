@@ -86,11 +86,21 @@ enum WatchlistAPIMapping {
             id: id,
             ticker: dto.ticker,
             companyName: dto.companyName,
-            price: dto.price ?? 0,
-            dayChange: dto.dayChange ?? 0,
-            dayChangePercent: dto.dayChangePercent ?? 0,
             createdAt: dto.createdAt.flatMap(DateFormatters.parse)
         )
+    }
+
+    static func quotes(from response: WatchlistWorkspaceResponse) -> [UUID: WatchlistQuote] {
+        var quotes: [UUID: WatchlistQuote] = [:]
+        for dto in response.folders.flatMap(\.symbols) {
+            guard let id = UUID(uuidString: dto.id) else { continue }
+            quotes[id] = WatchlistQuote(
+                price: dto.price ?? 0,
+                dayChange: dto.dayChange ?? 0,
+                dayChangePercent: dto.dayChangePercent ?? 0
+            )
+        }
+        return quotes
     }
 
     static func syncRequest(from folders: [WatchlistFolder]) -> WatchlistWorkspaceSyncRequest {

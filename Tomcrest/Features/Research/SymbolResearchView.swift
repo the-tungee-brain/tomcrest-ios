@@ -14,6 +14,7 @@ struct SymbolResearchView: View {
     @State private var strategyRecommendations: StrategyRecommendations?
     @State private var profileSymbols: [String] = []
     @State private var backtestExploreSection: BacktestExploreSection?
+    @State private var tabLoadTask: Task<Void, Never>?
 
     private let initialBacktestSection: BacktestExploreSection?
     private let initialWheelBacktestQuery: WheelBacktestQuery?
@@ -142,7 +143,8 @@ struct SymbolResearchView: View {
             if tab != .backtest {
                 backtestExploreSection = nil
             }
-            Task {
+            tabLoadTask?.cancel()
+            tabLoadTask = Task {
                 if tab == .position || tab == .options {
                     await positionVM.loadIfNeeded()
                 }

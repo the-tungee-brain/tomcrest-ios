@@ -7,9 +7,6 @@ struct WatchlistSymbol: Identifiable, Equatable, Hashable {
     let id: UUID
     var ticker: String
     var companyName: String
-    var price: Double
-    var dayChange: Double
-    var dayChangePercent: Double
     var createdAt: Date? = nil
 }
 

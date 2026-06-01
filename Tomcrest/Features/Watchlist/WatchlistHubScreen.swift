@@ -83,7 +83,7 @@ struct WatchlistHubScreen: View {
         .appPushedScreenCanvas()
         .refreshable {
             guard !isEditingFolderOrder else { return }
-            await watchlistStore.refreshQuotes()
+            await watchlistStore.refreshQuotesIfNeeded(force: true)
         }
         .sheet(item: $folderFormMode) { mode in
             WatchlistFolderFormSheet(mode: mode) { name, iconName, swatchID, accentHex in

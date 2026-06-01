@@ -3,23 +3,42 @@ import SwiftUI
 struct WatchlistFolderBackground: View {
     let swatch: WatchlistSwatch
     var accentOverride: Color?
+    var accentHex: UInt32?
+
+    @Environment(\.colorScheme) private var colorScheme
 
     private var accent: Color { accentOverride ?? swatch.accentColor }
 
     var body: some View {
-        WatchlistFolderCompositionRenderer(swatch: swatch, accent: accent)
+        GeometryReader { proxy in
+            let size = proxy.size
+            if let image = WatchlistFolderCompositionCache.render(
+                swatch: swatch,
+                accent: accent,
+                accentHex: accentHex,
+                size: size,
+                colorScheme: colorScheme
+            ) {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                WatchlistFolderCompositionRenderer(swatch: swatch, accent: accent)
+            }
+        }
     }
 }
 
 struct WatchlistFolderCardChrome: ViewModifier {
     let swatch: WatchlistSwatch
     var accent: Color
+    var accentHex: UInt32?
     var isTargeted: Bool = false
 
     func body(content: Content) -> some View {
         content
             .background {
-                WatchlistFolderBackground(swatch: swatch, accentOverride: accent)
+                WatchlistFolderBackground(swatch: swatch, accentOverride: accent, accentHex: accentHex)
             }
             .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
             .overlay {
@@ -36,8 +55,13 @@ struct WatchlistFolderCardChrome: ViewModifier {
 }
 
 extension View {
-    func watchlistFolderChrome(swatch: WatchlistSwatch, accent: Color, isTargeted: Bool = false) -> some View {
-        modifier(WatchlistFolderCardChrome(swatch: swatch, accent: accent, isTargeted: isTargeted))
+    func watchlistFolderChrome(
+        swatch: WatchlistSwatch,
+        accent: Color,
+        accentHex: UInt32? = nil,
+        isTargeted: Bool = false
+    ) -> some View {
+        modifier(WatchlistFolderCardChrome(swatch: swatch, accent: accent, accentHex: accentHex, isTargeted: isTargeted))
     }
 }
 

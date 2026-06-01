@@ -37,7 +37,7 @@ struct MainTabView: View {
         .appClearUIKitBackground()
         .task(id: auth.accessToken) {
             guard let accessToken = auth.accessToken else { return }
-            await account.loadPlan(accessToken: accessToken)
+            await account.loadPlanIfNeeded(accessToken: accessToken)
         }
     }
 }

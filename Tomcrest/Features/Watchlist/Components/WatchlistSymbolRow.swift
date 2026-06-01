@@ -1,10 +1,16 @@
 import SwiftUI
 
 struct WatchlistSymbolRow: View {
+    @Environment(WatchlistStore.self) private var watchlistStore
+
     let symbol: WatchlistSymbol
     var folderAccent: Color = AppColors.accentHighlight
     var isDragging = false
     var onTap: (() -> Void)?
+
+    private var quote: WatchlistQuote {
+        watchlistStore.quoteStore.quote(for: symbol.id)
+    }
 
     var body: some View {
         Button {
@@ -26,16 +32,16 @@ struct WatchlistSymbolRow: View {
                 Spacer(minLength: 8)
 
                 VStack(alignment: .trailing, spacing: 4) {
-                    Text(CurrencyFormatter.usd(symbol.price))
+                    Text(CurrencyFormatter.usd(quote.price))
                         .font(AppTypography.monoCaptionSemibold)
                         .foregroundStyle(AppColors.label)
 
                     HStack(spacing: 4) {
-                        WatchlistTrendGlyph(change: symbol.dayChangePercent)
+                        WatchlistTrendGlyph(change: quote.dayChangePercent)
 
-                        Text(CurrencyFormatter.percent(symbol.dayChangePercent))
+                        Text(CurrencyFormatter.percent(quote.dayChangePercent))
                             .font(AppTypography.monoCaption2)
-                            .foregroundStyle(WatchlistProfitTone.color(for: symbol.dayChangePercent))
+                            .foregroundStyle(WatchlistProfitTone.color(for: quote.dayChangePercent))
                     }
                 }
             }
@@ -52,6 +58,25 @@ struct WatchlistSymbolRow: View {
         }
         .buttonStyle(.plain)
         .disabled(onTap == nil)
+    }
+}
+
+struct WatchlistFolderDayChangeView: View {
+    @Environment(WatchlistStore.self) private var watchlistStore
+
+    let folder: WatchlistFolder
+
+    var body: some View {
+        if !folder.symbols.isEmpty {
+            WatchlistFolderPerformanceSummary(change: totals.value, percent: totals.percent)
+        }
+    }
+
+    private var totals: (value: Double, percent: Double) {
+        let quotes = folder.symbols.map { watchlistStore.quoteStore.quote(for: $0.id) }
+        let total = quotes.reduce(0) { $0 + $1.dayChange }
+        let averagePercent = quotes.reduce(0) { $0 + $1.dayChangePercent } / Double(quotes.count)
+        return (total, averagePercent)
     }
 }
 

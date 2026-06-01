@@ -30,7 +30,7 @@ struct PortfolioWatchlistPanel: View {
         .task(id: isExpanded) {
             guard isExpanded else { return }
             await watchlistStore.ensureLoaded()
-            await watchlistStore.refreshQuotes()
+            await watchlistStore.refreshQuotesIfNeeded()
         }
         .sheet(item: $folderFormMode) { mode in
             WatchlistFolderFormSheet(mode: mode) { name, iconName, swatchID, accentHex in
@@ -111,11 +111,10 @@ struct PortfolioWatchlistPanel: View {
     private func folderCard(_ folder: WatchlistFolder) -> some View {
         let swatch = watchlistStore.swatch(for: folder)
         let accent = watchlistStore.accentColor(for: folder)
-        let performance = watchlistStore.folderDayChange(folder)
         let isFolderCollapsed = collapsedFolderIDs.contains(folder.id)
 
         VStack(alignment: .leading, spacing: 0) {
-            folderHeader(folder, accent: accent, performance: performance, isCollapsed: isFolderCollapsed)
+            folderHeader(folder, accent: accent, isCollapsed: isFolderCollapsed)
                 .zIndex(1)
                 .contentShape(Rectangle())
                 .onTapGesture {
@@ -155,26 +154,27 @@ struct PortfolioWatchlistPanel: View {
                             .padding(.horizontal, 14)
                             .padding(.vertical, 10)
                     } else {
-                        ForEach(folder.symbols) { symbol in
-                            WatchlistSymbolRow(
-                                symbol: symbol,
-                                folderAccent: accent
-                            ) {
-                                onSelect(symbol.ticker)
+                        LazyVStack(spacing: 8) {
+                            ForEach(folder.symbols) { symbol in
+                                WatchlistSymbolRow(
+                                    symbol: symbol,
+                                    folderAccent: accent
+                                ) {
+                                    onSelect(symbol.ticker)
+                                }
                             }
                         }
                     }
                 }
             }
         }
-        .watchlistFolderChrome(swatch: swatch, accent: accent)
+        .watchlistFolderChrome(swatch: swatch, accent: accent, accentHex: folder.accentHex)
     }
 
     @ViewBuilder
     private func folderHeader(
         _ folder: WatchlistFolder,
         accent: Color,
-        performance: (value: Double, percent: Double),
         isCollapsed: Bool
     ) -> some View {
         HStack(alignment: .center, spacing: 12) {
@@ -198,12 +198,7 @@ struct PortfolioWatchlistPanel: View {
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.secondaryLabel)
 
-                    if !folder.symbols.isEmpty {
-                        WatchlistFolderPerformanceSummary(
-                            change: performance.value,
-                            percent: performance.percent
-                        )
-                    }
+                    WatchlistFolderDayChangeView(folder: folder)
                 }
             }
 

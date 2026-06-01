@@ -62,6 +62,9 @@ final class PortfolioViewModel {
     private var chatHistoryHydrated = false
     private var chatAccountPayload: JSONPassThrough?
     private var chatPositionsPayload: JSONPassThrough?
+    @ObservationIgnored private var cachedHoldingSummaries: [SymbolHoldingSummary]?
+    @ObservationIgnored private var holdingSummariesCacheKey: Int?
+    @ObservationIgnored private var chatStreamThrottler: ChatStreamThrottler
 
     private let auth: AuthSession
     private let api: APIClient
@@ -69,6 +72,12 @@ final class PortfolioViewModel {
     init(auth: AuthSession, api: APIClient = .shared) {
         self.auth = auth
         self.api = api
+        self.chatStreamThrottler = ChatStreamThrottler()
+        self.chatStreamThrottler.apply = { [weak self] assistantId, chunk in
+            guard let self,
+                  let index = self.chatMessages.firstIndex(where: { $0.id == assistantId }) else { return }
+            self.chatMessages[index].content += chunk
+        }
     }
 
     var briefLead: String? {
@@ -129,7 +138,29 @@ final class PortfolioViewModel {
     }
 
     var holdingSummaries: [SymbolHoldingSummary] {
-        PortfolioHoldingsSupport.buildSummaries(positions: positions, alerts: alerts)
+        let cacheKey = holdingSummariesCacheSignature
+        if holdingSummariesCacheKey == cacheKey, let cachedHoldingSummaries {
+            return cachedHoldingSummaries
+        }
+        let summaries = PortfolioHoldingsSupport.buildSummaries(positions: positions, alerts: alerts)
+        cachedHoldingSummaries = summaries
+        holdingSummariesCacheKey = cacheKey
+        return summaries
+    }
+
+    private var holdingSummariesCacheSignature: Int {
+        var hasher = Hasher()
+        hasher.combine(positions.count)
+        for position in positions {
+            hasher.combine(position.displaySymbol)
+            hasher.combine(position.currentDayProfitLoss)
+            hasher.combine(position.marketValue)
+        }
+        hasher.combine(alerts.count)
+        for alert in alerts {
+            hasher.combine(alert.id)
+        }
+        return hasher.finalize()
     }
 
     var totalDayProfitLoss: Double {
@@ -263,6 +294,10 @@ final class PortfolioViewModel {
         chatMessages.append(userMessage)
         chatLoading = true
         chatExpanded = true
+        defer {
+            chatStreamThrottler.flushAll()
+            chatLoading = false
+        }
 
         let assistantId = "assistant-\(Date().timeIntervalSince1970)"
         chatMessages.append(ChatMessage(id: assistantId, role: .assistant, content: ""))
@@ -291,8 +326,6 @@ final class PortfolioViewModel {
             )
             auth.setError((error as? APIError)?.errorDescription ?? error.localizedDescription)
         }
-
-        chatLoading = false
     }
 
     func connectSchwabFromPlaybook() async {
@@ -429,6 +462,10 @@ final class PortfolioViewModel {
         chatInput = ""
         chatLoading = true
         chatExpanded = true
+        defer {
+            chatStreamThrottler.flushAll()
+            chatLoading = false
+        }
 
         let assistantId = "assistant-\(Date().timeIntervalSince1970)"
         chatMessages.append(ChatMessage(id: assistantId, role: .assistant, content: ""))
@@ -470,14 +507,10 @@ final class PortfolioViewModel {
             )
             auth.setError((error as? APIError)?.errorDescription ?? error.localizedDescription)
         }
-
-        chatLoading = false
     }
 
     private func appendAssistantChunk(_ chunk: String, assistantId: String) {
-        guard !chunk.isEmpty,
-              let index = chatMessages.firstIndex(where: { $0.id == assistantId }) else { return }
-        chatMessages[index].content += chunk
+        chatStreamThrottler.append(chunk, assistantId: assistantId)
     }
 
     func hydrateChatHistoryIfNeeded(force: Bool = false) async {

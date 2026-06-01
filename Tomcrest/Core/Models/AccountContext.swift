@@ -58,6 +58,11 @@ final class AccountContext {
         ChatModelSupport.displayLabel(for: effectiveChatModel, plan: plan)
     }
 
+    func loadPlanIfNeeded(accessToken: String) async {
+        guard plan == nil, !isLoadingPlan else { return }
+        await loadPlan(accessToken: accessToken)
+    }
+
     func loadPlan(accessToken: String) async {
         isLoadingPlan = true
         defer { isLoadingPlan = false }

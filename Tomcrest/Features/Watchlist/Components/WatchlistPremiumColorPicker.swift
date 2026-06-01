@@ -92,7 +92,7 @@ struct WatchlistPremiumColorPicker: View {
             Spacer()
         }
         .padding(14)
-        .watchlistFolderChrome(swatch: selectedSwatch, accent: accentColor)
+        .watchlistFolderChrome(swatch: selectedSwatch, accent: accentColor, accentHex: accentHex)
     }
 
     private var accentColor: Color {

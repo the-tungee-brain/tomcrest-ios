@@ -8,10 +8,10 @@ enum WatchlistMockData {
                 name: "Tech growth",
                 iconName: "chart.line.uptrend.xyaxis",
                 symbols: [
-                    symbol("NVDA", "NVIDIA", 892.40, 18.20, 2.08),
-                    symbol("AAPL", "Apple", 189.30, -1.42, -0.74),
-                    symbol("MSFT", "Microsoft", 415.60, 3.85, 0.94),
-                    symbol("AMD", "Advanced Micro Devices", 162.15, 4.22, 2.67),
+                    symbol("NVDA", "NVIDIA"),
+                    symbol("AAPL", "Apple"),
+                    symbol("MSFT", "Microsoft"),
+                    symbol("AMD", "Advanced Micro Devices"),
                 ],
                 swatchID: "lavender",
                 accentHex: nil,
@@ -24,9 +24,9 @@ enum WatchlistMockData {
                 name: "Dividend income",
                 iconName: "banknote.fill",
                 symbols: [
-                    symbol("SCHD", "Schwab US Dividend", 78.42, 0.18, 0.23),
-                    symbol("JNJ", "Johnson & Johnson", 156.80, -0.55, -0.35),
-                    symbol("KO", "Coca-Cola", 60.12, 0.08, 0.13),
+                    symbol("SCHD", "Schwab US Dividend"),
+                    symbol("JNJ", "Johnson & Johnson"),
+                    symbol("KO", "Coca-Cola"),
                 ],
                 swatchID: "sage",
                 accentHex: nil,
@@ -39,9 +39,9 @@ enum WatchlistMockData {
                 name: "Index ETFs",
                 iconName: "chart.pie.fill",
                 symbols: [
-                    symbol("SPY", "SPDR S&P 500", 512.30, 2.10, 0.41),
-                    symbol("QQQ", "Invesco QQQ", 438.90, 3.44, 0.79),
-                    symbol("VTI", "Vanguard Total Stock", 268.15, 1.02, 0.38),
+                    symbol("SPY", "SPDR S&P 500"),
+                    symbol("QQQ", "Invesco QQQ"),
+                    symbol("VTI", "Vanguard Total Stock"),
                 ],
                 swatchID: "teal",
                 accentHex: nil,
@@ -54,8 +54,8 @@ enum WatchlistMockData {
                 name: "Watch later",
                 iconName: "eye.fill",
                 symbols: [
-                    symbol("PLTR", "Palantir", 24.88, -0.62, -2.43),
-                    symbol("COIN", "Coinbase", 198.40, 6.20, 3.22),
+                    symbol("PLTR", "Palantir"),
+                    symbol("COIN", "Coinbase"),
                 ],
                 swatchID: "rose",
                 accentHex: nil,
@@ -66,20 +66,11 @@ enum WatchlistMockData {
         ]
     }
 
-    private static func symbol(
-        _ ticker: String,
-        _ company: String,
-        _ price: Double,
-        _ change: Double,
-        _ changePct: Double
-    ) -> WatchlistSymbol {
+    private static func symbol(_ ticker: String, _ company: String) -> WatchlistSymbol {
         WatchlistSymbol(
             id: UUID(),
             ticker: ticker,
-            companyName: company,
-            price: price,
-            dayChange: change,
-            dayChangePercent: changePct
+            companyName: company
         )
     }
 }
