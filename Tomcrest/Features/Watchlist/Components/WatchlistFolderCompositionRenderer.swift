@@ -236,7 +236,7 @@ private struct WatchlistFolderConcentricRingsLayer: View {
             let center = CGPoint(x: size.width * 0.62, y: size.height * 0.42)
             let radii: [CGFloat] = [36, 58, 82, 108]
             for (index, radius) in radii.enumerated() {
-                var ring = Path(ellipseIn: CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2))
+                let ring = Path(ellipseIn: CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2))
                 let alpha = palette.intensity(0.16, light: 0.10) - Double(index) * 0.025
                 context.stroke(ring, with: .color(palette.accent.opacity(alpha)), lineWidth: 0.8)
             }

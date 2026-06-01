@@ -6,6 +6,7 @@ struct PortfolioWatchlistPanel: View {
 
     @State private var isExpanded = !OnboardingStorage.isPortfolioWatchlistCollapsed()
     @State private var collapsedFolderIDs: Set<UUID> = []
+    @State private var folderFormMode: WatchlistFolderFormSheet.Mode?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -30,6 +31,14 @@ struct PortfolioWatchlistPanel: View {
             guard isExpanded else { return }
             await watchlistStore.ensureLoaded()
             await watchlistStore.refreshQuotes()
+        }
+        .sheet(item: $folderFormMode) { mode in
+            WatchlistFolderFormSheet(mode: mode) { name, iconName, swatchID, accentHex in
+                if case .edit(let folder) = mode {
+                    watchlistStore.renameFolder(id: folder.id, name: name, iconName: iconName)
+                    watchlistStore.updateFolderStyle(id: folder.id, swatchID: swatchID, accentHex: accentHex)
+                }
+            }
         }
     }
 
@@ -115,6 +124,12 @@ struct PortfolioWatchlistPanel: View {
                     }
                 }
                 .contextMenu {
+                    Button {
+                        folderFormMode = .edit(folder)
+                    } label: {
+                        Label("Customize", systemImage: "paintpalette")
+                    }
+
                     if folder.isPinned {
                         Button {
                             watchlistStore.togglePin(folderID: folder.id)

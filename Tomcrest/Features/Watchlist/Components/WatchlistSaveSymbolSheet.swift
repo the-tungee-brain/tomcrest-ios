@@ -51,12 +51,16 @@ struct WatchlistSaveSymbolSheet: View {
         .presentationDragIndicator(.visible)
         .sheet(item: $folderFormMode) { mode in
             WatchlistFolderFormSheet(mode: mode) { name, iconName, swatchID, accentHex in
-                watchlistStore.addFolder(name: name, iconName: iconName, swatchID: swatchID)
-                if let folderID = watchlistStore.folders.last?.id {
-                    if let accentHex {
+                switch mode {
+                case .create:
+                    watchlistStore.addFolder(name: name, iconName: iconName, swatchID: swatchID)
+                    if let folderID = watchlistStore.folders.last?.id {
                         watchlistStore.updateFolderStyle(id: folderID, swatchID: swatchID, accentHex: accentHex)
+                        watchlistStore.addSymbol(ticker, companyName: displayName, toFolderID: folderID)
                     }
-                    watchlistStore.addSymbol(ticker, companyName: displayName, toFolderID: folderID)
+                case .edit(let folder):
+                    watchlistStore.renameFolder(id: folder.id, name: name, iconName: iconName)
+                    watchlistStore.updateFolderStyle(id: folder.id, swatchID: swatchID, accentHex: accentHex)
                 }
             }
         }
@@ -110,42 +114,59 @@ struct WatchlistSaveSymbolSheet: View {
         let accent = watchlistStore.accentColor(for: folder)
         let isSelected = watchlistStore.isSymbol(ticker, inFolderID: folder.id)
 
-        Button {
-            withAnimation(.spring(response: 0.28, dampingFraction: 0.84)) {
-                if isSelected {
-                    watchlistStore.removeSymbol(ticker, fromFolderID: folder.id)
-                } else {
-                    watchlistStore.addSymbol(ticker, companyName: displayName, toFolderID: folder.id)
+        HStack(spacing: 0) {
+            Button {
+                withAnimation(.spring(response: 0.28, dampingFraction: 0.84)) {
+                    if isSelected {
+                        watchlistStore.removeSymbol(ticker, fromFolderID: folder.id)
+                    } else {
+                        watchlistStore.addSymbol(ticker, companyName: displayName, toFolderID: folder.id)
+                    }
                 }
-            }
-        } label: {
-            HStack(spacing: 12) {
-                WatchlistFolderIconBadge(symbol: folder.iconName, accent: accent, size: 40, iconScale: .body)
+            } label: {
+                HStack(spacing: 12) {
+                    WatchlistFolderIconBadge(symbol: folder.iconName, accent: accent, size: 40, iconScale: .body)
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(folder.name)
-                        .font(AppTypography.cardTitle)
-                        .foregroundStyle(AppColors.label)
-                    Text("\(folder.symbols.count) symbols")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.secondaryLabel)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(folder.name)
+                            .font(AppTypography.cardTitle)
+                            .foregroundStyle(AppColors.label)
+                        Text("\(folder.symbols.count) symbols")
+                            .font(AppTypography.caption)
+                            .foregroundStyle(AppColors.secondaryLabel)
+                    }
+
+                    Spacer(minLength: 8)
+
+                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(isSelected ? accent : AppColors.tertiaryLabel)
                 }
-
-                Spacer(minLength: 8)
-
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(isSelected ? accent : AppColors.tertiaryLabel)
+                .padding(.leading, 14)
+                .padding(.vertical, 14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
             }
-            .padding(14)
-            .background(isSelected ? accent.opacity(0.12) : AppColors.insetSurface)
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .strokeBorder(isSelected ? accent.opacity(0.35) : AppColors.separator, lineWidth: 1)
+            .buttonStyle(.plain)
+
+            Button {
+                folderFormMode = .edit(folder)
+            } label: {
+                Image(systemName: "paintpalette.fill")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(accent)
+                    .frame(width: Layout.minTouchTarget, height: Layout.minTouchTarget)
             }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Customize \(folder.name)")
+            .padding(.trailing, 4)
         }
-        .buttonStyle(.plain)
+        .background(isSelected ? accent.opacity(0.12) : AppColors.insetSurface)
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(isSelected ? accent.opacity(0.35) : AppColors.separator, lineWidth: 1)
+        }
     }
 
     private var newFolderButton: some View {

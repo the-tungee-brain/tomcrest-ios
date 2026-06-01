@@ -950,7 +950,6 @@
 				LastUpgradeCheck = 2650;
 				TargetAttributes = {
 					61E91C968E701C7B16098D20 = {
-						DevelopmentTeam = "";
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -1321,6 +1320,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = 9N7A6NND9S;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Tomcrest/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Tomcrest;
@@ -1345,6 +1345,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = 9N7A6NND9S;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Tomcrest/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Tomcrest;
