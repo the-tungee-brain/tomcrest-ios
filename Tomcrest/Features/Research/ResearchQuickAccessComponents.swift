@@ -9,11 +9,10 @@ struct WatchlistToggleButton: View {
     @State private var isPreparing = false
     @State private var showSaveSheet = false
 
-    private var watching: Bool {
-        watchlistStore.contains(symbol)
-    }
-
     var body: some View {
+        @Bindable var store = watchlistStore
+        let watching = store.contains(symbol)
+
         Button {
             Task {
                 isPreparing = true
@@ -125,18 +124,11 @@ private struct ResearchSymbolChipRow: View {
     let onSelect: (String) -> Void
 
     var body: some View {
-        switch style {
-        case .watchlist:
-            AppHorizontalScrollRow {
-                HStack(spacing: 8) {
-                    ForEach(symbols, id: \.self) { symbol in
-                        chipButton(for: symbol)
-                    }
+        AppHorizontalScrollRow {
+            HStack(spacing: 8) {
+                ForEach(symbols, id: \.self) { symbol in
+                    chipButton(for: symbol)
                 }
-            }
-        case .recent:
-            AppWrappingChipGrid(items: symbols, minimumChipWidth: 96, spacing: 8) { symbol in
-                chipButton(for: symbol)
             }
         }
     }

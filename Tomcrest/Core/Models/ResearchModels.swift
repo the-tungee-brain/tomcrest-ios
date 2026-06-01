@@ -42,6 +42,7 @@ struct PerformanceSnapshot: Codable {
 struct SymbolIntelligence: Codable {
     let symbol: String
     let signals: [IntelligenceSignal]
+    let patternForecast: PatternTrendForecast?
     let partial: Bool?
 }
 

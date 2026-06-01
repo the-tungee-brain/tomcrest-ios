@@ -32,7 +32,6 @@ final class WatchlistStore {
     private var hasLoaded = false
     @ObservationIgnored private var cachedPinnedFolderIDs: [UUID]?
     @ObservationIgnored private var cachedRegularFolderIDs: [UUID]?
-    @ObservationIgnored private var cachedAllTickers: [String]?
     @ObservationIgnored private var lastQuoteRefresh: Date?
     @ObservationIgnored private var quoteRefreshTask: Task<Void, Never>?
     @ObservationIgnored private var isRefreshingQuotes = false
@@ -81,29 +80,29 @@ final class WatchlistStore {
         lastQuoteRefresh = nil
         quoteStore.reset()
         invalidateFolderOrderCache()
-        invalidateTickerCache()
         ResearchSymbolStorage.clearAll()
     }
 
     var allTickers: [String] {
-        if let cachedAllTickers { return cachedAllTickers }
-        let tickers = Array(
+        Array(
             Set(
                 folders.flatMap { folder in
                     folder.symbols.map { $0.ticker.uppercased() }
                 }
             )
         ).sorted()
-        cachedAllTickers = tickers
-        return tickers
     }
 
     var hasSymbols: Bool {
-        !allTickers.isEmpty
+        folders.contains { !$0.symbols.isEmpty }
     }
 
     func contains(_ symbol: String) -> Bool {
-        allTickers.contains(symbol.trimmingCharacters(in: .whitespacesAndNewlines).uppercased())
+        let upper = symbol.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        guard !upper.isEmpty else { return false }
+        return folders.contains { folder in
+            folder.symbols.contains { $0.ticker == upper }
+        }
     }
 
     var sortedFolders: [WatchlistFolder] {
@@ -134,10 +133,6 @@ final class WatchlistStore {
     private func invalidateFolderOrderCache() {
         cachedPinnedFolderIDs = nil
         cachedRegularFolderIDs = nil
-    }
-
-    private func invalidateTickerCache() {
-        cachedAllTickers = nil
     }
 
     private func sortFolders(_ folders: [WatchlistFolder]) -> [WatchlistFolder] {
@@ -209,7 +204,6 @@ final class WatchlistStore {
         )
         folders[index].symbols.append(symbol)
         quoteStore.setZero(for: symbol.id)
-        invalidateTickerCache()
         mirrorLocalCache()
         scheduleSync()
     }
@@ -222,7 +216,6 @@ final class WatchlistStore {
         let removedIDs = folders[index].symbols.filter { $0.ticker == upper }.map(\.id)
         folders[index].symbols.removeAll { $0.ticker == upper }
         removedIDs.forEach { quoteStore.removeQuote(for: $0) }
-        invalidateTickerCache()
         mirrorLocalCache()
         scheduleSync()
     }
@@ -338,7 +331,6 @@ final class WatchlistStore {
         ]
         items.forEach { quoteStore.setZero(for: $0.id) }
         invalidateFolderOrderCache()
-        invalidateTickerCache()
         normalizeSortOrders()
     }
 
@@ -354,7 +346,6 @@ final class WatchlistStore {
             seedQuotePlaceholders()
         }
         invalidateFolderOrderCache()
-        invalidateTickerCache()
         mirrorLocalCache()
     }
 
@@ -486,7 +477,6 @@ final class WatchlistStore {
             normalizeSortOrders()
         }
         invalidateFolderOrderCache()
-        invalidateTickerCache()
         mirrorLocalCache()
         scheduleSync()
     }
@@ -589,7 +579,6 @@ final class WatchlistStore {
         withAnimation(.spring(response: 0.38, dampingFraction: 0.84)) {
             folders[destIndex].symbols.append(symbol)
         }
-        invalidateTickerCache()
         mirrorLocalCache()
         scheduleSync()
     }
@@ -604,7 +593,6 @@ final class WatchlistStore {
         guard let index = folders.firstIndex(where: { $0.id == folderID }) else { return }
         folders[index].symbols.removeAll { $0.id == symbolID }
         quoteStore.removeQuote(for: symbolID)
-        invalidateTickerCache()
         mirrorLocalCache()
         scheduleSync()
     }

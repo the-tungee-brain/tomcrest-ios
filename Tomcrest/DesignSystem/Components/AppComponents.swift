@@ -134,9 +134,20 @@ struct AppSearchField: View {
             if isLoading {
                 ProgressView()
                     .controlSize(.small)
+            } else if !text.isEmpty {
+                Button {
+                    text = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.body)
+                        .foregroundStyle(AppColors.tertiaryLabel)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Clear search")
             }
         }
-        .padding(.horizontal, 14)
+        .padding(.leading, 14)
+        .padding(.trailing, (!text.isEmpty && !isLoading) ? 10 : 14)
         .frame(minHeight: Layout.minTouchTarget)
         .background(AppColors.secondaryFill)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))

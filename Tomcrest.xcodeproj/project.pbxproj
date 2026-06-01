@@ -122,6 +122,7 @@
 		A4EE0C975141119CE6DDAD86 /* SymbolResearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53BB8D1046E4B55799793F05 /* SymbolResearchView.swift */; };
 		A60256102693883CC996B177 /* PortfolioDestination.swift in Sources */ = {isa = PBXBuildFile; fileRef = D61D7BC464658FFB2824699F /* PortfolioDestination.swift */; };
 		A6A2C24443BBC27F02A085AC /* MarkdownText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A8CD16BE7E6DE61B1398F5D /* MarkdownText.swift */; };
+		A7C4E2F1938560B2D1E0F4A8 /* PatternTrendForecastViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8D5F3A2049671C3E2F1A5B9 /* PatternTrendForecastViews.swift */; };
 		A7D5F41AFD5E67F6336B2365 /* Inter-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 7A6BFF4363B9FEF83234643C /* Inter-Bold.ttf */; };
 		AB79334EB206DA687E6CFCE5 /* JetBrainsMono-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E87F760CDDD02D0D4EA42823 /* JetBrainsMono-SemiBold.ttf */; };
 		AE882C5BB0C1ECAD2CC87328 /* WatchlistMockData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C49ECE4709E4F94A3291A23 /* WatchlistMockData.swift */; };
@@ -212,7 +213,7 @@
 		0C49ECE4709E4F94A3291A23 /* WatchlistMockData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchlistMockData.swift; sourceTree = "<group>"; };
 		0CB2A83213E68E2642B34B5C /* WatchlistFolderComposition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchlistFolderComposition.swift; sourceTree = "<group>"; };
 		0F18AEC4D6A6D057B8949879 /* StrategySettingsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrategySettingsScreen.swift; sourceTree = "<group>"; };
-		138EC5E42BCE4AE458C46744 /* LICENSE */ = {isa = PBXFileReference; path = LICENSE; sourceTree = "<group>"; };
+		138EC5E42BCE4AE458C46744 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 		13F8E4634DC0DBAED63DF040 /* WatchlistFolderCompositionCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchlistFolderCompositionCache.swift; sourceTree = "<group>"; };
 		13FCA6420633BB5D44B6B041 /* StructuredAnalysisView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StructuredAnalysisView.swift; sourceTree = "<group>"; };
 		1697CBEF68C64E17FD159B09 /* SchwabOAuthCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchwabOAuthCoordinator.swift; sourceTree = "<group>"; };
@@ -305,7 +306,7 @@
 		85EC97728F1993387989923A /* PressAndHorizontalDragGesture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PressAndHorizontalDragGesture.swift; sourceTree = "<group>"; };
 		88F10CD8777A91B62DEE3729 /* ConversationalContentFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationalContentFormatting.swift; sourceTree = "<group>"; };
 		89A7D0E544FB71F7F77D85CB /* BrandTips.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = BrandTips.json; sourceTree = "<group>"; };
-		89DE7F43425C8D390A939AAA /* Tomcrest.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Tomcrest.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		89DE7F43425C8D390A939AAA /* Tomcrest.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Tomcrest.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8CAF69CE630520F776B851F3 /* AnalysisModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalysisModels.swift; sourceTree = "<group>"; };
 		8DCF22399EA739788C7300FC /* TomcrestApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TomcrestApp.swift; sourceTree = "<group>"; };
 		8E895B081A99DB55BF37C35C /* IntelligenceModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntelligenceModels.swift; sourceTree = "<group>"; };
@@ -350,6 +351,7 @@
 		B56394B8719374B1F61CC9DB /* RHLinePlot+NotSegmented.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RHLinePlot+NotSegmented.swift"; sourceTree = "<group>"; };
 		B65314C53D2FC1BAA35C9A31 /* WatchlistGalleryVariantScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchlistGalleryVariantScreen.swift; sourceTree = "<group>"; };
 		B6D9B7488577CD1BA00CF8BF /* PortfolioDashboardComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortfolioDashboardComponents.swift; sourceTree = "<group>"; };
+		B8D5F3A2049671C3E2F1A5B9 /* PatternTrendForecastViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatternTrendForecastViews.swift; sourceTree = "<group>"; };
 		BBD267BF2EB2C55F50BD1AAB /* IntelligenceHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntelligenceHelpers.swift; sourceTree = "<group>"; };
 		BCC6F358F37D7A0F5AABBC14 /* BrandTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrandTheme.swift; sourceTree = "<group>"; };
 		BD6F171E52B6F66A7CA40D34 /* LegalSettingsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegalSettingsScreen.swift; sourceTree = "<group>"; };
@@ -416,6 +418,7 @@
 				5325426B7882B9B13388D705 /* FundamentalMetricGroups.swift */,
 				BBD267BF2EB2C55F50BD1AAB /* IntelligenceHelpers.swift */,
 				4B2B49EE296007C99829151A /* PatternPredictionService.swift */,
+				B8D5F3A2049671C3E2F1A5B9 /* PatternTrendForecastViews.swift */,
 				4F6857D2FE761904F809D30C /* PdfExportSupport.swift */,
 				85DD00223176FDA0618D1B79 /* ResearchAssistantSheet.swift */,
 				9952646BAFBB92A38F812F53 /* ResearchChatPanel.swift */,
@@ -976,7 +979,6 @@
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					61E91C968E701C7B16098D20 = {
-						DevelopmentTeam = "";
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -1103,6 +1105,7 @@
 				0E72177F2B4551255D0E5430 /* OptionsRiskModels.swift in Sources */,
 				62A24C120A8F8BA291B7E2B5 /* PatternPredictionModels.swift in Sources */,
 				098F5F43B0807FE88953980E /* PatternPredictionService.swift in Sources */,
+				A7C4E2F1938560B2D1E0F4A8 /* PatternTrendForecastViews.swift in Sources */,
 				A4A4EC4F4CB83EE257E5537A /* PdfExportSupport.swift in Sources */,
 				CE177BFF154AEB04A3EA13D4 /* PortfolioActivityComponents.swift in Sources */,
 				50C901F53AA8EE4A1B4FDFCC /* PortfolioAnalysisComponents.swift in Sources */,
@@ -1349,6 +1352,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = 9N7A6NND9S;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Tomcrest/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Tomcrest;
@@ -1373,6 +1377,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = 9N7A6NND9S;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Tomcrest/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Tomcrest;

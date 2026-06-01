@@ -42,7 +42,7 @@ struct ResearchView: View {
                         ),
                         isLoading: viewModel.isSearching,
                         onSubmit: {
-                            if let first = viewModel.results.first {
+                            if let first = sortedSearchResults(viewModel.results).first {
                                 openSymbolItem(first)
                             }
                         }
@@ -146,8 +146,9 @@ struct ResearchView: View {
                 tone: .neutral
             )
         } else if !viewModel.results.isEmpty {
+            let results = sortedSearchResults(viewModel.results)
             AppGroupedList {
-                ForEach(Array(viewModel.results.prefix(12).enumerated()), id: \.element.id) { index, item in
+                ForEach(Array(results.prefix(12).enumerated()), id: \.element.id) { index, item in
                     HStack(spacing: 0) {
                         Button {
                             openSymbolItem(item)
@@ -156,11 +157,11 @@ struct ResearchView: View {
                         }
                         .buttonStyle(.plain)
 
-                        WatchlistToggleButton(symbol: item.symbol)
+                        WatchlistToggleButton(symbol: item.symbol, companyName: item.title)
                             .padding(.trailing, 8)
                     }
 
-                    if index < min(viewModel.results.count, 12) - 1 {
+                    if index < min(results.count, 12) - 1 {
                         AppGroupedDivider()
                     }
                 }
@@ -175,6 +176,18 @@ struct ResearchView: View {
                     openSymbol(symbol)
                 }
             }
+        }
+    }
+
+    private func sortedSearchResults(_ results: [TickerSymbolItem]) -> [TickerSymbolItem] {
+        let watchlist = Set(watchlistStore.allTickers)
+        return results.sorted { lhs, rhs in
+            let lhsWatching = watchlist.contains(lhs.symbol.uppercased())
+            let rhsWatching = watchlist.contains(rhs.symbol.uppercased())
+            if lhsWatching != rhsWatching {
+                return lhsWatching
+            }
+            return false
         }
     }
 
