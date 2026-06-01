@@ -44,6 +44,10 @@ final class WatchlistFolderEditReorderController {
         session?.folderID == id
     }
 
+    var hasActiveSession: Bool {
+        session != nil
+    }
+
     func rowOffset(for index: Int) -> CGFloat {
         guard let session else { return 0 }
         let from = session.startIndex
@@ -55,45 +59,29 @@ final class WatchlistFolderEditReorderController {
         return 0
     }
 
-    /// Drop any in-flight drag when leaving edit mode.
-    func cancelReorder() {
-        session = nil
-        isDragging = false
+    func begin(folder: WatchlistFolder, at index: Int) {
+        if let session, session.folderID != folder.id {
+            cancelReorder()
+        }
+        guard session == nil else { return }
+
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred(intensity: 0.9)
+        let stride = rowHeight + spacing
+        withAnimation(WatchlistFolderEditReorderMotion.lift) {
+            session = Session(
+                folderID: folder.id,
+                startIndex: index,
+                hoverIndex: index,
+                translation: 0,
+                rowStride: stride
+            )
+        }
     }
 
-    /// Long-press the folder card to lift, then drag — matches Reminders / Home Screen.
-    func reorderGesture(for folder: WatchlistFolder, at index: Int) -> some Gesture {
-        LongPressGesture(minimumDuration: 0.28, maximumDistance: 12)
-            .sequenced(before: DragGesture(minimumDistance: 0, coordinateSpace: .global))
-            .onChanged { value in
-                switch value {
-                case .first(true):
-                    if self.session == nil {
-                        self.begin(folder: folder, at: index)
-                    }
-                case .second(true, let drag):
-                    guard let drag else { break }
-                    if self.session == nil {
-                        self.begin(folder: folder, at: index)
-                    }
-                    self.updateDrag(for: folder, translation: drag.translation.height)
-                default:
-                    break
-                }
-            }
-            .onEnded { value in
-                switch value {
-                case .second(true, _):
-                    self.finish(folder: folder)
-                default:
-                    self.reset()
-                }
-            }
-    }
-
-    private func updateDrag(for folder: WatchlistFolder, translation: CGFloat) {
+    func updateDrag(for folder: WatchlistFolder, translation: CGFloat) {
         guard session?.folderID == folder.id, var next = session else { return }
 
+        isDragging = true
         let previousHover = next.hoverIndex
         next.translation = translation
         next.hoverIndex = hoverIndex(for: next)
@@ -108,28 +96,9 @@ final class WatchlistFolderEditReorderController {
         }
     }
 
-    private func begin(folder: WatchlistFolder, at index: Int) {
-        guard session == nil else { return }
-        isDragging = true
-        UIImpactFeedbackGenerator(style: .medium).impactOccurred(intensity: 0.9)
-
-        let stride = rowHeight + spacing
-        withAnimation(WatchlistFolderEditReorderMotion.lift) {
-            session = Session(
-                folderID: folder.id,
-                startIndex: index,
-                hoverIndex: index,
-                translation: 0,
-                rowStride: stride
-            )
-        }
-    }
-
-    private func finish(folder: WatchlistFolder) {
-        guard let session, session.folderID == folder.id else {
-            reset()
-            return
-        }
+    /// Commit or settle when the finger lifts.
+    func completeReorder(for folder: WatchlistFolder) {
+        guard let session, session.folderID == folder.id else { return }
 
         let from = session.startIndex
         let to = session.hoverIndex
@@ -137,12 +106,16 @@ final class WatchlistFolderEditReorderController {
         reset()
 
         guard from != to else { return }
-        Task { @MainActor in
-            withAnimation(WatchlistFolderEditReorderMotion.settle) {
-                commit?(from, to)
-            }
-            UIImpactFeedbackGenerator(style: .rigid).impactOccurred(intensity: 0.8)
+        withAnimation(WatchlistFolderEditReorderMotion.settle) {
+            commit?(from, to)
         }
+        UIImpactFeedbackGenerator(style: .rigid).impactOccurred(intensity: 0.8)
+    }
+
+    /// Drop lift without committing (finger up before drag, or recovery).
+    func cancelReorder() {
+        guard session != nil || isDragging else { return }
+        reset()
     }
 
     private func reset() {
@@ -176,7 +149,7 @@ struct WatchlistFolderEditReorderSection<RowContent: View>: View {
     @ViewBuilder var rowContent: (WatchlistFolder) -> RowContent
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: spacing) {
             Text(title)
                 .font(.caption2.weight(.medium))
                 .foregroundStyle(AppColors.tertiaryLabel)
@@ -185,7 +158,12 @@ struct WatchlistFolderEditReorderSection<RowContent: View>: View {
                 .padding(.top, 4)
 
             ForEach(Array(folders.enumerated()), id: \.element.id) { index, folder in
-                reorderRow(folder: folder, index: index)
+                WatchlistFolderEditReorderRow(
+                    folder: folder,
+                    index: index,
+                    controller: controller,
+                    rowContent: rowContent(folder)
+                )
             }
         }
         .onAppear {
@@ -193,19 +171,33 @@ struct WatchlistFolderEditReorderSection<RowContent: View>: View {
         }
         .onChange(of: folders.map(\.id)) { _, _ in
             controller.configure(folders: folders, spacing: spacing, onCommit: onCommit)
+            if controller.hasActiveSession {
+                controller.cancelReorder()
+            }
         }
         .onPreferenceChange(WatchlistFolderEditRowHeightKey.self) { height in
             controller.updateRowHeight(height)
         }
+        .onDisappear {
+            controller.cancelReorder()
+        }
     }
+}
 
-    @ViewBuilder
-    private func reorderRow(folder: WatchlistFolder, index: Int) -> some View {
+private struct WatchlistFolderEditReorderRow<RowContent: View>: View {
+    let folder: WatchlistFolder
+    let index: Int
+    @Bindable var controller: WatchlistFolderEditReorderController
+    let rowContent: RowContent
+
+    @GestureState private var isPointerDown = false
+
+    var body: some View {
         let isActive = controller.isActive(folder.id)
 
         ZStack(alignment: .top) {
             if isActive, let session = controller.session {
-                rowContent(folder)
+                rowContent
                     .opacity(0.42)
                     .overlay {
                         RoundedRectangle(cornerRadius: 20, style: .continuous)
@@ -216,7 +208,7 @@ struct WatchlistFolderEditReorderSection<RowContent: View>: View {
                     }
                     .animation(WatchlistFolderEditReorderMotion.lift, value: isActive)
 
-                rowContent(folder)
+                rowContent
                     .scaleEffect(1.05, anchor: .center)
                     .shadow(color: .black.opacity(0.28), radius: 22, y: 12)
                     .shadow(color: .black.opacity(0.12), radius: 5, y: 2)
@@ -224,16 +216,51 @@ struct WatchlistFolderEditReorderSection<RowContent: View>: View {
                     .animation(WatchlistFolderEditReorderMotion.finger, value: session.translation)
                     .zIndex(1)
             } else {
-                rowContent(folder)
+                rowContent
+                    .background(rowHeightReader)
             }
         }
         .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .gesture(controller.reorderGesture(for: folder, at: index))
-        .background(rowHeightReader)
+        .gesture(reorderGesture)
+        .onChange(of: isPointerDown) { _, down in
+            guard !down else { return }
+            guard controller.isActive(folder.id) else { return }
+            if controller.isDragging {
+                controller.completeReorder(for: folder)
+            } else {
+                controller.cancelReorder()
+            }
+        }
         .offset(y: isActive ? 0 : controller.rowOffset(for: index))
         .animation(WatchlistFolderEditReorderMotion.neighbor, value: controller.session?.hoverIndex)
         .zIndex(isActive ? 1 : 0)
         .accessibilityHint("Long press the folder, then drag to reorder.")
+    }
+
+    private var reorderGesture: some Gesture {
+        LongPressGesture(minimumDuration: 0.28, maximumDistance: 24)
+            .sequenced(before: DragGesture(minimumDistance: 0, coordinateSpace: .global))
+            .updating($isPointerDown) { _, state, _ in
+                state = true
+            }
+            .onChanged { value in
+                switch value {
+                case .first(true):
+                    controller.begin(folder: folder, at: index)
+                case .second(true, let drag?):
+                    controller.updateDrag(for: folder, translation: drag.translation.height)
+                default:
+                    break
+                }
+            }
+            .onEnded { value in
+                switch value {
+                case .second(true, _):
+                    controller.completeReorder(for: folder)
+                default:
+                    controller.cancelReorder()
+                }
+            }
     }
 
     private var rowHeightReader: some View {

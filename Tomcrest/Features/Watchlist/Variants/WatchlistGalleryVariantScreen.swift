@@ -13,10 +13,6 @@ struct WatchlistGalleryVariantScreen: View {
     @State private var pinnedEditReorder = WatchlistFolderEditReorderController()
     @State private var regularEditReorder = WatchlistFolderEditReorderController()
 
-    private var isEditDragging: Bool {
-        pinnedEditReorder.isDragging || regularEditReorder.isDragging
-    }
-
     var body: some View {
         Group {
             if isEditingFolderOrder {
@@ -111,7 +107,6 @@ struct WatchlistGalleryVariantScreen: View {
             .padding(.horizontal, 16)
             .padding(.bottom, 96)
         }
-        .scrollDisabled(isEditDragging)
         .accessibilityLabel("Reorder folders")
     }
 
