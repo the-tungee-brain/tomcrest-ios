@@ -9,30 +9,45 @@ final class WatchlistStore {
     var customizingFolderID: UUID?
     var showingNewFolderSheet = false
     var activeDragSymbol: WatchlistSymbolDragPayload?
+    var folderSortMode: WatchlistFolderSortMode {
+        didSet { UserDefaults.standard.set(folderSortMode.rawValue, forKey: Self.folderSortModeKey) }
+    }
     var isLoading = false
-    var isSyncing = false
     var errorMessage: String?
 
     private var auth: AuthSession?
-    private var syncTask: Task<Void, Never>?
+    private var debounceTask: Task<Void, Never>?
+    private var isPersisting = false
+    private var needsSyncAfterPersist = false
     private var hasLoaded = false
+    private static let folderSortModeKey = "watchlist.folderSortMode"
+    private static let legacySymbolSortModeKey = "watchlist.symbolSortMode"
 
-    init() {}
+    init() {
+        let storedRaw = UserDefaults.standard.string(forKey: Self.folderSortModeKey)
+            ?? UserDefaults.standard.string(forKey: Self.legacySymbolSortModeKey)
+        if let raw = storedRaw, let mode = WatchlistFolderSortMode(rawValue: raw) {
+            folderSortMode = mode
+        } else {
+            folderSortMode = .custom
+        }
+    }
 
     func bind(auth: AuthSession) {
         self.auth = auth
     }
 
     func reset() {
-        syncTask?.cancel()
-        syncTask = nil
+        debounceTask?.cancel()
+        debounceTask = nil
+        isPersisting = false
+        needsSyncAfterPersist = false
         folders = []
         editingFolderID = nil
         customizingFolderID = nil
         showingNewFolderSheet = false
         activeDragSymbol = nil
         isLoading = false
-        isSyncing = false
         errorMessage = nil
         hasLoaded = false
         ResearchSymbolStorage.clearAll()
@@ -57,18 +72,33 @@ final class WatchlistStore {
     }
 
     var sortedFolders: [WatchlistFolder] {
-        folders.sorted { lhs, rhs in
-            if lhs.isPinned != rhs.isPinned { return lhs.isPinned && !rhs.isPinned }
-            return lhs.sortOrder < rhs.sortOrder
-        }
+        sortFolders(folders.filter(\.isPinned)) + sortFolders(folders.filter { !$0.isPinned })
     }
 
     var pinnedFolders: [WatchlistFolder] {
-        sortedFolders.filter(\.isPinned)
+        sortFolders(folders.filter(\.isPinned))
     }
 
     var regularFolders: [WatchlistFolder] {
-        sortedFolders.filter { !$0.isPinned }
+        sortFolders(folders.filter { !$0.isPinned })
+    }
+
+    private func sortFolders(_ folders: [WatchlistFolder]) -> [WatchlistFolder] {
+        switch folderSortMode {
+        case .custom:
+            return folders.sorted { $0.sortOrder < $1.sortOrder }
+        case .name:
+            return folders.sorted {
+                $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+            }
+        case .dateAdded:
+            return folders.sorted { lhs, rhs in
+                let left = lhs.createdAt ?? .distantPast
+                let right = rhs.createdAt ?? .distantPast
+                if left != right { return left > right }
+                return lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
+            }
+        }
     }
 
     func folder(id: UUID) -> WatchlistFolder? {
@@ -120,7 +150,8 @@ final class WatchlistStore {
                 companyName: companyName?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty ?? upper,
                 price: 0,
                 dayChange: 0,
-                dayChangePercent: 0
+                dayChangePercent: 0,
+                createdAt: Date()
             )
         )
         mirrorLocalCache()
@@ -158,12 +189,11 @@ final class WatchlistStore {
 
         do {
             let response = try await WatchlistService.fetchWorkspace(accessToken: token)
-            folders = WatchlistAPIMapping.folders(from: response)
-            mirrorLocalCache()
+            applyWorkspace(response)
 
             if folders.isEmpty, !localSymbols.isEmpty, migrating {
                 seedFromLocalSymbols(localSymbols)
-                await persistWorkspaceImmediately()
+                await persistWorkspaceImmediately(applyResponse: true)
             }
         } catch {
             if migrating, !localSymbols.isEmpty {
@@ -198,7 +228,8 @@ final class WatchlistStore {
                 companyName: ticker.uppercased(),
                 price: 0,
                 dayChange: 0,
-                dayChangePercent: 0
+                dayChangePercent: 0,
+                createdAt: Date()
             )
         }
 
@@ -219,7 +250,11 @@ final class WatchlistStore {
     }
 
     private func applyWorkspace(_ response: WatchlistWorkspaceResponse) {
-        folders = WatchlistAPIMapping.folders(from: response)
+        var mapped = WatchlistAPIMapping.folders(from: response)
+        for index in mapped.indices where mapped[index].createdAt == nil {
+            mapped[index].createdAt = folders.first(where: { $0.id == mapped[index].id })?.createdAt
+        }
+        folders = mapped
         mirrorLocalCache()
     }
 
@@ -238,32 +273,51 @@ final class WatchlistStore {
                 folders[folderIndex].symbols[symbolIndex].price = dto.price ?? 0
                 folders[folderIndex].symbols[symbolIndex].dayChange = dto.dayChange ?? 0
                 folders[folderIndex].symbols[symbolIndex].dayChangePercent = dto.dayChangePercent ?? 0
+                if folders[folderIndex].symbols[symbolIndex].createdAt == nil,
+                   let createdAt = dto.createdAt.flatMap(DateFormatters.parse) {
+                    folders[folderIndex].symbols[symbolIndex].createdAt = createdAt
+                }
             }
         }
     }
 
     private func scheduleSync() {
         guard hasLoaded, auth?.accessToken != nil else { return }
-        syncTask?.cancel()
-        syncTask = Task { [weak self] in
+
+        if isPersisting {
+            needsSyncAfterPersist = true
+            return
+        }
+
+        debounceTask?.cancel()
+        debounceTask = Task { [weak self] in
             try? await Task.sleep(for: .milliseconds(700))
             guard !Task.isCancelled else { return }
             await self?.persistWorkspaceImmediately()
         }
     }
 
-    private func persistWorkspaceImmediately() async {
+    private func persistWorkspaceImmediately(applyResponse: Bool = false) async {
         guard let auth, let token = auth.accessToken else { return }
 
-        isSyncing = true
-        defer { isSyncing = false }
+        isPersisting = true
+        defer {
+            isPersisting = false
+            if needsSyncAfterPersist {
+                needsSyncAfterPersist = false
+                scheduleSync()
+            }
+        }
 
         do {
             let payload = WatchlistAPIMapping.syncRequest(from: folders)
             let response = try await WatchlistService.syncWorkspace(payload, accessToken: token)
-            applyWorkspace(response)
+            if applyResponse {
+                applyWorkspace(response)
+            }
             errorMessage = nil
         } catch {
+            guard !shouldIgnoreSyncError(error) else { return }
             errorMessage = userFacingError(error)
         }
     }
@@ -282,6 +336,9 @@ final class WatchlistStore {
     }
 
     private func userFacingError(_ error: Error) -> String {
+        if shouldIgnoreSyncError(error) {
+            return ""
+        }
         if let apiError = error as? APIError {
             switch apiError {
             case .decoding:
@@ -291,6 +348,17 @@ final class WatchlistStore {
             }
         }
         return error.localizedDescription
+    }
+
+    private func shouldIgnoreSyncError(_ error: Error) -> Bool {
+        if error is CancellationError { return true }
+        if Task.isCancelled { return true }
+        if let urlError = error as? URLError, urlError.code == .cancelled { return true }
+
+        let normalized = error.localizedDescription
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+        return normalized == "cancelled" || normalized == "canceled"
     }
 
     // MARK: - Folder actions
@@ -339,7 +407,8 @@ final class WatchlistStore {
             accentHex: nil,
             isPinned: false,
             isCollapsed: false,
-            sortOrder: order
+            sortOrder: order,
+            createdAt: Date()
         )
         withAnimation(.spring(response: 0.4, dampingFraction: 0.84)) {
             folders.append(folder)
@@ -360,6 +429,7 @@ final class WatchlistStore {
               let target = folders.first(where: { $0.id == targetID }),
               dragged.isPinned == target.isPinned else { return }
 
+        folderSortMode = .custom
         folders.removeAll { $0.id == draggedID }
         guard let targetIndex = folders.firstIndex(where: { $0.id == targetID }) else {
             folders.append(dragged)
@@ -374,20 +444,35 @@ final class WatchlistStore {
     }
 
     func reorderFolders(inPinnedSection: Bool, from source: IndexSet, to destination: Int) {
-        var section = inPinnedSection ? pinnedFolders : regularFolders
+        folderSortMode = .custom
+        var section = folders
+            .filter { inPinnedSection ? $0.isPinned : !$0.isPinned }
+            .sorted { $0.sortOrder < $1.sortOrder }
         section.move(fromOffsets: source, toOffset: destination)
         for (offset, folder) in section.enumerated() {
             if let index = folders.firstIndex(where: { $0.id == folder.id }) {
-                folders[index].sortOrder = offset + (inPinnedSection ? 0 : pinnedFolders.count)
+                folders[index].sortOrder = offset + (inPinnedSection ? 0 : pinnedSectionCount)
             }
         }
         scheduleSync()
     }
 
+    private var pinnedSectionCount: Int {
+        folders.filter(\.isPinned).count
+    }
+
     private func normalizeSortOrders() {
-        for (offset, folder) in sortedFolders.enumerated() {
+        let pinned = folders.filter(\.isPinned).sorted { $0.sortOrder < $1.sortOrder }
+        let regular = folders.filter { !$0.isPinned }.sorted { $0.sortOrder < $1.sortOrder }
+
+        for (offset, folder) in pinned.enumerated() {
             if let index = folders.firstIndex(where: { $0.id == folder.id }) {
                 folders[index].sortOrder = offset
+            }
+        }
+        for (offset, folder) in regular.enumerated() {
+            if let index = folders.firstIndex(where: { $0.id == folder.id }) {
+                folders[index].sortOrder = offset + pinned.count
             }
         }
     }

@@ -35,6 +35,25 @@ struct WatchlistHubScreen: View {
         }
         .navigationTitle("Watchlist")
         .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Picker("Sort folders", selection: Binding(
+                        get: { watchlistStore.folderSortMode },
+                        set: { watchlistStore.folderSortMode = $0 }
+                    )) {
+                        ForEach(WatchlistFolderSortMode.allCases) { mode in
+                            Label(mode.rawValue, systemImage: mode.systemImage)
+                                .tag(mode)
+                        }
+                    }
+                } label: {
+                    Image(systemName: "arrow.up.arrow.down.circle")
+                        .symbolRenderingMode(.hierarchical)
+                }
+                .accessibilityLabel("Sort folders")
+            }
+        }
         .appPushedScreenCanvas()
         .refreshable {
             await watchlistStore.refreshQuotes()
@@ -54,13 +73,8 @@ struct WatchlistHubScreen: View {
             folderFormMode = .create
         } label: {
             HStack(spacing: 8) {
-                if watchlistStore.isSyncing {
-                    ProgressView()
-                        .tint(AppColors.onAccent)
-                } else {
-                    Image(systemName: "folder.badge.plus")
-                        .font(.body.weight(.semibold))
-                }
+                Image(systemName: "folder.badge.plus")
+                    .font(.body.weight(.semibold))
                 Text("New folder")
                     .font(AppTypography.cardTitle)
             }
@@ -73,7 +87,6 @@ struct WatchlistHubScreen: View {
         }
         .buttonStyle(.plain)
         .padding(.bottom, 20)
-        .disabled(watchlistStore.isSyncing)
     }
 }
 

@@ -10,6 +10,7 @@ struct WatchlistSymbol: Identifiable, Equatable, Hashable {
     var price: Double
     var dayChange: Double
     var dayChangePercent: Double
+    var createdAt: Date? = nil
 }
 
 struct WatchlistFolder: Identifiable, Equatable {
@@ -22,6 +23,7 @@ struct WatchlistFolder: Identifiable, Equatable {
     var isPinned: Bool
     var isCollapsed: Bool
     var sortOrder: Int
+    var createdAt: Date? = nil
 }
 
 // MARK: - Premium palette
@@ -74,6 +76,24 @@ enum WatchlistDesignVariant: String, CaseIterable, Identifiable {
         switch self {
         case .gallery: "Premium cards · inline expand"
         case .ledger: "Grouped list · sticky sections"
+        }
+    }
+}
+
+// MARK: - Folder sort
+
+enum WatchlistFolderSortMode: String, CaseIterable, Identifiable {
+    case custom = "Custom order"
+    case name = "Name"
+    case dateAdded = "Date created"
+
+    var id: String { rawValue }
+
+    var systemImage: String {
+        switch self {
+        case .custom: "line.3.horizontal"
+        case .name: "textformat.abc"
+        case .dateAdded: "calendar"
         }
     }
 }

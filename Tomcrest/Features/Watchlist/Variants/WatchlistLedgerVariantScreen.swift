@@ -7,7 +7,6 @@ struct WatchlistLedgerVariantScreen: View {
     var onSelectSymbol: ((String) -> Void)?
 
     @State private var folderFormMode: WatchlistFolderFormSheet.Mode?
-    @State private var expandedFolderIDs: Set<UUID> = []
     @State private var editingFolderID: UUID?
 
     var body: some View {
@@ -24,9 +23,7 @@ struct WatchlistLedgerVariantScreen: View {
             .padding(.horizontal, 16)
             .padding(.bottom, 96)
         }
-        .onAppear {
-            expandedFolderIDs = Set(store.folders.filter { !$0.isCollapsed }.map(\.id))
-        }
+        .id(store.folderSortMode)
         .sheet(item: $folderFormMode) { mode in
             WatchlistFolderFormSheet(mode: mode) { name, iconName, swatchID, accentHex in
                 switch mode {
@@ -34,7 +31,6 @@ struct WatchlistLedgerVariantScreen: View {
                     store.addFolder(name: name, iconName: iconName, swatchID: swatchID)
                     if let id = store.folders.last?.id {
                         store.updateFolderStyle(id: id, swatchID: swatchID, accentHex: accentHex)
-                        expandedFolderIDs.insert(id)
                     }
                 case .edit(let folder):
                     store.renameFolder(id: folder.id, name: name, iconName: iconName)
@@ -64,16 +60,10 @@ struct WatchlistLedgerVariantScreen: View {
     @ViewBuilder
     private func pinnedChip(_ folder: WatchlistFolder) -> some View {
         let accent = store.accentColor(for: folder)
-        let isExpanded = expandedFolderIDs.contains(folder.id)
+        let isExpanded = !folder.isCollapsed
 
         Button {
-            withAnimation(.spring(response: 0.34, dampingFraction: 0.84)) {
-                if isExpanded {
-                    expandedFolderIDs.remove(folder.id)
-                } else {
-                    expandedFolderIDs.insert(folder.id)
-                }
-            }
+            store.toggleCollapse(folderID: folder.id)
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: folder.iconName)
@@ -106,7 +96,7 @@ struct WatchlistLedgerVariantScreen: View {
     private func ledgerSection(_ folder: WatchlistFolder) -> some View {
         let swatch = store.swatch(for: folder)
         let accent = store.accentColor(for: folder)
-        let isExpanded = expandedFolderIDs.contains(folder.id)
+        let isExpanded = !folder.isCollapsed
         let performance = store.folderDayChange(folder)
         let isEditing = editingFolderID == folder.id
 
@@ -152,7 +142,9 @@ struct WatchlistLedgerVariantScreen: View {
         .dropDestination(for: WatchlistSymbolDragPayload.self) { items, _ in
             guard let payload = items.first else { return false }
             store.moveSymbol(payload, to: folder.id)
-            expandedFolderIDs.insert(folder.id)
+            if folder.isCollapsed {
+                store.toggleCollapse(folderID: folder.id)
+            }
             return true
         }
         .contextMenu {
@@ -185,29 +177,43 @@ struct WatchlistLedgerVariantScreen: View {
         isExpanded: Bool
     ) -> some View {
         HStack(spacing: 12) {
-            RoundedRectangle(cornerRadius: 4, style: .continuous)
-                .fill(accent)
-                .frame(width: 4, height: 36)
+            Button {
+                store.toggleCollapse(folderID: folder.id)
+            } label: {
+                HStack(spacing: 12) {
+                    RoundedRectangle(cornerRadius: 4, style: .continuous)
+                        .fill(accent)
+                        .frame(width: 4, height: 36)
 
-            WatchlistFolderIconBadge(symbol: folder.iconName, accent: accent, size: 40, iconScale: .body)
+                    WatchlistFolderIconBadge(symbol: folder.iconName, accent: accent, size: 40, iconScale: .body)
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(folder.name)
-                    .font(AppTypography.cardTitle)
-                    .foregroundStyle(AppColors.label)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(folder.name)
+                            .font(AppTypography.cardTitle)
+                            .foregroundStyle(AppColors.label)
 
-                HStack(spacing: 6) {
-                    Text("\(folder.symbols.count) symbols")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.tertiaryLabel)
+                        HStack(spacing: 6) {
+                            Text("\(folder.symbols.count) symbols")
+                                .font(AppTypography.caption)
+                                .foregroundStyle(AppColors.tertiaryLabel)
 
-                    if !folder.symbols.isEmpty {
-                        WatchlistFolderPerformanceSummary(change: performance.value, percent: performance.percent)
+                            if !folder.symbols.isEmpty {
+                                WatchlistFolderPerformanceSummary(change: performance.value, percent: performance.percent)
+                            }
+                        }
                     }
-                }
-            }
 
-            Spacer()
+                    Spacer()
+
+                    Image(systemName: "chevron.down")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(AppColors.secondaryLabel)
+                        .rotationEffect(.degrees(isExpanded ? 180 : 0))
+                        .frame(width: 32, height: 32)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
 
             Button {
                 withAnimation(.spring(response: 0.32, dampingFraction: 0.84)) {
@@ -218,22 +224,6 @@ struct WatchlistLedgerVariantScreen: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(editingFolderID == folder.id ? accent : AppColors.tertiaryLabel)
                     .frame(width: 32, height: 32)
-            }
-            .buttonStyle(.plain)
-
-            Button {
-                withAnimation(.spring(response: 0.34, dampingFraction: 0.84)) {
-                    if isExpanded {
-                        expandedFolderIDs.remove(folder.id)
-                    } else {
-                        expandedFolderIDs.insert(folder.id)
-                    }
-                }
-            } label: {
-                Image(systemName: "chevron.down")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(AppColors.secondaryLabel)
-                    .rotationEffect(.degrees(isExpanded ? 180 : 0))
             }
             .buttonStyle(.plain)
         }

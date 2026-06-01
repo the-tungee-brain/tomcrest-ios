@@ -28,6 +28,7 @@ struct WatchlistGalleryVariantScreen: View {
                     }
                 }
             }
+            .id(store.folderSortMode)
             .padding(.horizontal, 16)
             .padding(.bottom, 96)
         }
@@ -118,59 +119,58 @@ struct WatchlistGalleryVariantScreen: View {
         performance: (value: Double, percent: Double)
     ) -> some View {
         HStack(alignment: .top, spacing: 12) {
-            WatchlistFolderIconBadge(symbol: folder.iconName, accent: accent)
+            Button {
+                store.toggleCollapse(folderID: folder.id)
+            } label: {
+                HStack(alignment: .top, spacing: 12) {
+                    WatchlistFolderIconBadge(symbol: folder.iconName, accent: accent)
 
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 6) {
-                    Text(folder.name)
-                        .font(AppTypography.sectionTitle)
-                        .foregroundStyle(AppColors.label)
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(spacing: 6) {
+                            Text(folder.name)
+                                .font(AppTypography.sectionTitle)
+                                .foregroundStyle(AppColors.label)
 
-                    if folder.isPinned {
-                        Image(systemName: "pin.fill")
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(accent)
+                            if folder.isPinned {
+                                Image(systemName: "pin.fill")
+                                    .font(.caption2.weight(.semibold))
+                                    .foregroundStyle(accent)
+                            }
+                        }
+
+                        HStack(spacing: 8) {
+                            Text("\(folder.symbols.count) symbols")
+                                .font(AppTypography.caption)
+                                .foregroundStyle(AppColors.secondaryLabel)
+
+                            if !folder.symbols.isEmpty {
+                                WatchlistFolderPerformanceSummary(change: performance.value, percent: performance.percent)
+                            }
+                        }
                     }
-                }
 
-                HStack(spacing: 8) {
-                    Text("\(folder.symbols.count) symbols")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.secondaryLabel)
+                    Spacer(minLength: 0)
 
-                    if !folder.symbols.isEmpty {
-                        WatchlistFolderPerformanceSummary(change: performance.value, percent: performance.percent)
-                    }
-                }
-            }
-
-            Spacer(minLength: 0)
-
-            HStack(spacing: 4) {
-                Button {
-                    folderFormMode = .edit(folder)
-                } label: {
-                    Image(systemName: "paintpalette.fill")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(accent)
-                        .frame(width: 32, height: 32)
-                }
-                .buttonStyle(.plain)
-
-                Button {
-                    store.toggleCollapse(folderID: folder.id)
-                } label: {
                     Image(systemName: folder.isCollapsed ? "chevron.down" : "chevron.up")
                         .font(.caption.weight(.bold))
                         .foregroundStyle(AppColors.secondaryLabel)
                         .frame(width: 32, height: 32)
-                        .rotationEffect(.degrees(folder.isCollapsed ? 0 : 0))
                 }
-                .buttonStyle(.plain)
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+
+            Button {
+                folderFormMode = .edit(folder)
+            } label: {
+                Image(systemName: "paintpalette.fill")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(accent)
+                    .frame(width: 32, height: 32)
+            }
+            .buttonStyle(.plain)
         }
         .padding(16)
-        .contentShape(Rectangle())
     }
 
     @ViewBuilder
@@ -181,13 +181,12 @@ struct WatchlistGalleryVariantScreen: View {
         WatchlistSymbolRow(
             symbol: symbol,
             folderAccent: accent,
-            showsDragHandle: true,
             isDragging: isDragging
         ) {
             onSelectSymbol?(symbol.ticker)
         }
         .draggable(payload) {
-            WatchlistSymbolRow(symbol: symbol, folderAccent: accent, showsDragHandle: true)
+            WatchlistSymbolRow(symbol: symbol, folderAccent: accent)
                 .frame(width: 320)
         }
     }

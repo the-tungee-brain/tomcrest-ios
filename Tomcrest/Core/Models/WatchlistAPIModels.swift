@@ -22,6 +22,7 @@ struct WatchlistFolderDTO: Decodable {
     let isPinned: Bool
     let isCollapsed: Bool
     let sortOrder: Int
+    let createdAt: String?
     let symbols: [WatchlistSymbolDTO]
 }
 
@@ -33,6 +34,7 @@ struct WatchlistSymbolDTO: Decodable {
     let price: Double?
     let dayChange: Double?
     let dayChangePercent: Double?
+    let createdAt: String?
 }
 
 struct WatchlistWorkspaceSyncRequest: Encodable {
@@ -73,7 +75,8 @@ enum WatchlistAPIMapping {
             accentHex: dto.accentHex.map { UInt32($0) },
             isPinned: dto.isPinned,
             isCollapsed: dto.isCollapsed,
-            sortOrder: dto.sortOrder
+            sortOrder: dto.sortOrder,
+            createdAt: dto.createdAt.flatMap(DateFormatters.parse)
         )
     }
 
@@ -85,7 +88,8 @@ enum WatchlistAPIMapping {
             companyName: dto.companyName,
             price: dto.price ?? 0,
             dayChange: dto.dayChange ?? 0,
-            dayChangePercent: dto.dayChangePercent ?? 0
+            dayChangePercent: dto.dayChangePercent ?? 0,
+            createdAt: dto.createdAt.flatMap(DateFormatters.parse)
         )
     }
 

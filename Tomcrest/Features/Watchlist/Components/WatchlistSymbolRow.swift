@@ -3,7 +3,6 @@ import SwiftUI
 struct WatchlistSymbolRow: View {
     let symbol: WatchlistSymbol
     var folderAccent: Color = AppColors.accentHighlight
-    var showsDragHandle = false
     var isDragging = false
     var onTap: (() -> Void)?
 
@@ -12,13 +11,6 @@ struct WatchlistSymbolRow: View {
             onTap?()
         } label: {
             HStack(spacing: 12) {
-                if showsDragHandle {
-                    Image(systemName: "line.3.horizontal")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(AppColors.tertiaryLabel)
-                        .frame(width: 16)
-                }
-
                 SymbolAvatar(symbol: symbol.ticker, size: 36, accent: folderAccent)
 
                 VStack(alignment: .leading, spacing: 2) {
