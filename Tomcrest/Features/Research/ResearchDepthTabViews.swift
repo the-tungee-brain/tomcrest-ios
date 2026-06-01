@@ -4,13 +4,13 @@ import Charts
 // MARK: - Overview tab (quote, performance, signals, chat)
 
 struct SymbolOverviewTab: View {
-    @Environment(AccountContext.self) private var account
-    @Environment(AssistantPresenter.self) private var assistant
     @Bindable var viewModel: SymbolOverviewViewModel
     @Bindable var positionViewModel: SymbolPositionViewModel
     let bundle: ResearchOverviewBundle?
+    let availableTabs: [ResearchTab]
+    @Binding var selectedTab: ResearchTab
+    var onOpenMore: (ResearchMoreDestination) -> Void = { _ in }
     var onQuickAction: (String) -> Void = { _ in }
-    @State private var signalsExpanded = false
 
     var body: some View {
         Group {
@@ -49,69 +49,17 @@ struct SymbolOverviewTab: View {
 
         ResearchStockChartSection(symbol: bundle.symbol, viewModel: viewModel)
 
-        BigPictureSection(
-            summary: bundle.summary,
-            isLoading: viewModel.isBigPictureLoading,
-            errorMessage: viewModel.bigPictureError,
-            onRefresh: {
-                Task { await viewModel.refreshBigPicture() }
-            }
-        )
-
         AppScreenSection(title: "Performance") {
             SymbolPerformanceCard(performance: bundle.performance)
         }
 
-        if !isEtfAsset(bundle.assetType) {
-            StreetAnalysisOverviewPreview(street: bundle.streetAnalysis)
-        } else {
-            EtfHoldingsOverviewPreview(holdings: bundle.etfHoldings)
-            if let funds = bundle.etfFunds {
-                AppScreenSection(title: "Fund profile") {
-                    EtfFundsOverviewSection(funds: funds)
-                }
-            }
-        }
-
-        SymbolIntelligenceOverviewPanel(signals: bundle.intelligence.signals) { prompt in
-            assistant.openSymbol(viewModel.symbol, prompt: prompt, sendImmediately: true)
-        }
-
-        AppScreenSection(title: "Company snapshot") {
-            VStack(alignment: .leading, spacing: 8) {
-                snapshotRow("Sector", bundle.snapshot.sector)
-                snapshotRow("Country", bundle.snapshot.country)
-                snapshotRow("Market cap", bundle.snapshot.marketCap)
-                if let range = bundle.snapshot.range52w {
-                    snapshotRow("52-week range", range)
-                }
-            }
-            .appPanel(subtle: true)
-        }
-
-        AssistantLauncherRow(
-            title: "Ask about \(viewModel.symbol)",
-            subtitle: "Research assistant — quality, risks, and valuation"
-        ) {
-            assistant.openSymbol(viewModel.symbol)
-        }
-    }
-
-    private func snapshotRow(_ label: String, _ value: String) -> some View {
-        HStack {
-            Text(label)
-                .font(.caption)
-                .foregroundStyle(AppColors.secondaryLabel)
-            Spacer()
-            Text(value)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(AppColors.label)
-        }
-    }
-
-    private func isEtfAsset(_ assetType: String?) -> Bool {
-        let normalized = assetType?.uppercased() ?? ""
-        return normalized == "ETF" || normalized == "MUTUAL_FUND" || normalized == "INDEX"
+        ResearchExploreLinks(
+            symbol: viewModel.symbol,
+            assetType: bundle.assetType,
+            availableTabs: availableTabs,
+            selectedTab: $selectedTab,
+            onOpenMore: onOpenMore
+        )
     }
 }
 
@@ -119,6 +67,7 @@ struct SymbolOverviewTab: View {
 
 struct SymbolPositionTab: View {
     @Bindable var viewModel: SymbolPositionViewModel
+    var showsOptionsPrompt = true
     var onQuickAction: (String) -> Void = { _ in }
 
     var body: some View {
@@ -202,9 +151,9 @@ struct SymbolPositionTab: View {
                         positions: viewModel.positions
                     )
 
-                    if viewModel.hasOptionPositions {
+                    if showsOptionsPrompt, viewModel.hasOptionPositions {
                         OptionsTabPrompt(symbol: viewModel.symbol) {
-                            onQuickAction("__open_options_tab__")
+                            onQuickAction("__open_portfolio_options__")
                         }
                     }
 
@@ -252,7 +201,7 @@ struct SymbolEarningsTab: View {
     let viewModel: SymbolDepthViewModel
 
     var body: some View {
-        ResearchDepthTabShell(tab: .earnings, viewModel: viewModel) {
+        ResearchDepthTabShell(tab: .more, viewModel: viewModel) {
             if let earnings = viewModel.earnings {
                 VStack(alignment: .leading, spacing: Layout.sectionSpacing) {
                     if let upcoming = earnings.upcoming {
@@ -720,7 +669,7 @@ struct SymbolDividendsTab: View {
     @State private var annualExpanded = false
 
     var body: some View {
-        ResearchDepthTabShell(tab: .dividends, viewModel: viewModel) {
+        ResearchDepthTabShell(tab: .more, viewModel: viewModel) {
             if let context = viewModel.dividends {
                 VStack(alignment: .leading, spacing: Layout.sectionSpacing) {
                     // Recent payments first — the tab’s primary read; summary stays compact below.
@@ -807,7 +756,7 @@ struct SymbolOptionsTab: View {
     var onAnalyze: (String) -> Void
 
     var body: some View {
-        ResearchDepthTabShell(tab: .options, viewModel: viewModel) {
+        ResearchDepthTabShell(tab: .more, viewModel: viewModel) {
             let intelligence = viewModel.symbolIntelligence
             let cspSummary = OptionsRiskHelpers.summarizeCSPCash(positions: symbolPositions, cashBalance: nil)
 
@@ -938,31 +887,39 @@ struct SymbolOptionsTab: View {
 
 // MARK: - Business tab
 
-struct SymbolBusinessTab: View {
+struct SymbolBusinessContent: View {
     @Environment(AccountContext.self) private var account
     let viewModel: SymbolDepthViewModel
 
     var body: some View {
-        ResearchDepthTabShell(tab: .business, viewModel: viewModel) {
-            AppScreenSection(
-                title: "Business",
-                footnote: account.hasProFeature(.business)
-                    ? "How the company works, competes, and grows"
-                    : "Pro — AI overview of the business model, moat, and risks"
-            ) {
-                if account.hasProFeature(.business) {
-                    if let business = viewModel.business {
-                        BusinessOverviewContent(business: business)
-                    } else {
-                        AppEmptyMessage(message: "Business details are not available.")
-                    }
+        AppScreenSection(
+            title: "Business",
+            footnote: account.hasProFeature(.business)
+                ? "How the company works, competes, and grows"
+                : "Pro — AI overview of the business model, moat, and risks"
+        ) {
+            if account.hasProFeature(.business) {
+                if let business = viewModel.business {
+                    BusinessOverviewContent(business: business)
                 } else {
-                    AppInlineBanner(
-                        message: "Upgrade to Pro for AI business model analysis, moat, and risk breakdowns.",
-                        tone: .neutral
-                    )
+                    AppEmptyMessage(message: "Business details are not available.")
                 }
+            } else {
+                AppInlineBanner(
+                    message: "Upgrade to Pro for AI business model analysis, moat, and risk breakdowns.",
+                    tone: .neutral
+                )
             }
+        }
+    }
+}
+
+struct SymbolBusinessTab: View {
+    let viewModel: SymbolDepthViewModel
+
+    var body: some View {
+        ResearchDepthTabShell(tab: .analysis, viewModel: viewModel) {
+            SymbolBusinessContent(viewModel: viewModel)
         }
     }
 }
@@ -1117,7 +1074,7 @@ struct SymbolFundamentalsTab: View {
     }
 
     var body: some View {
-        ResearchDepthTabShell(tab: .fundamentals, viewModel: viewModel) {
+        ResearchDepthTabShell(tab: .metrics, viewModel: viewModel) {
             if let block = viewModel.fundamentals {
                 VStack(alignment: .leading, spacing: Layout.sectionSpacing) {
                     if isEtf, let funds = block.etfFunds {
@@ -1129,7 +1086,7 @@ struct SymbolFundamentalsTab: View {
                     // Metrics first — the tab’s primary job; narrative blocks stay collapsed.
                     if !block.metrics.isEmpty {
                         AppScreenSection(
-                            title: ResearchTab.fundamentals.fundamentalsLabel(for: assetType)
+                            title: ResearchTab.metrics.metricsLabel(for: assetType)
                         ) {
                             GroupedKeyMetricsSection(metrics: block.metrics)
                         }
@@ -1232,17 +1189,18 @@ struct ResearchDepthTabShell<Content: View>: View {
 
     private var isEmpty: Bool {
         switch tab {
-        case .overview, .position: true
-        case .earnings: viewModel.earnings == nil
-        case .news: viewModel.news == nil
-        case .dividends: viewModel.dividends == nil
-        case .fundamentals: viewModel.fundamentals == nil
-        case .financials: viewModel.fundamentals == nil
-        case .composition: viewModel.etfHoldings == nil
-        case .business: viewModel.business == nil
-        case .options: viewModel.symbolIntelligence == nil
-        case .trend: viewModel.patternPrediction == nil
-        case .backtest: viewModel.dividends == nil
+        case .overview:
+            true
+        case .analysis:
+            viewModel.business == nil && viewModel.patternPrediction == nil
+        case .metrics:
+            viewModel.fundamentals == nil
+        case .news:
+            viewModel.news == nil && viewModel.companyNews == nil
+        case .financials:
+            viewModel.fundamentals == nil && viewModel.secFinancials == nil
+        case .more:
+            false
         }
     }
 }

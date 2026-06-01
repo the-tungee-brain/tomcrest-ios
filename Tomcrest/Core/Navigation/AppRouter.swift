@@ -3,6 +3,7 @@ import Foundation
 struct PendingSymbolResearch: Equatable {
     let symbol: String
     var tab: ResearchTab?
+    var moreDestination: ResearchMoreDestination?
     var backtestSection: BacktestExploreSection?
     var wheelBacktestQuery: WheelBacktestQuery?
 }
@@ -16,15 +17,20 @@ final class AppRouter {
     var pendingSymbolResearch: PendingSymbolResearch?
     var showStrategyOnboarding = false
 
-    func openSymbol(_ symbol: String, tab: ResearchTab? = nil) {
-        pendingSymbolResearch = PendingSymbolResearch(symbol: symbol.uppercased(), tab: tab)
+    func openSymbol(_ symbol: String, tab: ResearchTab? = nil, more: ResearchMoreDestination? = nil) {
+        pendingSymbolResearch = PendingSymbolResearch(
+            symbol: symbol.uppercased(),
+            tab: tab,
+            moreDestination: more
+        )
         selectedTab = .research
     }
 
     func openWheelBacktest(symbol: String, query: WheelBacktestQuery) {
         pendingSymbolResearch = PendingSymbolResearch(
             symbol: symbol.uppercased(),
-            tab: .backtest,
+            tab: .more,
+            moreDestination: .tools,
             backtestSection: .wheel,
             wheelBacktestQuery: query
         )

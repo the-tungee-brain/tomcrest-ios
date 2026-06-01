@@ -91,12 +91,10 @@ enum SymbolOptionsHelpers {
         positions.contains { $0.instrument.assetType == "OPTION" }
     }
 
-    static func shouldShowOptionsTab(
+    static func shouldShowOptionsContent(
         positions: [Position],
-        intelligence: SymbolIntelligenceDetail?,
-        activeTab: ResearchTab
+        intelligence: SymbolIntelligenceDetail?
     ) -> Bool {
-        if activeTab == .options { return true }
-        return symbolHasOptionPositions(positions) || hasOptionsContent(intelligence)
+        symbolHasOptionPositions(positions) || hasOptionsContent(intelligence)
     }
 }

@@ -142,7 +142,7 @@ struct SymbolCompositionTab: View {
     let viewModel: SymbolDepthViewModel
 
     var body: some View {
-        ResearchDepthTabShell(tab: .composition, viewModel: viewModel) {
+        ResearchDepthTabShell(tab: .more, viewModel: viewModel) {
             if let holdings = viewModel.etfHoldings {
                 VStack(alignment: .leading, spacing: Layout.sectionSpacing) {
                     AppScreenSection(title: "Fund overview") {

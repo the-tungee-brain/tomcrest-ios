@@ -37,7 +37,7 @@ struct DividendBacktestSection: View {
                         onRun: runBacktest
                     )
 
-                    if let error = viewModel.tabErrors[.backtest] {
+                    if let error = viewModel.tabErrors[.more] {
                         AppInlineBanner(message: error, tone: .error)
                     }
 

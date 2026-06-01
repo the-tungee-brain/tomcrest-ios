@@ -1,95 +1,129 @@
 import Foundation
 
+/// Top-level research destinations — six hubs instead of a flat list of 11+ tabs.
 enum ResearchTab: String, CaseIterable, Identifiable, Hashable {
     case overview
-    case position
-    case options
+    case analysis
+    case metrics
     case news
-    case business
-    case earnings
-    case dividends
-    case fundamentals
     case financials
-    case composition
-    case trend
-    case backtest
+    case more
 
     var id: String { rawValue }
 
     var label: String {
         switch self {
         case .overview: "Overview"
-        case .position: "Positions"
-        case .options: "Options"
+        case .analysis: "Analysis"
+        case .metrics: "Metrics"
         case .news: "News"
-        case .business: "Business"
-        case .earnings: "Earnings"
-        case .dividends: "Dividends"
-        case .fundamentals: "Fundamentals"
         case .financials: "Financials"
-        case .composition: "Composition"
-        case .trend: "5D Trend"
-        case .backtest: "Backtest"
+        case .more: "More"
         }
     }
 
     var systemImage: String {
         switch self {
-        case .overview: "square.grid.2x2.fill"
-        case .position: "briefcase.fill"
-        case .options: "target"
-        case .news: "newspaper.fill"
-        case .business: "building.2.fill"
-        case .earnings: "chart.line.uptrend.xyaxis"
-        case .dividends: "dollarsign.circle.fill"
-        case .fundamentals: "tablecells.fill"
-        case .financials: "doc.text.fill"
-        case .composition: "square.stack.3d.up.fill"
-        case .trend: "waveform.path.ecg.rectangle"
-        case .backtest: "chart.xyaxis.line"
+        case .overview: "chart.line.uptrend.xyaxis"
+        case .analysis: "sparkles"
+        case .metrics: "gauge.with.dots.needle.67percent"
+        case .news: "newspaper"
+        case .financials: "doc.text"
+        case .more: "ellipsis.circle"
         }
     }
 
-    static func tabs(
-        for assetType: String?,
-        primaryStrategy: String? = nil
-    ) -> [ResearchTab] {
+    static func tabs(for assetType: String?) -> [ResearchTab] {
         let normalized = assetType?.uppercased() ?? "STOCK"
-        var result: [ResearchTab] = [.overview, .position, .options, .news]
 
         switch normalized {
         case "ETF", "MUTUAL_FUND", "INDEX":
-            result.removeAll { $0 == .options || $0 == .business }
-            result.append(.dividends)
-            result.append(.trend)
-            result.append(.backtest)
-            result.append(.composition)
-            result.append(.fundamentals)
-        case "STOCK", "ADR":
-            result.append(.dividends)
-            result.append(.business)
-            result.append(.earnings)
-            result.append(.fundamentals)
-            result.append(.financials)
-            result.append(.trend)
-            result.append(.backtest)
+            return [.overview, .metrics, .news, .more]
         default:
-            result.append(.earnings)
-            result.append(.dividends)
-            result.append(.fundamentals)
-            result.append(.trend)
-            result.append(.backtest)
+            return [.overview, .analysis, .metrics, .news, .financials, .more]
         }
-
-        _ = primaryStrategy
-        return result
     }
 
-    func fundamentalsLabel(for assetType: String?) -> String {
+    func metricsLabel(for assetType: String?) -> String {
         let normalized = assetType?.uppercased() ?? "STOCK"
         if normalized == "ETF" || normalized == "MUTUAL_FUND" {
             return "Fund metrics"
         }
-        return "Fundamentals"
+        return "Metrics"
+    }
+
+    /// Maps legacy deep-link path segments to hub tabs + optional More destination.
+    static func resolve(deepLink name: String) -> (tab: ResearchTab, more: ResearchMoreDestination?) {
+        switch name.lowercased() {
+        case "position", "positions", "options":
+            return (.more, .portfolio)
+        case "earnings", "dividends", "income":
+            return (.more, .income)
+        case "backtest", "wheel-backtest", "wheelbacktest":
+            return (.more, .tools)
+        case "composition":
+            return (.more, .composition)
+        case "business", "trend", "5d-trend":
+            return (.analysis, nil)
+        case "fundamentals":
+            return (.metrics, nil)
+        default:
+            if let tab = ResearchTab(rawValue: name.lowercased()) {
+                return (tab, nil)
+            }
+            return (.overview, nil)
+        }
+    }
+}
+
+/// Secondary screens reachable from the More hub.
+enum ResearchMoreDestination: String, CaseIterable, Identifiable, Hashable {
+    case portfolio
+    case income
+    case tools
+    case composition
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .portfolio: "Portfolio"
+        case .income: "Income"
+        case .tools: "Tools"
+        case .composition: "Composition"
+        }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .portfolio: "Holdings, options, and activity"
+        case .income: "Dividends and earnings history"
+        case .tools: "Backtests and simulations"
+        case .composition: "Holdings and sector breakdown"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .portfolio: "briefcase"
+        case .income: "dollarsign.circle"
+        case .tools: "chart.xyaxis.line"
+        case .composition: "square.stack.3d.up"
+        }
+    }
+
+    static func destinations(for assetType: String?, includesOptions: Bool) -> [ResearchMoreDestination] {
+        let normalized = assetType?.uppercased() ?? "STOCK"
+
+        switch normalized {
+        case "ETF", "MUTUAL_FUND", "INDEX":
+            return [.composition, .income, .tools]
+        default:
+            var items: [ResearchMoreDestination] = [.portfolio, .income, .tools]
+            if includesOptions {
+                _ = includesOptions
+            }
+            return items
+        }
     }
 }

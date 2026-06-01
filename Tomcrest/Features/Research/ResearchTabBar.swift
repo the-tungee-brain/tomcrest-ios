@@ -8,7 +8,7 @@ struct ResearchTabBar: View {
 
     var body: some View {
         AppChipRow(tabs: tabs, selection: $selection) { tab in
-            tab == .fundamentals ? tab.fundamentalsLabel(for: assetType) : tab.label
+            tab == .metrics ? tab.metricsLabel(for: assetType) : tab.label
         }
         .accessibilityLabel("Research sections")
     }

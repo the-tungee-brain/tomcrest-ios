@@ -43,19 +43,35 @@ final class SymbolDepthViewModel {
         self.wheelBacktestQuery = WheelBacktestQuery(symbol: symbol.uppercased())
     }
 
-    func loadIfNeeded(_ tab: ResearchTab, force: Bool = false) async {
-        guard tab != .overview, tab != .position else { return }
-        if !force, loadedTabs.contains(tab), loadingTab != tab { return }
+    func loadIfNeeded(
+        _ tab: ResearchTab,
+        more: ResearchMoreDestination? = nil,
+        force: Bool = false
+    ) async {
+        guard tab != .overview else { return }
 
-        loadingTab = tab
-        tabErrors[tab] = nil
+        let loadKey = loadCacheKey(tab: tab, more: more)
+        if !force, loadedTabs.contains(loadKey), loadingTab != loadKey { return }
+
+        loadingTab = loadKey
+        tabErrors[loadKey] = nil
         defer {
-            if loadingTab == tab {
+            if loadingTab == loadKey {
                 loadingTab = nil
             }
         }
 
-        await loadTab(tab)
+        await loadTab(tab, more: more)
+    }
+
+    private func loadCacheKey(tab: ResearchTab, more: ResearchMoreDestination?) -> ResearchTab {
+        switch (tab, more) {
+        case (.more, .income): .more
+        case (.more, .tools): .more
+        case (.more, .composition): .more
+        case (.more, .portfolio): .more
+        default: tab
+        }
     }
 
     func prefetchOptionsIntelligenceIfNeeded(hasOptionPositions: Bool) async {
@@ -72,47 +88,44 @@ final class SymbolDepthViewModel {
         }
     }
 
-    private func loadTab(_ tab: ResearchTab) async {
+    private func loadTab(_ tab: ResearchTab, more: ResearchMoreDestination? = nil) async {
+        let loadKey = loadCacheKey(tab: tab, more: more)
         do {
+            guard let accessToken = auth.accessToken else {
+                throw APIError.missingToken
+            }
+
             switch tab {
-            case .overview, .position:
+            case .overview:
                 break
-            case .earnings:
-                guard let accessToken = auth.accessToken else {
-                    throw APIError.missingToken
+            case .analysis:
+                do {
+                    business = try await ResearchService.fetchBusinessDetails(
+                        symbol: symbol,
+                        accessToken: accessToken
+                    )
+                } catch {
+                    // Pro gate or unavailable — Analysis hub shows upsell inline.
                 }
-                earnings = try await ResearchService.fetchEarningsList(
-                    symbol: symbol,
-                    accessToken: accessToken
-                )
-                if selectedHistoryEvent == nil {
-                    selectedHistoryEvent = earnings?.history.first
+                do {
+                    async let healthTask = PatternPredictionService.fetchHealth(accessToken: accessToken)
+                    async let predictionTask = PatternPredictionService.fetchPrediction(
+                        symbol: symbol,
+                        accessToken: accessToken
+                    )
+                    patternModelHealth = try await healthTask
+                    patternPrediction = try await predictionTask
+                } catch {
+                    // Pro gate for 5D trend — section shows upsell inline.
                 }
-            case .news:
-                guard let accessToken = auth.accessToken else {
-                    throw APIError.missingToken
-                }
-                try await loadNews(accessToken: accessToken)
-            case .dividends:
-                guard let accessToken = auth.accessToken else {
-                    throw APIError.missingToken
-                }
-                dividends = try await ResearchService.fetchDividendHistory(
-                    symbol: symbol,
-                    accessToken: accessToken
-                )
-            case .fundamentals:
-                guard let accessToken = auth.accessToken else {
-                    throw APIError.missingToken
-                }
+            case .metrics:
                 fundamentals = try await ResearchService.fetchFundamentals(
                     symbol: symbol,
                     accessToken: accessToken
                 )
+            case .news:
+                try await loadNews(accessToken: accessToken)
             case .financials:
-                guard let accessToken = auth.accessToken else {
-                    throw APIError.missingToken
-                }
                 async let fundamentalsTask = ResearchService.fetchFundamentals(
                     symbol: symbol,
                     accessToken: accessToken
@@ -136,53 +149,42 @@ final class SymbolDepthViewModel {
                 secFilings = filingsResult
                 secRatios = ratiosResult
                 secFinancials = financialsResult
-            case .composition:
-                guard let accessToken = auth.accessToken else {
-                    throw APIError.missingToken
+            case .more:
+                switch more {
+                case .income:
+                    earnings = try await ResearchService.fetchEarningsList(
+                        symbol: symbol,
+                        accessToken: accessToken
+                    )
+                    if selectedHistoryEvent == nil {
+                        selectedHistoryEvent = earnings?.history.first
+                    }
+                    dividends = try await ResearchService.fetchDividendHistory(
+                        symbol: symbol,
+                        accessToken: accessToken
+                    )
+                case .tools:
+                    dividends = try await ResearchService.fetchDividendHistory(
+                        symbol: symbol,
+                        accessToken: accessToken
+                    )
+                case .composition:
+                    etfHoldings = try await ResearchService.fetchEtfHoldings(
+                        symbol: symbol,
+                        accessToken: accessToken
+                    )
+                case .portfolio:
+                    symbolIntelligence = try await ResearchService.fetchSymbolIntelligence(
+                        symbol: symbol,
+                        accessToken: accessToken
+                    )
+                case nil:
+                    break
                 }
-                etfHoldings = try await ResearchService.fetchEtfHoldings(
-                    symbol: symbol,
-                    accessToken: accessToken
-                )
-            case .business:
-                guard let accessToken = auth.accessToken else {
-                    throw APIError.missingToken
-                }
-                business = try await ResearchService.fetchBusinessDetails(
-                    symbol: symbol,
-                    accessToken: accessToken
-                )
-            case .options:
-                guard let accessToken = auth.accessToken else {
-                    throw APIError.missingToken
-                }
-                symbolIntelligence = try await ResearchService.fetchSymbolIntelligence(
-                    symbol: symbol,
-                    accessToken: accessToken
-                )
-            case .backtest:
-                guard let accessToken = auth.accessToken else {
-                    throw APIError.missingToken
-                }
-                dividends = try await ResearchService.fetchDividendHistory(
-                    symbol: symbol,
-                    accessToken: accessToken
-                )
-            case .trend:
-                guard let accessToken = auth.accessToken else {
-                    throw APIError.missingToken
-                }
-                async let healthTask = PatternPredictionService.fetchHealth(accessToken: accessToken)
-                async let predictionTask = PatternPredictionService.fetchPrediction(
-                    symbol: symbol,
-                    accessToken: accessToken
-                )
-                patternModelHealth = try await healthTask
-                patternPrediction = try await predictionTask
             }
-            loadedTabs.insert(tab)
+            loadedTabs.insert(loadKey)
         } catch {
-            tabErrors[tab] = (error as? APIError)?.errorDescription ?? error.localizedDescription
+            tabErrors[loadKey] = (error as? APIError)?.errorDescription ?? error.localizedDescription
         }
     }
 
@@ -267,21 +269,22 @@ final class SymbolDepthViewModel {
         }
     }
 
-    func reload(_ tab: ResearchTab) async {
-        loadedTabs.remove(tab)
-        if tab == .earnings {
+    func reload(_ tab: ResearchTab, more: ResearchMoreDestination? = nil) async {
+        let loadKey = loadCacheKey(tab: tab, more: more)
+        loadedTabs.remove(loadKey)
+        if more == .income || tab == .more && more == .income {
             earningsDetail = nil
             selectedHistoryEvent = nil
         }
         if tab == .news {
             companyNews = nil
         }
-        if tab == .trend {
+        if tab == .analysis {
             patternPrediction = nil
             patternModelHealth = nil
         }
-        await loadIfNeeded(tab, force: true)
-        if tab == .earnings, let event = earnings?.history.first {
+        await loadIfNeeded(tab, more: more, force: true)
+        if more == .income, let event = earnings?.history.first {
             selectedHistoryEvent = event
         }
     }
@@ -294,10 +297,10 @@ final class SymbolDepthViewModel {
         shares: Double = 100
     ) async {
         guard let accessToken = auth.accessToken else { return }
-        loadingTab = .dividends
-        tabErrors[.dividends] = nil
+        loadingTab = .more
+        tabErrors[.more] = nil
         defer {
-            if loadingTab == .dividends { loadingTab = nil }
+            if loadingTab == .more { loadingTab = nil }
         }
 
         do {
@@ -310,9 +313,9 @@ final class SymbolDepthViewModel {
                 priceCagrPct: priceCagrPct,
                 annualContributionUsd: annualContributionUsd
             )
-            loadedTabs.insert(.dividends)
+            loadedTabs.insert(.more)
         } catch {
-            tabErrors[.dividends] = (error as? APIError)?.errorDescription ?? error.localizedDescription
+            tabErrors[.more] = (error as? APIError)?.errorDescription ?? error.localizedDescription
         }
     }
 
@@ -323,7 +326,7 @@ final class SymbolDepthViewModel {
     ) async {
         guard let accessToken = auth.accessToken else { return }
         dividendBacktestLoading = true
-        tabErrors[.backtest] = nil
+        tabErrors[.more] = nil
         defer { dividendBacktestLoading = false }
 
         let endYear = DividendBacktestSupport.completedYears(from: context).last ?? historyStartYear
@@ -337,7 +340,7 @@ final class SymbolDepthViewModel {
         dividendBacktestQuery = resolvedQuery
 
         guard resolvedQuery.shares > 0 || resolvedQuery.investmentUsd > 0 else {
-            tabErrors[.backtest] = "Enter an investment amount or share count to run the backtest."
+            tabErrors[.more] = "Enter an investment amount or share count to run the backtest."
             return
         }
 
@@ -352,17 +355,17 @@ final class SymbolDepthViewModel {
                 historyStartYear: historyStartYear,
                 annualContributionUsd: resolvedQuery.annualContributionUsd
             )
-            loadedTabs.insert(.dividends)
+            loadedTabs.insert(.more)
             hasRunDividendBacktest = true
         } catch {
-            tabErrors[.backtest] = (error as? APIError)?.errorDescription ?? error.localizedDescription
+            tabErrors[.more] = (error as? APIError)?.errorDescription ?? error.localizedDescription
         }
     }
 
     func runWheelBacktest() async {
         guard let accessToken = auth.accessToken else { return }
         wheelBacktestLoading = true
-        tabErrors[.backtest] = nil
+        tabErrors[.more] = nil
         defer { wheelBacktestLoading = false }
 
         do {
@@ -371,7 +374,7 @@ final class SymbolDepthViewModel {
                 accessToken: accessToken
             )
         } catch {
-            tabErrors[.backtest] = (error as? APIError)?.errorDescription ?? error.localizedDescription
+            tabErrors[.more] = (error as? APIError)?.errorDescription ?? error.localizedDescription
         }
     }
 }

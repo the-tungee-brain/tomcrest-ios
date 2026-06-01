@@ -21,19 +21,6 @@ struct ResearchView: View {
         AppRoutedNavigationCanvasStack(path: $path) {
             AppScrollScreen {
                 if let viewModel {
-                    if showsResearchOnboarding, !researchOnboardingComplete {
-                        ResearchOnboardingCard(
-                            hasOpenedSymbol: !bookmarks.recentSymbols.isEmpty,
-                            hasWatchlist: watchlistStore.hasSymbols,
-                            usedChat: ResearchSymbolStorage.hasUsedResearchChat(),
-                            onDismiss: dismissResearchOnboarding
-                        )
-                    }
-
-                    StrategyPlaybookQuickLinksSection { symbol in
-                        openSymbol(symbol)
-                    }
-
                     AppSearchField(
                         placeholder: "Search tickers",
                         text: Binding(
@@ -49,8 +36,20 @@ struct ResearchView: View {
                     )
 
                     if viewModel.query.isEmpty {
-                        researchExploreSection
                         quickAccessSection
+
+                        if showsResearchOnboarding, !researchOnboardingComplete {
+                            ResearchOnboardingCard(
+                                hasOpenedSymbol: !bookmarks.recentSymbols.isEmpty,
+                                hasWatchlist: watchlistStore.hasSymbols,
+                                usedChat: ResearchSymbolStorage.hasUsedResearchChat(),
+                                onDismiss: dismissResearchOnboarding
+                            )
+                        }
+
+                        StrategyPlaybookQuickLinksSection { symbol in
+                            openSymbol(symbol)
+                        }
                     }
 
                     searchResults(viewModel)
@@ -87,50 +86,38 @@ struct ResearchView: View {
     }
 
     @ViewBuilder
-    private var researchExploreSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Explore")
-                .font(.caption2.weight(.medium))
-                .foregroundStyle(AppColors.tertiaryLabel)
-                .textCase(.uppercase)
-                .padding(.horizontal, 4)
+    private var quickAccessSection: some View {
+        VStack(alignment: .leading, spacing: Layout.sectionSpacing) {
+            if !watchlistStore.allTickers.isEmpty {
+                ResearchWatchlistSection(symbols: watchlistStore.allTickers) { symbol in
+                    openSymbol(symbol)
+                } onViewAll: {
+                    path.append(.watchlist)
+                }
+            } else {
+                NavigationLink(value: ResearchDestination.watchlist) {
+                    PortfolioQuickLinkRow(
+                        icon: "star.fill",
+                        title: "Watchlist",
+                        subtitle: "Save symbols from search"
+                    )
+                }
+                .buttonStyle(.plain)
+                .background(AppColors.secondaryBackground)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(AppColors.panelBorder, lineWidth: 1)
+                }
+            }
 
-            NavigationLink(value: ResearchDestination.watchlist) {
-                PortfolioQuickLinkRow(
-                    icon: "star.fill",
-                    title: "Watchlist",
-                    subtitle: watchlistStore.hasSymbols
-                        ? "\(watchlistStore.allTickers.count) saved for research"
-                        : "Save symbols from search",
-                    badge: watchlistStore.allTickers.count
+            if !bookmarks.recentWithoutWatchlist.isEmpty {
+                ResearchRecentSymbolsSection(
+                    symbols: bookmarks.recentWithoutWatchlist,
+                    onClear: { bookmarks.clearRecent() },
+                    onSelect: { openSymbol($0) }
                 )
             }
-            .buttonStyle(.plain)
-            .background(AppColors.secondaryBackground)
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(AppColors.panelBorder, lineWidth: 1)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var quickAccessSection: some View {
-        if !watchlistStore.allTickers.isEmpty {
-            ResearchWatchlistSection(symbols: watchlistStore.allTickers) { symbol in
-                openSymbol(symbol)
-            } onViewAll: {
-                path.append(.watchlist)
-            }
-        }
-
-        if !bookmarks.recentWithoutWatchlist.isEmpty {
-            ResearchRecentSymbolsSection(
-                symbols: bookmarks.recentWithoutWatchlist,
-                onClear: { bookmarks.clearRecent() },
-                onSelect: { openSymbol($0) }
-            )
         }
     }
 
@@ -147,22 +134,24 @@ struct ResearchView: View {
             )
         } else if !viewModel.results.isEmpty {
             let results = sortedSearchResults(viewModel.results)
-            AppGroupedList {
-                ForEach(Array(results.prefix(12).enumerated()), id: \.element.id) { index, item in
-                    HStack(spacing: 0) {
-                        Button {
-                            openSymbolItem(item)
-                        } label: {
-                            SymbolSearchRowContent(item: item)
+            AppScreenSection(title: "Results") {
+                AppGroupedList {
+                    ForEach(Array(results.prefix(12).enumerated()), id: \.element.id) { index, item in
+                        HStack(spacing: 0) {
+                            Button {
+                                openSymbolItem(item)
+                            } label: {
+                                SymbolSearchRowContent(item: item)
+                            }
+                            .buttonStyle(.plain)
+
+                            WatchlistToggleButton(symbol: item.symbol, companyName: item.title)
+                                .padding(.trailing, 8)
                         }
-                        .buttonStyle(.plain)
 
-                        WatchlistToggleButton(symbol: item.symbol, companyName: item.title)
-                            .padding(.trailing, 8)
-                    }
-
-                    if index < min(results.count, 12) - 1 {
-                        AppGroupedDivider()
+                        if index < min(results.count, 12) - 1 {
+                            AppGroupedDivider()
+                        }
                     }
                 }
             }

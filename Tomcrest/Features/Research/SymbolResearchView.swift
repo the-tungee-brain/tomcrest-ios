@@ -9,6 +9,7 @@ struct SymbolResearchView: View {
     @State private var depthVM: SymbolDepthViewModel
     @State private var positionVM: SymbolPositionViewModel
     @State private var selectedTab: ResearchTab = .overview
+    @State private var moreDestination: ResearchMoreDestination?
     @State private var primaryStrategy: String?
     @State private var strategyCatalogItem: StrategyCatalogItem?
     @State private var strategyRecommendations: StrategyRecommendations?
@@ -16,6 +17,7 @@ struct SymbolResearchView: View {
     @State private var backtestExploreSection: BacktestExploreSection?
     @State private var tabLoadTask: Task<Void, Never>?
 
+    private let initialMoreDestination: ResearchMoreDestination?
     private let initialBacktestSection: BacktestExploreSection?
     private let initialWheelBacktestQuery: WheelBacktestQuery?
 
@@ -23,6 +25,7 @@ struct SymbolResearchView: View {
         symbol: String,
         auth: AuthSession,
         initialTab: ResearchTab = .overview,
+        initialMoreDestination: ResearchMoreDestination? = nil,
         initialBacktestSection: BacktestExploreSection? = nil,
         initialWheelBacktestQuery: WheelBacktestQuery? = nil
     ) {
@@ -30,24 +33,22 @@ struct SymbolResearchView: View {
         _depthVM = State(initialValue: SymbolDepthViewModel(symbol: symbol, auth: auth))
         _positionVM = State(initialValue: SymbolPositionViewModel(symbol: symbol, auth: auth))
         _selectedTab = State(initialValue: initialTab)
+        _moreDestination = State(initialValue: initialMoreDestination)
         _backtestExploreSection = State(initialValue: initialBacktestSection)
+        self.initialMoreDestination = initialMoreDestination
         self.initialBacktestSection = initialBacktestSection
         self.initialWheelBacktestQuery = initialWheelBacktestQuery
     }
 
     private var availableTabs: [ResearchTab] {
-        let tabs = ResearchTab.tabs(
-            for: overviewVM.bundle?.assetType,
-            primaryStrategy: primaryStrategy
-        )
-        guard SymbolOptionsHelpers.shouldShowOptionsTab(
+        ResearchTab.tabs(for: overviewVM.bundle?.assetType)
+    }
+
+    private var includesOptions: Bool {
+        SymbolOptionsHelpers.shouldShowOptionsContent(
             positions: positionVM.positions,
-            intelligence: depthVM.symbolIntelligence,
-            activeTab: selectedTab
-        ) else {
-            return tabs.filter { $0 != .options }
-        }
-        return tabs
+            intelligence: depthVM.symbolIntelligence
+        )
     }
 
     private var companyName: String? {
@@ -71,24 +72,27 @@ struct SymbolResearchView: View {
 
             AppScrollScreen(topPadding: 16, refresh: { await refreshCurrentTab() }) {
                 VStack(alignment: .leading, spacing: Layout.sectionSpacing) {
-                    StrategySymbolPlaybookStrip(
-                        symbol: overviewVM.symbol,
-                        strategyId: primaryStrategy,
-                        catalogItem: strategyCatalogItem,
-                        recommendations: strategyRecommendations,
-                        profileSymbols: profileSymbols,
-                        onRunAction: { action in
-                            guard let primaryStrategy else { return }
-                            assistant.openSymbol(overviewVM.symbol)
-                            Task {
-                                await overviewVM.sendPlaybookAsk(action: action, strategyId: primaryStrategy)
+                    if primaryStrategy != nil {
+                        StrategySymbolPlaybookStrip(
+                            symbol: overviewVM.symbol,
+                            strategyId: primaryStrategy,
+                            catalogItem: strategyCatalogItem,
+                            recommendations: strategyRecommendations,
+                            profileSymbols: profileSymbols,
+                            onRunAction: { action in
+                                guard let primaryStrategy else { return }
+                                assistant.openSymbol(overviewVM.symbol)
+                                Task {
+                                    await overviewVM.sendPlaybookAsk(action: action, strategyId: primaryStrategy)
+                                }
+                            },
+                            onOpenBacktest: {
+                                backtestExploreSection = .wheel
+                                moreDestination = .tools
+                                selectedTab = .more
                             }
-                        },
-                        onOpenBacktest: {
-                            backtestExploreSection = .wheel
-                            selectedTab = .backtest
-                        }
-                    )
+                        )
+                    }
 
                     tabContent
                 }
@@ -130,49 +134,34 @@ struct SymbolResearchView: View {
             )
             await loadStrategyContext()
             ensureValidTabSelection()
+            await loadCurrentTabIfNeeded()
         }
         .onAppear {
             bookmarks.recordRecent(overviewVM.symbol)
-            if selectedTab == .backtest,
+            if selectedTab == .more,
+               moreDestination == .tools,
                backtestExploreSection == nil,
                let initialBacktestSection {
                 backtestExploreSection = initialBacktestSection
             }
         }
         .onChange(of: selectedTab) { _, tab in
-            if tab != .backtest {
+            if tab != .more {
+                moreDestination = nil
                 backtestExploreSection = nil
             }
             tabLoadTask?.cancel()
-            tabLoadTask = Task {
-                if tab == .position || tab == .options {
-                    await positionVM.loadIfNeeded()
-                }
-                if tab != .overview, tab != .position {
-                    if tab == .trend {
-                        if account.hasProFeature(.patternTrend) {
-                            await depthVM.loadIfNeeded(tab)
-                        }
-                    } else {
-                        await depthVM.loadIfNeeded(tab)
-                    }
-                }
-                if tab == .earnings {
-                    await depthVM.loadEarningsDetail(
-                        includeAnalysis: account.hasProFeature(.earningsAi),
-                        force: depthVM.selectedHistoryEvent != nil
-                    )
-                }
-            }
+            tabLoadTask = Task { await loadTabData(tab: tab, more: moreDestination) }
+        }
+        .onChange(of: moreDestination) { _, destination in
+            guard selectedTab == .more, let destination else { return }
+            tabLoadTask?.cancel()
+            tabLoadTask = Task { await loadTabData(tab: .more, more: destination) }
         }
         .onChange(of: positionVM.hasOptionPositions) { _, hasOptions in
             Task {
                 await depthVM.prefetchOptionsIntelligenceIfNeeded(hasOptionPositions: hasOptions)
-                ensureValidTabSelection()
             }
-        }
-        .onChange(of: depthVM.symbolIntelligence?.symbol) { _, _ in
-            ensureValidTabSelection()
         }
         .onChange(of: overviewVM.bundle?.assetType) { _, _ in
             ensureValidTabSelection()
@@ -204,66 +193,60 @@ struct SymbolResearchView: View {
             SymbolOverviewTab(
                 viewModel: overviewVM,
                 positionViewModel: positionVM,
-                bundle: overviewVM.bundle
-            ) { prompt in
-                assistant.openSymbol(overviewVM.symbol, prompt: prompt, sendImmediately: true)
-            }
-        case .position:
-            SymbolPositionTab(viewModel: positionVM) { prompt in
-                if prompt == "__open_options_tab__" {
-                    selectedTab = .options
-                } else {
-                    assistant.openSymbol(overviewVM.symbol, prompt: prompt, sendImmediately: true)
+                bundle: overviewVM.bundle,
+                availableTabs: availableTabs,
+                selectedTab: $selectedTab,
+                onOpenMore: { destination in
+                    moreDestination = destination
+                    selectedTab = .more
                 }
-            }
-        case .options:
-            SymbolOptionsTab(
-                viewModel: depthVM,
-                symbolPositions: positionVM.positions,
-                assignmentRiskSummary: OptionsRiskHelpers.filterAssignmentRisk(
-                    positionVM.assignmentRiskSummary,
-                    symbol: overviewVM.symbol
-                )
             ) { prompt in
                 assistant.openSymbol(overviewVM.symbol, prompt: prompt, sendImmediately: true)
             }
-        case .earnings:
-            SymbolEarningsTab(viewModel: depthVM)
+        case .analysis:
+            SymbolAnalysisHubTab(
+                overviewVM: overviewVM,
+                depthVM: depthVM,
+                bundle: overviewVM.bundle
+            )
+        case .metrics:
+            SymbolMetricsHubTab(
+                assetType: overviewVM.bundle?.assetType,
+                depthVM: depthVM
+            )
         case .news:
             SymbolNewsTab(viewModel: depthVM)
-        case .business:
-            SymbolBusinessTab(viewModel: depthVM)
-        case .dividends:
-            SymbolDividendsTab(viewModel: depthVM)
-        case .fundamentals:
-            SymbolFundamentalsTab(viewModel: depthVM, assetType: overviewVM.bundle?.assetType)
         case .financials:
             SymbolFinancialsTab(viewModel: depthVM)
-        case .composition:
-            SymbolCompositionTab(viewModel: depthVM)
-        case .trend:
-            SymbolPatternPredictionTab(viewModel: depthVM)
-        case .backtest:
-            SymbolBacktestTab(
-                exploreSection: $backtestExploreSection,
-                viewModel: depthVM,
+        case .more:
+            ResearchMoreTab(
+                symbol: overviewVM.symbol,
+                assetType: overviewVM.bundle?.assetType,
+                includesOptions: includesOptions,
+                destination: $moreDestination,
+                overviewVM: overviewVM,
+                depthVM: depthVM,
+                positionVM: positionVM,
+                backtestExploreSection: $backtestExploreSection,
                 primaryStrategy: primaryStrategy,
-                marketSharePrice: overviewVM.bundle?.snapshot.price
+                onAssistantPrompt: { prompt in
+                    assistant.openSymbol(overviewVM.symbol, prompt: prompt, sendImmediately: true)
+                }
             )
         }
     }
 
     private var isRefreshing: Bool {
-        if selectedTab == .overview {
+        switch selectedTab {
+        case .overview:
             return overviewVM.isLoading
+        case .more where moreDestination == .portfolio:
+            return positionVM.isLoading
+                || positionVM.recentOrdersLoading
+                || depthVM.loadingTab == .more
+        default:
+            return depthVM.loadingTab == selectedTab
         }
-        if selectedTab == .position {
-            return positionVM.isLoading || positionVM.recentOrdersLoading
-        }
-        if selectedTab == .options {
-            return depthVM.loadingTab == .options || positionVM.isLoading
-        }
-        return depthVM.loadingTab == selectedTab
     }
 
     private func loadStrategyContext() async {
@@ -288,22 +271,55 @@ struct SymbolResearchView: View {
         }
     }
 
+    private func loadCurrentTabIfNeeded() async {
+        await loadTabData(tab: selectedTab, more: moreDestination)
+    }
+
+    private func loadTabData(tab: ResearchTab, more: ResearchMoreDestination?) async {
+        if tab == .more, more == .portfolio {
+            await positionVM.loadIfNeeded()
+        }
+
+        if tab == .overview {
+            return
+        }
+
+        if tab == .analysis {
+            await depthVM.loadIfNeeded(.analysis)
+            return
+        }
+
+        if tab == .more {
+            if let more {
+                await depthVM.loadIfNeeded(.more, more: more)
+                if more == .income {
+                    await depthVM.loadEarningsDetail(
+                        includeAnalysis: account.hasProFeature(.earningsAi),
+                        force: depthVM.selectedHistoryEvent != nil
+                    )
+                }
+            }
+            return
+        }
+
+        await depthVM.loadIfNeeded(tab)
+    }
+
     private func refreshCurrentTab() async {
-        if selectedTab == .overview {
+        switch selectedTab {
+        case .overview:
             await overviewVM.reload()
-        } else if selectedTab == .position || selectedTab == .options {
+        case .more where moreDestination == .portfolio:
             await positionVM.loadIfNeeded(force: true)
-            if selectedTab == .options {
-                await depthVM.reload(.options)
-            }
-        } else {
-            await depthVM.reload(selectedTab)
-            if selectedTab == .earnings {
-                await depthVM.loadEarningsDetail(
-                    includeAnalysis: account.hasProFeature(.earningsAi),
-                    force: true
-                )
-            }
+            await depthVM.reload(.more, more: .portfolio)
+        case .more where moreDestination == .income:
+            await depthVM.reload(.more, more: .income)
+            await depthVM.loadEarningsDetail(
+                includeAnalysis: account.hasProFeature(.earningsAi),
+                force: true
+            )
+        default:
+            await depthVM.reload(selectedTab, more: moreDestination)
         }
     }
 
@@ -311,6 +327,7 @@ struct SymbolResearchView: View {
         let tabs = availableTabs
         if !tabs.contains(selectedTab), let first = tabs.first {
             selectedTab = first
+            moreDestination = nil
         }
     }
 }

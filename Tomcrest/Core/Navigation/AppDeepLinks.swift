@@ -15,7 +15,6 @@ enum AppDeepLinks {
         case "research":
             guard let symbol = pathParts.first, !symbol.isEmpty else { return false }
             let tabName = pathParts.count > 1 ? pathParts[1] : nil
-            let tab = tabName.flatMap(ResearchTab.init(rawValue:))
 
             if tabName == "wheel-backtest" || tabName == "wheelBacktest" {
                 let query = WheelBacktestShareSupport.parse(url: url, symbol: symbol)
@@ -23,16 +22,19 @@ enum AppDeepLinks {
                 return true
             }
 
-            if tab == .backtest || tabName == "backtest" {
+            if let tabName {
+                let resolved = ResearchTab.resolve(deepLink: tabName)
                 router.pendingSymbolResearch = PendingSymbolResearch(
                     symbol: symbol.uppercased(),
-                    tab: .backtest
+                    tab: resolved.tab,
+                    moreDestination: resolved.more,
+                    backtestSection: resolved.more == .tools ? .wheel : nil
                 )
                 router.selectedTab = .research
                 return true
             }
 
-            router.openSymbol(symbol, tab: tab)
+            router.openSymbol(symbol)
             return true
         case "settings":
             if pathParts.first == "strategy" {

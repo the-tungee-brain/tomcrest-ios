@@ -45,7 +45,7 @@ struct SymbolBacktestTab: View {
     var marketSharePrice: Double?
 
     var body: some View {
-        ResearchDepthTabShell(tab: .backtest, viewModel: viewModel) {
+        ResearchDepthTabShell(tab: .more, viewModel: viewModel) {
             if let exploreSection {
                 backtestDetail(exploreSection)
             } else {
@@ -139,7 +139,7 @@ struct SymbolBacktestTab: View {
                         marketSharePrice: marketSharePrice,
                         viewModel: viewModel
                     )
-                } else if viewModel.loadingTab == .backtest {
+                } else if viewModel.loadingTab == .more {
                     AppLoadingState(message: "Loading dividend history…")
                 } else {
                     AppEmptyMessage(message: "Open the Dividends tab first, or pull to refresh this tab.")
@@ -193,7 +193,7 @@ struct WheelBacktestSection: View {
                     }
                 )
 
-                if let error = viewModel.tabErrors[.backtest] {
+                if let error = viewModel.tabErrors[.more] {
                     AppInlineBanner(message: error, tone: .error)
                 }
 
