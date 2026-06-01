@@ -5,7 +5,12 @@ struct ResearchStockChartSection: View {
     @Bindable var viewModel: SymbolOverviewViewModel
 
     var body: some View {
-        AppScreenSection(title: "Price chart", footnote: viewModel.chartPeriod.label) {
+        AppScreenSection(
+            title: "Price chart",
+            footnote: viewModel.chartPeriod == .oneDay
+                ? "Today · 4:00 AM – 8:00 PM PT"
+                : viewModel.chartPeriod.label
+        ) {
             VStack(alignment: .leading, spacing: 10) {
                 Picker("Period", selection: $viewModel.chartPeriod) {
                     ForEach(StockChartPeriod.allCases) { period in
@@ -20,8 +25,12 @@ struct ResearchStockChartSection: View {
                 if viewModel.isChartLoading, viewModel.stockChart == nil {
                     ProgressView()
                         .frame(maxWidth: .infinity, minHeight: 160)
-                } else if let chart = viewModel.stockChart, !chart.data.isEmpty {
-                    InteractiveStockPriceChart(points: chart.data)
+                } else if let prepared = viewModel.preparedStockChart, !prepared.points.isEmpty {
+                    InteractiveStockPriceChart(
+                        prepared: prepared,
+                        previousClose: viewModel.stockChart?.previousClose,
+                        showsIntradayAxis: viewModel.chartPeriod.isRobinhoodIntradaySession
+                    )
                 } else if let error = viewModel.chartError {
                     AppInlineBanner(message: error, tone: .error)
                 } else {

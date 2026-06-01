@@ -1,3 +1,4 @@
+import CoreGraphics
 import Foundation
 
 @MainActor
@@ -84,9 +85,10 @@ final class SymbolOverviewViewModel {
     private(set) var errorMessage: String?
 
     private(set) var stockChart: StockChartPayload?
+    private(set) var preparedStockChart: IntradayChartTimeline.PreparedChart?
     private(set) var isChartLoading = false
     private(set) var chartError: String?
-    var chartPeriod: StockChartPeriod = .threeMonths
+    var chartPeriod: StockChartPeriod = .oneDay
 
     private(set) var isBigPictureLoading = false
     private(set) var bigPictureError: String?
@@ -348,16 +350,38 @@ final class SymbolOverviewViewModel {
         defer { isChartLoading = false }
 
         do {
-            stockChart = try await ResearchService.fetchStockChart(
+            let chart = try await ResearchService.fetchStockChart(
                 symbol: symbol,
                 accessToken: accessToken,
                 period: chartPeriod.rawValue,
+                interval: chartPeriod.interval,
                 api: api
             )
+            stockChart = chart
+            preparedStockChart = Self.buildPreparedChart(from: chart, period: chartPeriod)
+            chartError = nil
         } catch {
             stockChart = nil
+            preparedStockChart = nil
             chartError = (error as? APIError)?.errorDescription ?? error.localizedDescription
         }
+    }
+
+    private static func buildPreparedChart(
+        from chart: StockChartPayload,
+        period: StockChartPeriod
+    ) -> IntradayChartTimeline.PreparedChart {
+        if period.isRobinhoodIntradaySession {
+            return IntradayChartTimeline.prepare(
+                rawPoints: chart.data,
+                previousClose: chart.previousClose
+            )
+        }
+        return IntradayChartTimeline.PreparedChart(
+            points: chart.data,
+            values: chart.data.map { CGFloat($0.close) },
+            occupyingRelativeWidth: 1
+        )
     }
 
     func refreshBigPicture() async {

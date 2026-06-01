@@ -39,31 +39,42 @@ private var tomcrestLinePlotConfig: RHLinePlotConfig {
 // MARK: - Stock price chart (Robinhood-style via RHLinePlot)
 
 struct InteractiveStockPriceChart: View {
-    let points: [StockChartPoint]
+    let prepared: IntradayChartTimeline.PreparedChart
+    var previousClose: Double?
+    var showsIntradayAxis = false
 
     @State private var selectedIndex: Int?
 
+    private var chartPoints: [StockChartPoint] {
+        prepared.points
+    }
+
     private var closeValues: [CGFloat] {
-        points.map { CGFloat($0.close) }
+        prepared.values
+    }
+
+    private var occupyingRelativeWidth: CGFloat {
+        prepared.occupyingRelativeWidth
     }
 
     private var displayIndex: Int {
-        if let selectedIndex, points.indices.contains(selectedIndex) {
+        if let selectedIndex, chartPoints.indices.contains(selectedIndex) {
             return selectedIndex
         }
-        return max(points.count - 1, 0)
+        return max(chartPoints.count - 1, 0)
     }
 
     private var displayPoint: StockChartPoint? {
-        guard points.indices.contains(displayIndex) else { return nil }
-        return points[displayIndex]
+        guard chartPoints.indices.contains(displayIndex) else { return nil }
+        return chartPoints[displayIndex]
     }
 
     private var lineColor: Color {
-        guard let first = points.first?.close, let last = points.last?.close else {
+        let baseline = previousClose ?? chartPoints.first?.close
+        guard let baseline, let last = chartPoints.last?.close else {
             return AppColors.accent
         }
-        return last >= first ? AppColors.success : AppColors.error
+        return last >= baseline ? AppColors.success : AppColors.error
     }
 
     var body: some View {
@@ -72,40 +83,80 @@ struct InteractiveStockPriceChart: View {
                 stockReadout(point, scrubbing: selectedIndex != nil)
             }
 
-            if points.count < 2 {
+            if chartPoints.count < 2 {
                 AppEmptyMessage(
                     message: "Not enough data to draw this chart.",
                     systemImage: "chart.line.uptrend.xyaxis"
                 )
                 .frame(height: 180)
             } else {
-                RHInteractiveLinePlot(
+                StockPriceLinePlot(
                     values: closeValues,
-                    showGlowingIndicator: true,
-                    didSelectValueAtIndex: { index in
-                        selectedIndex = index
-                    },
-                    valueStickLabel: { _ in
-                        if let point = displayPoint {
-                            Text(DateFormatters.display(ChartDateParser.date(from: point.date)))
-                                .font(.caption2.weight(.medium))
-                                .foregroundStyle(AppColors.secondaryLabel)
-                        } else {
-                            Text("")
-                        }
-                    }
+                    occupyingRelativeWidth: occupyingRelativeWidth,
+                    lineColor: lineColor,
+                    selectedIndex: $selectedIndex
                 )
-                .frame(height: 200)
-                .foregroundColor(lineColor)
-                .environment(\.rhLinePlotConfig, tomcrestLinePlotConfig)
+
+                if showsIntradayAxis {
+                    intradaySessionAxis
+                }
             }
         }
+        .onChange(of: prepared.points.count) { _, _ in
+            selectedIndex = nil
+        }
+    }
+}
+
+/// Isolated plot layer so scrubbing only re-renders the readout + stick, not the whole section.
+private struct StockPriceLinePlot: View {
+    let values: [CGFloat]
+    let occupyingRelativeWidth: CGFloat
+    let lineColor: Color
+    @Binding var selectedIndex: Int?
+
+    var body: some View {
+        RHInteractiveLinePlot(
+            values: values,
+            occupyingRelativeWidth: occupyingRelativeWidth,
+            showGlowingIndicator: true,
+            didSelectValueAtIndex: { index in
+                selectedIndex = index
+            },
+            valueStickLabel: { _ in
+                Text(" ")
+                    .font(.caption2)
+            }
+        )
+        .frame(height: 200)
+        .foregroundColor(lineColor)
+        .environment(\.rhLinePlotConfig, tomcrestLinePlotConfig)
+    }
+}
+
+extension InteractiveStockPriceChart {
+
+    private var intradaySessionAxis: some View {
+        HStack {
+            Text("4 AM")
+            Spacer()
+            Text("8 AM")
+            Spacer()
+            Text("12 PM")
+            Spacer()
+            Text("4 PM")
+            Spacer()
+            Text("8 PM")
+        }
+        .font(.caption2.weight(.medium))
+        .foregroundStyle(AppColors.tertiaryLabel)
+        .padding(.horizontal, 2)
     }
 
     @ViewBuilder
     private func stockReadout(_ point: StockChartPoint, scrubbing: Bool) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(DateFormatters.display(ChartDateParser.date(from: point.date)))
+            Text(DateFormatters.display(from: point.date))
                 .font(.caption2.weight(.medium))
                 .foregroundStyle(scrubbing ? AppColors.accentHighlight : AppColors.secondaryLabel)
 
@@ -123,7 +174,7 @@ struct InteractiveStockPriceChart: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(AppColors.surfaceElevated.opacity(0.65))
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .animation(.easeOut(duration: 0.15), value: scrubbing)
+        .animation(nil, value: selectedIndex)
     }
 
     private func readoutMetric(_ label: String, _ value: String) -> some View {
