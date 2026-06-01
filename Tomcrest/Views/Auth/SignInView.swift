@@ -79,7 +79,9 @@ struct WaitlistView: View {
             message: "Tomcrest is invite-only. Join the waitlist, then return after you're approved."
         ) {
             VStack(spacing: 16) {
-                if let message = auth.lastError, !message.isEmpty {
+                if let message = auth.lastError,
+                   !message.isEmpty,
+                   !message.isAuthCancellationNoise {
                     AppInlineBanner(message: message, tone: .neutral)
                 }
 

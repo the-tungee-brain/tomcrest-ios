@@ -4,7 +4,9 @@ enum WatchlistFolderIcons {
     static let defaultIcon = "folder.fill"
 
     /// Curated SF Symbols — fintech-friendly, reads well at small sizes.
-    static let catalog: [(symbol: String, label: String)] = [
+    static let catalog: [(symbol: String, label: String)] = originalCatalog + addedCatalog
+
+    private static let originalCatalog: [(symbol: String, label: String)] = [
         ("folder.fill", "Folder"),
         ("star.fill", "Star"),
         ("chart.line.uptrend.xyaxis", "Growth"),
@@ -23,13 +25,33 @@ enum WatchlistFolderIcons {
         ("target", "Goals"),
         ("briefcase.fill", "Portfolio"),
         ("bitcoinsign.circle.fill", "Crypto"),
-        ("rocket.fill", "Rocket"),
+    ]
+
+    private static let addedCatalog: [(symbol: String, label: String)] = [
+        ("moon.fill", "Moon"),
         ("square.stack.3d.up.fill", "Composition"),
         ("heart.fill", "Heart"),
     ]
 
     static func label(for symbol: String) -> String {
-        catalog.first { $0.symbol == symbol }?.label ?? "Folder"
+        if let match = catalog.first(where: { $0.symbol == symbol }) {
+            return match.label
+        }
+        switch symbol {
+        case "rocket", "rocket.fill":
+            return "Moon"
+        default:
+            return "Folder"
+        }
+    }
+
+    static func resolvedSystemSymbol(_ symbol: String) -> String {
+        switch symbol {
+        case "rocket", "rocket.fill":
+            "moon.fill"
+        default:
+            symbol
+        }
     }
 }
 
@@ -40,7 +62,7 @@ struct WatchlistFolderIconBadge: View {
     var iconScale: Font = .title2
 
     var body: some View {
-        Image(systemName: symbol)
+        Image(systemName: WatchlistFolderIcons.resolvedSystemSymbol(symbol))
             .font(iconScale.weight(.semibold))
             .foregroundStyle(accent)
             .frame(width: size, height: size)
@@ -58,6 +80,8 @@ struct WatchlistFolderIconPicker: View {
     @Binding var selection: String
     var accent: Color = AppColors.accentHighlight
 
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: 10), count: 7)
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Icon")
@@ -65,20 +89,19 @@ struct WatchlistFolderIconPicker: View {
                 .foregroundStyle(AppColors.secondaryLabel)
                 .textCase(.uppercase)
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
-                    ForEach(WatchlistFolderIcons.catalog, id: \.symbol) { item in
-                        iconButton(symbol: item.symbol, label: item.label)
-                    }
+            LazyVGrid(columns: columns, spacing: 10) {
+                ForEach(WatchlistFolderIcons.catalog, id: \.symbol) { item in
+                    iconButton(symbol: item.symbol, label: item.label)
                 }
-                .padding(.horizontal, 2)
             }
         }
     }
 
     @ViewBuilder
     private func iconButton(symbol: String, label: String) -> some View {
-        let isSelected = selection == symbol
+        let resolvedSelection = WatchlistFolderIcons.resolvedSystemSymbol(selection)
+        let isSelected = resolvedSelection == symbol
+            || (symbol == "moon.fill" && (selection == "rocket" || selection == "rocket.fill"))
 
         Button {
             withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {

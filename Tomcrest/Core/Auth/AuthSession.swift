@@ -90,14 +90,20 @@ final class AuthSession {
             switch error {
             case let .waitlist(message):
                 markWaitlist()
-                if let message {
+                if let message, !message.isAuthCancellationNoise {
                     lastError = message
                 }
             default:
                 lastError = error.errorDescription
             }
+        } catch is CancellationError {
+            return
+        } catch let urlError as URLError where urlError.code == .cancelled {
+            return
         } catch {
-            lastError = error.localizedDescription
+            let message = error.localizedDescription
+            guard !message.isAuthCancellationNoise else { return }
+            lastError = message
         }
     }
 

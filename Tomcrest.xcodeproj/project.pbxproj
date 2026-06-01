@@ -154,6 +154,7 @@
 		DD83B2C97A3630D9580FA931 /* NewsAnalyticsModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B13D7D516E06FA028D05365D /* NewsAnalyticsModels.swift */; };
 		DD951AC0B31E64ED97EBB1B1 /* WheelBacktestModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = C919238E6D2E240857FDFB35 /* WheelBacktestModels.swift */; };
 		DE3AFA98A25394C994687B58 /* AuthSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = C93FE282066AE69118409A0C /* AuthSession.swift */; };
+		A1B2C3D4E5F60718293A4B5C /* AuthErrorMessages.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1C2D3E4F5A60718293A4B5D /* AuthErrorMessages.swift */; };
 		E11EE29B2EA051338B14ACAA /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97AE132548425F9A2A96F97C /* SettingsViewModel.swift */; };
 		E16E791CABCFE8907FBA3EB4 /* AuthModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DD45D3F0C2E8473DBA8D2B8 /* AuthModels.swift */; };
 		E1D2C3B4A596978877665544 /* WatchlistSaveSymbolSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1E2D3C4B5A6978877665544 /* WatchlistSaveSymbolSheet.swift */; };
@@ -344,6 +345,7 @@
 		C87146805DB754A10EE59ABD /* AccountModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountModels.swift; sourceTree = "<group>"; };
 		C919238E6D2E240857FDFB35 /* WheelBacktestModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WheelBacktestModels.swift; sourceTree = "<group>"; };
 		C93FE282066AE69118409A0C /* AuthSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthSession.swift; sourceTree = "<group>"; };
+		B1C2D3E4F5A60718293A4B5D /* AuthErrorMessages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthErrorMessages.swift; sourceTree = "<group>"; };
 		CC368AD1553548944A76F114 /* WatchlistPremiumColorPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchlistPremiumColorPicker.swift; sourceTree = "<group>"; };
 		CDAC06A77DE8D12B57E598D2 /* Misc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Misc.swift; sourceTree = "<group>"; };
 		CEEFC7CBBB878138A4DD9FA5 /* WatchlistScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchlistScreen.swift; sourceTree = "<group>"; };
@@ -490,6 +492,7 @@
 			isa = PBXGroup;
 			children = (
 				C93FE282066AE69118409A0C /* AuthSession.swift */,
+				B1C2D3E4F5A60718293A4B5D /* AuthErrorMessages.swift */,
 				C3D4E5F6A7B8091234567890 /* SessionDataCleaner.swift */,
 				631B6DDF0B43758082EB3A46 /* GoogleSignInCoordinator.swift */,
 				6199A99A9663233347FAFE5A /* KeychainTokenStore.swift */,
@@ -1016,6 +1019,7 @@
 				77DE72BCAB224C56C14C7E2F /* AssistantPresenter.swift in Sources */,
 				E16E791CABCFE8907FBA3EB4 /* AuthModels.swift in Sources */,
 				DE3AFA98A25394C994687B58 /* AuthSession.swift in Sources */,
+				A1B2C3D4E5F60718293A4B5C /* AuthErrorMessages.swift in Sources */,
 				D4E5F6A7B8C901234567890 /* SessionDataCleaner.swift in Sources */,
 				AF783A5092D41404D5AB410D /* BacktestInputComponents.swift in Sources */,
 				F0E87BA65A8AF4BABA12A009 /* BrandMarketLine.swift in Sources */,

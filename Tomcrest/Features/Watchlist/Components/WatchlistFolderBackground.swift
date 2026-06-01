@@ -55,3 +55,17 @@ extension View {
         modifier(WatchlistFolderCardChrome(swatch: swatch, accent: accent, isTargeted: isTargeted))
     }
 }
+
+struct WatchlistFolderExpandableContent<Content: View>: View {
+    let isCollapsed: Bool
+    @ViewBuilder var content: () -> Content
+
+    var body: some View {
+        content()
+            .padding(.horizontal, 10)
+            .padding(.bottom, isCollapsed ? 0 : 12)
+            .frame(maxHeight: isCollapsed ? 0 : nil, alignment: .top)
+            .clipped()
+            .allowsHitTesting(!isCollapsed)
+    }
+}

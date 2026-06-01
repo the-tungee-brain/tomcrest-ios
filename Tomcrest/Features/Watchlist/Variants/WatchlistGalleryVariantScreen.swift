@@ -66,8 +66,12 @@ struct WatchlistGalleryVariantScreen: View {
 
         VStack(alignment: .leading, spacing: 0) {
             folderHeader(folder, swatch: swatch, accent: accent, performance: performance)
+                .zIndex(1)
+                .contextMenu {
+                    folderContextMenu(folder)
+                }
 
-            if !folder.isCollapsed {
+            WatchlistFolderExpandableContent(isCollapsed: folder.isCollapsed) {
                 VStack(spacing: 8) {
                     ForEach(folder.symbols) { symbol in
                         symbolRow(symbol, folderID: folder.id, accent: accent)
@@ -82,15 +86,10 @@ struct WatchlistGalleryVariantScreen: View {
                             .padding(.vertical, 10)
                     }
                 }
-                .padding(.horizontal, 10)
-                .padding(.bottom, 12)
-                .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
         .watchlistFolderChrome(swatch: swatch, accent: accent, isTargeted: isDropTarget || targetedFolderID == folder.id)
-        .draggable(folder.id.uuidString) {
-            folderDragPreview(folder, swatch: swatch, accent: accent)
-        }
+        .modifier(FolderDragModifier(folder: folder, swatch: swatch, accent: accent))
         .dropDestination(for: String.self) { items, _ in
             guard let raw = items.first, let draggedID = UUID(uuidString: raw), draggedID != folder.id else {
                 return false
@@ -108,9 +107,6 @@ struct WatchlistGalleryVariantScreen: View {
             return true
         } isTargeted: { targeted in
             targetedDropFolderID = targeted ? folder.id : nil
-        }
-        .contextMenu {
-            folderContextMenu(folder)
         }
     }
 
@@ -175,9 +171,6 @@ struct WatchlistGalleryVariantScreen: View {
         }
         .padding(16)
         .contentShape(Rectangle())
-        .onTapGesture {
-            store.toggleCollapse(folderID: folder.id)
-        }
     }
 
     @ViewBuilder
@@ -200,36 +193,57 @@ struct WatchlistGalleryVariantScreen: View {
     }
 
     @ViewBuilder
-    private func folderDragPreview(_ folder: WatchlistFolder, swatch: WatchlistSwatch, accent: Color) -> some View {
-        HStack(spacing: 10) {
-            WatchlistFolderIconBadge(symbol: folder.iconName, accent: accent, size: 36, iconScale: .body)
-            Text(folder.name)
-                .font(AppTypography.cardTitle)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .watchlistFolderChrome(swatch: swatch, accent: accent)
-        .frame(width: 220)
-    }
-
-    @ViewBuilder
     private func folderContextMenu(_ folder: WatchlistFolder) -> some View {
+        if folder.isPinned {
+            Button {
+                store.togglePin(folderID: folder.id)
+            } label: {
+                Label("Unpin", systemImage: "pin.slash")
+            }
+        }
+
         Button {
             folderFormMode = .edit(folder)
         } label: {
             Label("Customize", systemImage: "paintpalette")
         }
 
-        Button {
-            store.togglePin(folderID: folder.id)
-        } label: {
-            Label(folder.isPinned ? "Unpin" : "Pin to top", systemImage: folder.isPinned ? "pin.slash" : "pin")
+        if !folder.isPinned {
+            Button {
+                store.togglePin(folderID: folder.id)
+            } label: {
+                Label("Pin to top", systemImage: "pin")
+            }
         }
 
         Button(role: .destructive) {
             store.deleteFolder(id: folder.id)
         } label: {
             Label("Delete folder", systemImage: "trash")
+        }
+    }
+}
+
+private struct FolderDragModifier: ViewModifier {
+    let folder: WatchlistFolder
+    let swatch: WatchlistSwatch
+    let accent: Color
+
+    func body(content: Content) -> some View {
+        if folder.isPinned {
+            content
+        } else {
+            content.draggable(folder.id.uuidString) {
+                HStack(spacing: 10) {
+                    WatchlistFolderIconBadge(symbol: folder.iconName, accent: accent, size: 36, iconScale: .body)
+                    Text(folder.name)
+                        .font(AppTypography.cardTitle)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .watchlistFolderChrome(swatch: swatch, accent: accent)
+                .frame(width: 220)
+            }
         }
     }
 }

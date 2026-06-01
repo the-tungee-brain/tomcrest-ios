@@ -106,16 +106,31 @@ struct PortfolioWatchlistPanel: View {
         let isFolderCollapsed = collapsedFolderIDs.contains(folder.id)
 
         VStack(alignment: .leading, spacing: 0) {
-            Button {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    toggleFolderCollapse(folder.id)
+            folderHeader(folder, accent: accent, performance: performance, isCollapsed: isFolderCollapsed)
+                .zIndex(1)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
+                        toggleFolderCollapse(folder.id)
+                    }
                 }
-            } label: {
-                folderHeader(folder, accent: accent, performance: performance, isCollapsed: isFolderCollapsed)
-            }
-            .buttonStyle(.plain)
+                .contextMenu {
+                    if folder.isPinned {
+                        Button {
+                            watchlistStore.togglePin(folderID: folder.id)
+                        } label: {
+                            Label("Unpin", systemImage: "pin.slash")
+                        }
+                    } else {
+                        Button {
+                            watchlistStore.togglePin(folderID: folder.id)
+                        } label: {
+                            Label("Pin to top", systemImage: "pin")
+                        }
+                    }
+                }
 
-            if !isFolderCollapsed {
+            WatchlistFolderExpandableContent(isCollapsed: isFolderCollapsed) {
                 VStack(spacing: 8) {
                     if folder.symbols.isEmpty {
                         Text("No symbols in this folder yet.")
@@ -135,9 +150,6 @@ struct PortfolioWatchlistPanel: View {
                         }
                     }
                 }
-                .padding(.horizontal, 10)
-                .padding(.bottom, 12)
-                .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
         .watchlistFolderChrome(swatch: swatch, accent: accent)
