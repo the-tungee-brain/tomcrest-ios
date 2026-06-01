@@ -114,7 +114,7 @@ struct StrategyPlaybookCard: View {
                         onOpenSymbol(symbol)
                     } label: {
                         Text(symbol)
-                            .font(AppTypography.monoCaption2Semibold)
+                            .font(.caption2.weight(.semibold).monospaced())
                             .foregroundStyle(AppColors.accentHighlight)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 8)

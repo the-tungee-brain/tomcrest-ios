@@ -99,7 +99,7 @@ struct StreetAnalysisSection: View {
                 .font(.caption2)
                 .foregroundStyle(AppColors.tertiaryLabel)
             Text(value)
-                .font(AppTypography.monoCardTitle)
+                .font(AppTypography.cardTitle.monospacedDigit())
                 .foregroundStyle(AppColors.label)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -123,7 +123,7 @@ struct StreetAnalysisSection: View {
             ForEach(Array(actions.prefix(5))) { action in
                 HStack(alignment: .top, spacing: 8) {
                     Text(StreetAnalysisFormatters.formatActionDate(action.date))
-                        .font(AppTypography.monoCaption2)
+                        .font(.caption2.monospacedDigit())
                         .foregroundStyle(AppColors.tertiaryLabel)
                         .frame(width: 52, alignment: .leading)
 
@@ -226,7 +226,7 @@ struct StreetOwnershipSection: View {
                                     .frame(maxWidth: .infinity, alignment: .leading)
 
                                 Text(holderDetail(holder))
-                                    .font(AppTypography.monoCaption)
+                                    .font(.caption.monospacedDigit())
                                     .foregroundStyle(AppColors.secondaryLabel)
                             }
                         }
@@ -257,7 +257,7 @@ struct StreetOwnershipSection: View {
                 .font(.caption2)
                 .foregroundStyle(AppColors.tertiaryLabel)
             Text(value)
-                .font(AppTypography.monoCardTitle)
+                .font(AppTypography.cardTitle.monospacedDigit())
                 .foregroundStyle(AppColors.label)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -296,7 +296,7 @@ struct StreetOwnershipSection: View {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
                         Text(StreetAnalysisFormatters.formatActionDate(row.date))
-                            .font(AppTypography.monoCaption2)
+                            .font(.caption2.monospacedDigit())
                             .foregroundStyle(AppColors.tertiaryLabel)
                         Text(row.insider)
                             .font(.caption.weight(.medium))

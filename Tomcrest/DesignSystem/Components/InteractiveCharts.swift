@@ -132,7 +132,7 @@ struct InteractiveStockPriceChart: View {
                 .font(.caption2)
                 .foregroundStyle(AppColors.tertiaryLabel)
             Text(value)
-                .font(AppTypography.monoCaption2Semibold)
+                .font(.caption2.weight(.semibold).monospacedDigit())
                 .foregroundStyle(AppColors.label)
         }
     }
@@ -152,7 +152,7 @@ struct InteractiveAnnualBarChart: View {
                         .foregroundStyle(AppColors.label)
                     Spacer()
                     Text(CurrencyFormatter.usd(row.incomeOnShares, fractionDigits: 0))
-                        .font(AppTypography.monoCaptionSemibold)
+                        .font(.caption.weight(.semibold).monospacedDigit())
                         .foregroundStyle(AppColors.label)
                 }
                 .padding(.horizontal, 10)
@@ -248,7 +248,7 @@ struct InteractiveDividendBacktestYearChart: View {
                 .font(.caption2)
                 .foregroundStyle(AppColors.tertiaryLabel)
             Text(value)
-                .font(AppTypography.monoCaption2Semibold)
+                .font(.caption2.weight(.semibold).monospacedDigit())
                 .foregroundStyle(AppColors.label)
         }
     }
@@ -403,7 +403,7 @@ struct InteractiveEquityCurveChart: View {
                 .font(.caption2)
                 .foregroundStyle(AppColors.tertiaryLabel)
             Text(value)
-                .font(AppTypography.monoCaption2Semibold)
+                .font(.caption2.weight(.semibold).monospacedDigit())
                 .foregroundStyle(AppColors.label)
         }
     }

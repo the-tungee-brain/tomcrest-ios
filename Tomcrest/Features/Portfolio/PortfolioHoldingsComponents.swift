@@ -187,7 +187,7 @@ private struct PortfolioHoldingsRow: View {
                     .font(AppTypography.captionEmphasis)
                     .foregroundStyle(profitTone(summary.openProfitLoss))
                 Text(CurrencyFormatter.signedUsd(summary.dayProfitLoss))
-                    .font(AppTypography.monoCaption2)
+                    .font(.caption2.monospacedDigit())
                     .foregroundStyle(profitTone(summary.dayProfitLoss))
             }
         }
@@ -241,10 +241,10 @@ struct CashSecuredPutSummaryCard: View {
                     ForEach(summary.positions.prefix(5)) { position in
                         HStack {
                             Text(position.underlyingSymbol ?? position.symbol)
-                                .font(AppTypography.monoCaptionSemibold)
+                                .font(.caption.weight(.semibold).monospaced())
                             Spacer()
                             Text(CurrencyFormatter.usd(position.reservedCash, fractionDigits: 0))
-                                .font(AppTypography.monoCaption)
+                                .font(.caption.monospacedDigit())
                                 .foregroundStyle(AppColors.secondaryLabel)
                         }
                     }
@@ -288,7 +288,7 @@ struct AssignmentRiskSummaryCard: View {
                     VStack(alignment: .leading, spacing: 4) {
                         HStack {
                             Text(position.underlyingSymbol ?? position.symbol)
-                                .font(AppTypography.monoCaptionSemibold)
+                                .font(.caption.weight(.semibold).monospaced())
                             Spacer()
                             Text(position.riskLevel?.capitalized ?? "Watch")
                                 .font(.caption2.weight(.semibold))

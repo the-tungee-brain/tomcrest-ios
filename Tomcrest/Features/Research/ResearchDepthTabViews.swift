@@ -862,16 +862,16 @@ struct SymbolOptionsTab: View {
                             ForEach(chain.rows.prefix(8)) { row in
                                 HStack {
                                     Text(CurrencyFormatter.usd(row.strike))
-                                        .font(AppTypography.monoCaption)
+                                        .font(.caption.monospacedDigit())
                                     Spacer()
                                     if let put = row.put {
                                         Text("P \(CurrencyFormatter.usd(put.mark ?? put.bid ?? 0))")
-                                            .font(AppTypography.monoCaption2)
+                                            .font(.caption2.monospacedDigit())
                                             .foregroundStyle(AppColors.secondaryLabel)
                                     }
                                     if let call = row.call {
                                         Text("C \(CurrencyFormatter.usd(call.mark ?? call.bid ?? 0))")
-                                            .font(AppTypography.monoCaption2)
+                                            .font(.caption2.monospacedDigit())
                                             .foregroundStyle(AppColors.secondaryLabel)
                                     }
                                 }

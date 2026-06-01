@@ -40,9 +40,9 @@ struct WheelBacktestExtendedPanel: View {
                                     .font(.caption.weight(.semibold))
                                 Spacer()
                                 Text(CurrencyFormatter.percent(row.returnPct ?? 0))
-                                    .font(AppTypography.monoCaption)
+                                    .font(.caption.monospacedDigit())
                                 Text(CurrencyFormatter.usd(row.plUsd ?? 0, fractionDigits: 0))
-                                    .font(AppTypography.monoCaption)
+                                    .font(.caption.monospacedDigit())
                                     .foregroundStyle(AppColors.secondaryLabel)
                             }
                         }
@@ -60,9 +60,9 @@ struct WheelBacktestExtendedPanel: View {
                                     .font(.caption.weight(.semibold))
                                 Spacer()
                                 Text("Put \(cycle.putStrike.map { CurrencyFormatter.usd($0) } ?? "—")")
-                                    .font(AppTypography.monoCaption2)
+                                    .font(.caption2.monospacedDigit())
                                 Text("Call \(cycle.callStrike.map { CurrencyFormatter.usd($0) } ?? "—")")
-                                    .font(AppTypography.monoCaption2)
+                                    .font(.caption2.monospacedDigit())
                             }
                         }
                     }
@@ -137,7 +137,7 @@ struct WheelBacktestExtendedPanel: View {
                 .foregroundStyle(AppColors.tertiaryLabel)
                 .textCase(.uppercase)
             Text(value)
-                .font(AppTypography.monoCaptionSemibold)
+                .font(.caption.weight(.semibold).monospacedDigit())
         }
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -170,7 +170,7 @@ struct StreetAnalysisOverviewPreview: View {
                                 .foregroundStyle(AppColors.secondaryLabel)
                             Spacer()
                             Text(StreetAnalysisFormatters.formatUpside(upside))
-                                .font(AppTypography.monoCaptionSemibold)
+                                .font(.caption.weight(.semibold).monospacedDigit())
                         }
                     }
                     if let headline = street.estimateRevisionHeadline ?? street.growthContextHeadline,
@@ -203,7 +203,7 @@ struct EtfHoldingsOverviewPreview: View {
                                 .font(.caption.weight(.semibold))
                             Spacer()
                             Text(CurrencyFormatter.compactPercent(item.weightPct))
-                                .font(AppTypography.monoCaption)
+                                .font(.caption.monospacedDigit())
                         }
                     }
                     Text("See Composition tab for sector breakdown and full list.")

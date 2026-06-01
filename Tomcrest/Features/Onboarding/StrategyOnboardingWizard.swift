@@ -144,7 +144,7 @@ struct StrategyOnboardingWizard: View {
             TextField("AAPL MSFT SCHD", text: $watchlistText, axis: .vertical)
                 .lineLimit(3 ... 6)
                 .textInputAutocapitalization(.characters)
-                .font(AppTypography.monoBody)
+                .font(.body.monospaced())
                 .padding(12)
                 .background(AppColors.secondaryBackground)
                 .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))

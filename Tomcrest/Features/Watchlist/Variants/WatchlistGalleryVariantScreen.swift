@@ -10,6 +10,12 @@ struct WatchlistGalleryVariantScreen: View {
 
     @State private var folderFormMode: WatchlistFolderFormSheet.Mode?
     @State private var targetedDropFolderID: UUID?
+    @State private var pinnedEditReorder = WatchlistFolderEditReorderController()
+    @State private var regularEditReorder = WatchlistFolderEditReorderController()
+
+    private var isEditDragging: Bool {
+        pinnedEditReorder.isDragging || regularEditReorder.isDragging
+    }
 
     var body: some View {
         Group {
@@ -64,43 +70,42 @@ struct WatchlistGalleryVariantScreen: View {
     // MARK: - Edit / reorder
 
     private var folderReorderList: some View {
-        List {
-            if !store.pinnedFolders.isEmpty {
-                Section {
-                    ForEach(store.pinnedFolders) { folder in
+        ScrollView {
+            VStack(spacing: 16) {
+                if !store.pinnedFolders.isEmpty {
+                    WatchlistFolderEditReorderSection(
+                        title: "Pinned",
+                        folders: store.pinnedFolders,
+                        spacing: 12,
+                        controller: pinnedEditReorder,
+                        onCommit: { from, to in
+                            let destination = to > from ? to + 1 : to
+                            store.reorderFolders(inPinnedSection: true, from: IndexSet(integer: from), to: destination)
+                        }
+                    ) { folder in
                         folderEditRow(folder)
-                            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 8))
-                            .listRowSeparator(.hidden)
-                            .listRowBackground(Color.clear)
                     }
-                    .onMove { source, destination in
-                        store.reorderFolders(inPinnedSection: true, from: source, to: destination)
-                    }
-                } header: {
-                    sectionHeader("Pinned")
                 }
-            }
 
-            if !store.regularFolders.isEmpty {
-                Section {
-                    ForEach(store.regularFolders) { folder in
+                if !store.regularFolders.isEmpty {
+                    WatchlistFolderEditReorderSection(
+                        title: store.pinnedFolders.isEmpty ? "Folders" : "All folders",
+                        folders: store.regularFolders,
+                        spacing: 12,
+                        controller: regularEditReorder,
+                        onCommit: { from, to in
+                            let destination = to > from ? to + 1 : to
+                            store.reorderFolders(inPinnedSection: false, from: IndexSet(integer: from), to: destination)
+                        }
+                    ) { folder in
                         folderEditRow(folder)
-                            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 8))
-                            .listRowSeparator(.hidden)
-                            .listRowBackground(Color.clear)
                     }
-                    .onMove { source, destination in
-                        store.reorderFolders(inPinnedSection: false, from: source, to: destination)
-                    }
-                } header: {
-                    sectionHeader(store.pinnedFolders.isEmpty ? "Folders" : "All folders")
                 }
             }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 96)
         }
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)
-        .environment(\.editMode, .constant(.active))
-        .padding(.bottom, 96)
+        .scrollDisabled(isEditDragging)
         .accessibilityLabel("Reorder folders")
     }
 
@@ -112,7 +117,7 @@ struct WatchlistGalleryVariantScreen: View {
 
         folderHeader(folder, accent: accent, performance: performance, allowsCollapseTap: false)
             .watchlistFolderChrome(swatch: swatch, accent: accent)
-            .accessibilityHint("Drag to reorder")
+            .accessibilityHint("Long press, then drag to reorder")
     }
 
     @ViewBuilder

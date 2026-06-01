@@ -251,7 +251,7 @@ struct MorningBriefCard: View {
 
                     if let pct = changes.liquidationValueChangePct {
                         Text(CurrencyFormatter.percent(pct))
-                            .font(AppTypography.monoCaptionSemibold)
+                            .font(.caption.weight(.semibold).monospacedDigit())
                             .foregroundStyle(profitTone(pct))
                     }
 
@@ -289,7 +289,7 @@ struct MorningBriefCard: View {
                                         .foregroundStyle(AppColors.label)
                                     Spacer(minLength: 0)
                                     Text(CurrencyFormatter.compactPercent(sector.weightPct))
-                                        .font(AppTypography.monoCaption)
+                                        .font(.caption.monospacedDigit())
                                         .foregroundStyle(AppColors.secondaryLabel)
                                 }
                                 Capsule()
@@ -320,7 +320,7 @@ struct MorningBriefCard: View {
                             onSymbolTap?(symbol)
                         } label: {
                             Text(symbol)
-                                .font(AppTypography.monoCaption2Semibold)
+                                .font(.caption2.weight(.semibold).monospaced())
                                 .foregroundStyle(AppColors.label)
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 6)

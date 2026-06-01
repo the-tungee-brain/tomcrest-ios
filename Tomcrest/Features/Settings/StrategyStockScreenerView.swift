@@ -205,7 +205,7 @@ struct StrategyStockScreenerSheet: View {
                     step: 1
                 )
                 Text(viewModel.filters.maxPe.map { String(format: "%.0f", $0) } ?? "Any")
-                    .font(AppTypography.monoCaption)
+                    .font(.caption.monospacedDigit())
             }
             Text("Sectors")
                 .font(.caption2.weight(.medium))
@@ -263,11 +263,11 @@ struct StrategyStockScreenerSheet: View {
                             VStack(alignment: .leading, spacing: 6) {
                                 HStack {
                                     Text(quote.symbol)
-                                        .font(AppTypography.monoCardTitle)
+                                        .font(AppTypography.cardTitle.monospaced())
                                     Spacer()
                                     if let price = quote.price {
                                         Text(CurrencyFormatter.usd(price))
-                                            .font(AppTypography.monoCaption)
+                                            .font(.caption.monospacedDigit())
                                     }
                                 }
                                 if let name = quote.companyName {

@@ -157,7 +157,7 @@ struct PortfolioAllocationCard: View {
                             Spacer()
                             if let amount = step.amount {
                                 Text(CurrencyFormatter.usd(amount, fractionDigits: 0))
-                                    .font(AppTypography.monoCaption)
+                                    .font(.caption.monospacedDigit())
                                     .foregroundStyle(step.isSubtraction == true ? AppColors.error : AppColors.label)
                             }
                         }
@@ -175,10 +175,10 @@ struct PortfolioAllocationCard: View {
                         VStack(alignment: .leading, spacing: 4) {
                             HStack {
                                 Text(holding.symbol)
-                                    .font(AppTypography.monoCaptionSemibold)
+                                    .font(.caption.weight(.semibold).monospaced())
                                 Spacer()
                                 Text(CurrencyFormatter.compactPercent(holding.weightPct))
-                                    .font(AppTypography.monoCaption)
+                                    .font(.caption.monospacedDigit())
                             }
                             Text(holding.status)
                                 .font(.caption2.weight(.semibold))
@@ -221,7 +221,7 @@ struct PortfolioAllocationCard: View {
                 .foregroundStyle(AppColors.tertiaryLabel)
                 .textCase(.uppercase)
             Text(value)
-                .font(AppTypography.monoCaptionSemibold)
+                .font(.caption.weight(.semibold).monospacedDigit())
                 .foregroundStyle(accent ? AppColors.accentHighlight : AppColors.label)
         }
         .padding(10)

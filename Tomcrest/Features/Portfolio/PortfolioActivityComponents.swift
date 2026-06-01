@@ -281,7 +281,7 @@ struct PortfolioActivityOrderRow: View {
                     onSymbolTap?(order.symbol)
                 } label: {
                     Text(order.symbol)
-                        .font(AppTypography.monoSubheadlineSemibold)
+                        .font(.system(.subheadline, design: .monospaced).weight(.semibold))
                         .foregroundStyle(AppColors.label)
                 }
                 .buttonStyle(.plain)
@@ -318,7 +318,7 @@ struct PortfolioActivityOrderRow: View {
                 Spacer(minLength: 0)
 
                 Text(tradeSummary)
-                    .font(AppTypography.monoCaption)
+                    .font(AppTypography.caption.monospacedDigit())
                     .foregroundStyle(AppColors.secondaryLabel)
                     .multilineTextAlignment(.trailing)
             }

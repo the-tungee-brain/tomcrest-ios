@@ -126,6 +126,7 @@
 		BF851FFECD297D9A5E053CB8 /* OnboardingComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41FAC74FDAD148A81196237F /* OnboardingComponents.swift */; };
 		C2C63E525288C111B7B0354E /* WatchlistHint.swift in Sources */ = {isa = PBXBuildFile; fileRef = D230218055549EB880DC32D4 /* WatchlistHint.swift */; };
 		C65124F80E9A8797387676B1 /* WatchlistFolderBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977BA65E6786EF040351729A /* WatchlistFolderBackground.swift */; };
+		A1B2C3D4E5F6010203040506 /* WatchlistFolderEditReorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6010203040507 /* WatchlistFolderEditReorder.swift */; };
 		C895874005685C3211DAE98E /* PortfolioDetailScreens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 361CF8ED53FFE0FE749B29D8 /* PortfolioDetailScreens.swift */; };
 		C985843274E6F3AD37DE19D4 /* BrandTips.json in Resources */ = {isa = PBXBuildFile; fileRef = 89A7D0E544FB71F7F77D85CB /* BrandTips.json */; };
 		CB9C85D1EA6792B1A47C89DC /* BrandTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCC6F358F37D7A0F5AABBC14 /* BrandTheme.swift */; };
@@ -301,6 +302,7 @@
 		93DAC7ED0864B83CC74FB58D /* AppPanels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPanels.swift; sourceTree = "<group>"; };
 		95D58779A1C15248AF2B5AD4 /* JSONPassThrough.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONPassThrough.swift; sourceTree = "<group>"; };
 		977BA65E6786EF040351729A /* WatchlistFolderBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchlistFolderBackground.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F6010203040507 /* WatchlistFolderEditReorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchlistFolderEditReorder.swift; sourceTree = "<group>"; };
 		97AE132548425F9A2A96F97C /* SettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewModel.swift; sourceTree = "<group>"; };
 		982D278460CF8A3FFD370FCF /* WatchlistStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchlistStore.swift; sourceTree = "<group>"; };
 		9952646BAFBB92A38F812F53 /* ResearchChatPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResearchChatPanel.swift; sourceTree = "<group>"; };
@@ -479,6 +481,7 @@
 			isa = PBXGroup;
 			children = (
 				977BA65E6786EF040351729A /* WatchlistFolderBackground.swift */,
+				A1B2C3D4E5F6010203040507 /* WatchlistFolderEditReorder.swift */,
 				4DE9DBEB513F72CCE8B7395E /* WatchlistFolderFormSheet.swift */,
 				F1E2D3C4B5A6978877665544 /* WatchlistSaveSymbolSheet.swift */,
 				FD0C1878D196D5BD04D38FC4 /* WatchlistFolderIcon.swift */,
@@ -1147,6 +1150,7 @@
 				425BE6A48B452F0057E1B460 /* TomcrestApp.swift in Sources */,
 				E680006201F5BBB9FE5D2C2B /* WatchlistAPIModels.swift in Sources */,
 				C65124F80E9A8797387676B1 /* WatchlistFolderBackground.swift in Sources */,
+				A1B2C3D4E5F6010203040506 /* WatchlistFolderEditReorder.swift in Sources */,
 				EDAF0B49AFBE77C3172DC734 /* WatchlistFolderFormSheet.swift in Sources */,
 				E1D2C3B4A596978877665544 /* WatchlistSaveSymbolSheet.swift in Sources */,
 				2ADACF049F36E1A3F5630D1C /* WatchlistFolderIcon.swift in Sources */,

@@ -138,7 +138,7 @@ struct SymbolPositionLegsSection: View {
                 .foregroundStyle(AppColors.tertiaryLabel)
                 .textCase(.uppercase)
             Text(value)
-                .font(AppTypography.monoCaptionSemibold)
+                .font(.caption.weight(.semibold).monospacedDigit())
                 .foregroundStyle(tone)
                 .lineLimit(2)
                 .minimumScaleFactor(0.85)
@@ -204,7 +204,7 @@ struct SymbolPositionLegRow: View {
                 .font(.caption2)
                 .foregroundStyle(AppColors.tertiaryLabel)
             Text(value)
-                .font(AppTypography.monoCaptionSemibold)
+                .font(.caption.weight(.semibold).monospacedDigit())
                 .foregroundStyle(tone)
                 .lineLimit(2)
                 .minimumScaleFactor(0.85)
@@ -264,7 +264,7 @@ struct SymbolTaxWashSaleStrip: View {
                                 .foregroundStyle(AppColors.label)
                             if let symbol = item.symbol {
                                 Text(symbol)
-                                    .font(AppTypography.monoCaptionSemibold)
+                                    .font(.caption.weight(.semibold).monospaced())
                                     .foregroundStyle(AppColors.accentHighlight)
                             }
                         }

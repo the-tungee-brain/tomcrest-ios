@@ -63,7 +63,7 @@ struct StructuredAnalysisView: View {
                     .foregroundStyle(AppColors.label)
                 if let symbol = action.symbol, !symbol.isEmpty {
                     Text(symbol.uppercased())
-                        .font(AppTypography.monoCaption2Semibold)
+                        .font(.caption2.weight(.semibold).monospaced())
                         .foregroundStyle(AppColors.accentHighlight)
                 }
             }
