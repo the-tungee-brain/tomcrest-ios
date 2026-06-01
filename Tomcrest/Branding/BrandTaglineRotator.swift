@@ -9,7 +9,7 @@ struct BrandTaglineRotator: View {
 
     var body: some View {
         Text(phrases[index])
-            .font(.subheadline)
+            .font(AppTypography.bodySecondary)
             .foregroundStyle(theme.textSecondary)
             .multilineTextAlignment(.center)
             .lineSpacing(2)

@@ -118,7 +118,7 @@ struct FinancialStatementsSection: View {
                         Spacer()
                         if let latest = latestValue(item) {
                             Text(CurrencyFormatter.compactUSD(latest))
-                                .font(.caption.monospacedDigit())
+                                .font(AppTypography.monoCaption)
                                 .foregroundStyle(AppColors.label)
                         }
                     }
@@ -164,7 +164,7 @@ struct SymbolCompositionTab: View {
                                             .font(.caption)
                                         Spacer()
                                         Text(CurrencyFormatter.compactPercent(weight))
-                                            .font(.caption.monospacedDigit())
+                                            .font(AppTypography.monoCaption)
                                     }
                                 }
                             }
@@ -200,10 +200,10 @@ struct SymbolCompositionTab: View {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
                         Text(item.ticker ?? "—")
-                            .font(.caption.weight(.semibold).monospaced())
+                            .font(AppTypography.monoCaptionSemibold)
                         Spacer()
                         Text(CurrencyFormatter.compactPercent(item.weightPct))
-                            .font(.caption.monospacedDigit())
+                            .font(AppTypography.monoCaption)
                     }
                     Text(item.name)
                         .font(.caption2)
@@ -240,14 +240,14 @@ struct DividendSnowballCard: View {
                             .font(.caption)
                         Slider(value: $projectYears, in: 5 ... 30, step: 1)
                         Text("\(Int(projectYears))y")
-                            .font(.caption.monospacedDigit())
+                            .font(AppTypography.monoCaption)
                     }
                     HStack {
                         Text("Annual contribution")
                             .font(.caption)
                         Spacer()
                         Text(CurrencyFormatter.usd(annualContribution, fractionDigits: 0))
-                            .font(.caption.monospacedDigit())
+                            .font(AppTypography.monoCaption)
                     }
                     Slider(value: $annualContribution, in: 0 ... 50_000, step: 500)
 
@@ -302,7 +302,7 @@ struct DividendSnowballCard: View {
                 .foregroundStyle(AppColors.tertiaryLabel)
                 .textCase(.uppercase)
             Text(value)
-                .font(.caption.weight(.semibold).monospacedDigit())
+                .font(AppTypography.monoCaptionSemibold)
         }
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)

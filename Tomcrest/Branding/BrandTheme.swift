@@ -37,4 +37,8 @@ struct BrandTheme {
     ]
 
     static let appName = "Tomcrest"
+
+    /// Web `TomcrestLogo` uses `rounded-[10px]` on a 32pt mark; scale for cold-start logo.
+    static let logoSize: CGFloat = 72
+    static let logoCornerRadius: CGFloat = 22
 }

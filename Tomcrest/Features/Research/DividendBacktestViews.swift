@@ -134,7 +134,7 @@ private struct DividendBacktestControlsPanel: View {
 
                     if let historyStartYear, let startSharePrice {
                         Text("\(historyStartYear) modeled price · \(CurrencyFormatter.usd(startSharePrice, fractionDigits: 2))/sh")
-                            .font(.caption2.monospacedDigit())
+                            .font(AppTypography.monoCaption2)
                             .foregroundStyle(AppColors.tertiaryLabel)
                     }
 
@@ -164,7 +164,7 @@ private struct DividendBacktestControlsPanel: View {
             BacktestControlsShell(title: "History window") {
                 VStack(alignment: .leading, spacing: 10) {
                     Text(windowLabel)
-                        .font(.caption.monospacedDigit())
+                        .font(AppTypography.monoCaption)
                         .foregroundStyle(AppColors.label)
 
                     BacktestChipRow(
@@ -298,7 +298,7 @@ private struct DividendBacktestResultsPanel: View {
                         .font(.headline)
                         .foregroundStyle(AppColors.label)
                     Text(windowLabel)
-                        .font(.caption.monospacedDigit())
+                        .font(AppTypography.monoCaption)
                         .foregroundStyle(AppColors.secondaryLabel)
                     Text(query.reinvestDividends ? "DRIP on" : "DRIP off")
                         .font(.caption2.weight(.semibold))
@@ -426,7 +426,7 @@ private struct DividendBacktestHeroMetric: View {
                 .lineLimit(2)
                 .minimumScaleFactor(0.85)
             Text(value)
-                .font(.title3.weight(.semibold).monospacedDigit())
+                .font(AppTypography.monoTitle3)
                 .foregroundStyle(AppColors.label)
                 .minimumScaleFactor(0.7)
                 .lineLimit(1)
@@ -470,19 +470,19 @@ private struct DividendBacktestYearTable: View {
             ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
                 HStack(spacing: 8) {
                     Text(String(row.year))
-                        .font(.caption.weight(.semibold).monospacedDigit())
+                        .font(AppTypography.monoCaptionSemibold)
                         .frame(width: 44, alignment: .leading)
                     Text(String(format: "$%.4f", row.dps))
-                        .font(.caption2.monospacedDigit())
+                        .font(AppTypography.monoCaption2)
                         .frame(maxWidth: .infinity, alignment: .trailing)
                     Text(String(format: "%.2f", row.shares))
-                        .font(.caption2.monospacedDigit())
+                        .font(AppTypography.monoCaption2)
                         .frame(maxWidth: .infinity, alignment: .trailing)
                     Text(CurrencyFormatter.usd(row.dividendIncome, fractionDigits: 0))
-                        .font(.caption.weight(.semibold).monospacedDigit())
+                        .font(AppTypography.monoCaptionSemibold)
                         .frame(maxWidth: .infinity, alignment: .trailing)
                     Text(String(format: "%.2f%%", row.dividendYieldPct))
-                        .font(.caption2.monospacedDigit())
+                        .font(AppTypography.monoCaption2)
                         .foregroundStyle(AppColors.secondaryLabel)
                         .frame(width: 52, alignment: .trailing)
                 }

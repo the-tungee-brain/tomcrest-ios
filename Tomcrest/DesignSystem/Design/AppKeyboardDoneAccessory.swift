@@ -54,7 +54,7 @@ struct DecimalPadTextField: UIViewRepresentable {
         field.keyboardType = .decimalPad
         field.autocorrectionType = .no
         field.autocapitalizationType = .none
-        field.font = UIFont.monospacedDigitSystemFont(ofSize: UIFont.labelFontSize, weight: .regular)
+        field.font = AppFont.uiJetBrainsMono(size: UIFont.labelFontSize, weight: .regular)
         field.textColor = UIColor(AppColors.label)
         field.tintColor = UIColor(AppColors.accentHighlight)
         field.delegate = context.coordinator

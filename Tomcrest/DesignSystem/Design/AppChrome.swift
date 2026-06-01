@@ -10,9 +10,16 @@ enum AppChrome {
         navigation.shadowColor = .clear
 
         let navigationBar = UINavigationBar.appearance()
+        let titleFont = AppFont.uiFont(name: AppFont.Inter.semiBold, size: 17, weight: .semibold)
+        let largeTitleFont = AppFont.uiFont(name: AppFont.Inter.bold, size: 34, weight: .bold)
+        navigation.titleTextAttributes = [.font: titleFont]
+        navigation.largeTitleTextAttributes = [.font: largeTitleFont]
+
         navigationBar.standardAppearance = navigation
         navigationBar.compactAppearance = navigation
         navigationBar.scrollEdgeAppearance = navigation
+        navigationBar.titleTextAttributes = [.font: titleFont]
+        navigationBar.largeTitleTextAttributes = [.font: largeTitleFont]
         navigationBar.isTranslucent = true
 
         UITableView.appearance().backgroundColor = .clear

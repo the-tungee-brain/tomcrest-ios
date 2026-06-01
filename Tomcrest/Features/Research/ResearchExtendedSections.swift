@@ -77,7 +77,7 @@ struct SecRatiosSectionView: View {
                 .foregroundStyle(AppColors.secondaryLabel)
             Spacer()
             Text(formatValue(value, asPercent: asPercent))
-                .font(.caption2.monospacedDigit())
+                .font(AppTypography.monoCaption2)
                 .foregroundStyle(AppColors.label)
         }
     }
@@ -121,7 +121,7 @@ struct SecFinancialTrendSectionView: View {
                             .foregroundStyle(AppColors.secondaryLabel)
                         Spacer()
                         Text(CurrencyFormatter.usd(obs.value, fractionDigits: 0))
-                            .font(.caption.monospacedDigit())
+                            .font(AppTypography.monoCaption)
                     }
                 }
             }
@@ -155,7 +155,7 @@ struct GroupedKeyMetricsSection: View {
                                         .foregroundStyle(AppColors.tertiaryLabel)
                                         .lineLimit(2)
                                     Text(metric.value)
-                                        .font(.caption.weight(.semibold).monospacedDigit())
+                                        .font(AppTypography.monoCaptionSemibold)
                                         .foregroundStyle(AppColors.label)
                                 }
                                 .padding(10)

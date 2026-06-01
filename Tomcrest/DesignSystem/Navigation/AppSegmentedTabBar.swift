@@ -43,8 +43,7 @@ struct AppSegmentedTabBar<Tab: Hashable>: View {
 
                 if badgeCount > 0 {
                     Text(badgeCount > 99 ? "99+" : "\(badgeCount)")
-                        .font(.caption2.weight(.bold))
-                        .monospacedDigit()
+                        .font(AppTypography.monoCaption2Semibold)
                         .padding(.horizontal, 5)
                         .padding(.vertical, 2)
                         .background(isSelected ? Token.primaryMuted : Token.surfaceFillSecondary)

@@ -23,6 +23,9 @@ targets:
     platform: iOS
     sources:
       - path: Tomcrest
+    resources:
+      - path: Tomcrest/Resources/Fonts
+        type: folder
     dependencies:
       - package: GoogleSignIn
         product: GoogleSignIn
@@ -52,3 +55,11 @@ targets:
         LSApplicationQueriesSchemes:
           - googlegmail
           - googlechrome
+        UIAppFonts:
+          - Inter-Regular.ttf
+          - Inter-Medium.ttf
+          - Inter-SemiBold.ttf
+          - Inter-Bold.ttf
+          - JetBrainsMono-Regular.ttf
+          - JetBrainsMono-Medium.ttf
+          - JetBrainsMono-SemiBold.ttf

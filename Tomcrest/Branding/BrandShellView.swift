@@ -30,16 +30,16 @@ struct BrandShellView: View {
 
                 VStack(spacing: 10) {
                     Text(BrandTheme.appName)
-                        .font(.system(size: 28, weight: .semibold, design: .rounded))
+                        .font(AppTypography.brandTitle)
                         .foregroundStyle(theme.textPrimary)
-                        .tracking(0.3)
+                        .tracking(-0.8)
 
                     BrandTaglineRotator(phrases: BrandTheme.taglines, theme: theme)
                 }
 
                 if let tip = BrandTips.tipOfTheDay() {
                     Text(tip)
-                        .font(.caption)
+                        .font(AppTypography.caption)
                         .foregroundStyle(theme.textTertiary)
                         .multilineTextAlignment(.center)
                         .lineSpacing(3)
@@ -66,7 +66,14 @@ private struct BrandLogoMark: View {
             Image("BrandLogo")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 72, height: 72)
+                .frame(width: BrandTheme.logoSize, height: BrandTheme.logoSize)
+                .clipShape(
+                    RoundedRectangle(cornerRadius: BrandTheme.logoCornerRadius, style: .continuous)
+                )
+                .overlay {
+                    RoundedRectangle(cornerRadius: BrandTheme.logoCornerRadius, style: .continuous)
+                        .stroke(theme.accent.opacity(0.12), lineWidth: 1)
+                }
                 .shadow(color: theme.logoShadow, radius: 18, y: 8)
                 .scaleEffect(scale)
                 .offset(offset)

@@ -76,8 +76,7 @@ struct NewsFeedScopeBar: View {
                             .font(.caption.weight(.semibold))
                         if let count = count(for: tab), count > 0 {
                             Text(count > 99 ? "99+" : "\(count)")
-                                .font(.caption2.weight(.bold))
-                                .monospacedDigit()
+                                .font(AppTypography.monoCaption2Semibold)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
                                 .background(isSelected ? AppColors.accentMuted : AppColors.secondaryFill)

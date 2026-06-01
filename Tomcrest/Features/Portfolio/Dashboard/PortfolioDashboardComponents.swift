@@ -62,12 +62,12 @@ struct PortfolioHeroSummary: View {
 
             HStack(spacing: 6) {
                 Text(CurrencyFormatter.signedUsd(value))
-                    .font(.subheadline.weight(.semibold).monospacedDigit())
+                    .font(AppTypography.monoSubheadlineSemibold)
                     .foregroundStyle(profitTone(value))
 
                 if let percent {
                     Text(CurrencyFormatter.percent(percent))
-                        .font(.caption2.weight(.medium).monospacedDigit())
+                        .font(AppTypography.monoCaption2Medium)
                         .foregroundStyle(profitTone(percent))
                 }
             }
@@ -85,7 +85,7 @@ struct PortfolioHeroSummary: View {
                 .font(.caption2)
                 .foregroundStyle(AppColors.tertiaryLabel)
             Text(value)
-                .font(.caption.weight(.semibold).monospacedDigit())
+                .font(AppTypography.monoCaptionSemibold)
                 .foregroundStyle(AppColors.secondaryLabel)
         }
     }
@@ -254,10 +254,10 @@ private struct PortfolioCompactHoldingRow: View {
 
             VStack(alignment: .trailing, spacing: 3) {
                 Text(CurrencyFormatter.usd(summary.marketValue, fractionDigits: 0))
-                    .font(.subheadline.weight(.medium).monospacedDigit())
+                    .font(AppTypography.monoSubheadlineMedium)
                     .foregroundStyle(AppColors.label)
                 Text(CurrencyFormatter.signedUsd(summary.dayProfitLoss))
-                    .font(.caption.weight(.semibold).monospacedDigit())
+                    .font(AppTypography.monoCaptionSemibold)
                     .foregroundStyle(profitTone(summary.dayProfitLoss))
             }
         }

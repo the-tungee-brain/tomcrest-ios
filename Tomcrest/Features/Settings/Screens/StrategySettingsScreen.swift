@@ -461,7 +461,7 @@ private struct StrategySliderField: View {
                 }
                 Spacer(minLength: 8)
                 Text(format(value))
-                    .font(.caption.weight(.semibold).monospacedDigit())
+                    .font(AppTypography.monoCaptionSemibold)
                     .foregroundStyle(AppColors.accentHighlight)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)

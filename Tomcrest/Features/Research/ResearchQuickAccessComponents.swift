@@ -110,7 +110,7 @@ private struct ResearchSymbolChipRow: View {
                             Image(systemName: style == .watchlist ? "star.fill" : "clock")
                                 .font(.caption2.weight(.semibold))
                             Text(symbol)
-                                .font(.caption.weight(.semibold).monospaced())
+                                .font(AppTypography.monoCaptionSemibold)
                         }
                         .foregroundStyle(
                             style == .watchlist
@@ -210,7 +210,7 @@ struct StrategyPlaybookQuickLinksSection: View {
                             .frame(width: 6, height: 6)
                     }
                     Text(symbol)
-                        .font(.caption.weight(.semibold).monospaced())
+                        .font(AppTypography.monoCaptionSemibold)
                         .foregroundStyle(AppColors.label)
                 }
                 Text(playbookSubtitle(for: status, strategyId: strategyId))
