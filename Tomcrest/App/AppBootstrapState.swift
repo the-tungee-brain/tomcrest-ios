@@ -20,17 +20,18 @@ final class AppBootstrapState {
     private static let minimumBrandDisplay: Duration = .milliseconds(900)
     private static let maximumBrandDisplay: Duration = .milliseconds(2750)
 
-    func run(auth: AuthSession, account: AccountContext) async {
+    func run(auth: AuthSession, account: AccountContext, watchlistStore: WatchlistStore) async {
         guard phase == .coldStart else { return }
         phase = .bootstrapping
 
         auth.bootstrap()
+        watchlistStore.bind(auth: auth)
         await configureAPIClients(auth: auth)
 
         let clock = ContinuousClock()
         let started = clock.now
 
-        Task { await performWarmUp(auth: auth, account: account) }
+        Task { await performWarmUp(auth: auth, account: account, watchlistStore: watchlistStore) }
 
         try? await Task.sleep(for: Self.minimumBrandDisplay)
 
@@ -48,17 +49,28 @@ final class AppBootstrapState {
         }
     }
 
-    private func performWarmUp(auth: AuthSession, account: AccountContext) async {
+    private func performWarmUp(auth: AuthSession, account: AccountContext, watchlistStore: WatchlistStore) async {
         defer { warmUpFinished = true }
 
-        guard auth.phase == .signedIn, let accessToken = auth.accessToken else { return }
+        async let watchlistLoad: Void = watchlistStore.load(
+            localSymbols: ResearchSymbolStorage.watchlist()
+        )
+
+        guard auth.phase == .signedIn, let accessToken = auth.accessToken else {
+            _ = await watchlistLoad
+            return
+        }
 
         let portfolio = PortfolioViewModel(auth: auth)
         portfolioViewModel = portfolio
 
         async let planLoad: Void = account.loadPlan(accessToken: accessToken)
         async let portfolioLoad: Void = portfolio.loadIfNeeded()
-        _ = await (planLoad, portfolioLoad)
+        _ = await (planLoad, portfolioLoad, watchlistLoad)
+    }
+
+    func clearPreloadedSession() {
+        portfolioViewModel = nil
     }
 
     private func configureAPIClients(auth: AuthSession) async {

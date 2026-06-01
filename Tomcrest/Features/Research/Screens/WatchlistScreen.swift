@@ -28,7 +28,7 @@ struct WatchlistScreen: View {
                             Button {
                                 onSelect(symbol)
                             } label: {
-                                WatchlistSymbolRow(symbol: symbol)
+                                SavedWatchlistSymbolRow(symbol: symbol)
                             }
                             .buttonStyle(.plain)
 
@@ -57,7 +57,7 @@ struct WatchlistScreen: View {
     }
 }
 
-private struct WatchlistSymbolRow: View {
+private struct SavedWatchlistSymbolRow: View {
     let symbol: String
 
     var body: some View {

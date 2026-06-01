@@ -41,6 +41,13 @@ enum ResearchSymbolStorage {
         writeSymbols(symbols, key: watchlistKey)
     }
 
+    static func replaceWatchlist(_ symbols: [String]) {
+        let normalized = Array(
+            Set(symbols.map(normalize).filter { !$0.isEmpty })
+        ).sorted()
+        writeSymbols(normalized, key: watchlistKey)
+    }
+
     static func recentSymbols() -> [String] {
         readSymbols(key: recentKey)
     }
@@ -59,6 +66,12 @@ enum ResearchSymbolStorage {
 
     static func markResearchChatUsed() {
         UserDefaults.standard.set(true, forKey: researchChatUsedKey)
+    }
+
+    static func clearAll() {
+        writeSymbols([], key: watchlistKey)
+        writeSymbols([], key: recentKey)
+        UserDefaults.standard.removeObject(forKey: researchChatUsedKey)
     }
 
     static func hasUsedResearchChat() -> Bool {

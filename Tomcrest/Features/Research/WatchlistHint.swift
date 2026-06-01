@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct WatchlistHint: View {
-    @Environment(ResearchSymbolBookmarks.self) private var bookmarks
+    @Environment(WatchlistStore.self) private var watchlistStore
     let symbol: String
 
     @State private var dismissed = OnboardingStorage.isWatchlistHintDismissed()
@@ -9,7 +9,7 @@ struct WatchlistHint: View {
     private var upper: String { symbol.uppercased() }
 
     var body: some View {
-        if !dismissed, !bookmarks.isWatchlisted(symbol) {
+        if !dismissed, !watchlistStore.contains(symbol) {
             HStack(alignment: .top, spacing: 10) {
                 Image(systemName: "star")
                     .font(.caption.weight(.semibold))

@@ -118,13 +118,17 @@ struct SymbolSignalsCard: View {
 struct SymbolAvatar: View {
     let symbol: String
     var size: CGFloat = 36
+    var accent: Color?
+
+    private var foreground: Color { accent ?? AppColors.accentHighlight }
+    private var background: Color { (accent ?? AppColors.accent).opacity(0.14) }
 
     var body: some View {
         Text(String(symbol.prefix(2)).uppercased())
             .font(.system(size: size * 0.32, weight: .bold, design: .rounded))
-            .foregroundStyle(AppColors.accentHighlight)
+            .foregroundStyle(foreground)
             .frame(width: size, height: size)
-            .background(AppColors.accent.opacity(0.14))
+            .background(background)
             .clipShape(RoundedRectangle(cornerRadius: size * 0.28, style: .continuous))
             .accessibilityHidden(true)
     }

@@ -71,6 +71,11 @@ final class AccountContext {
         }
     }
 
+    func clearSession() {
+        plan = nil
+        isLoadingPlan = false
+    }
+
     func hasProFeature(_ feature: ProFeature) -> Bool {
         guard let plan else { return false }
         if let features = plan.features, let value = features[feature.rawValue] {

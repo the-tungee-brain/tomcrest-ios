@@ -111,7 +111,7 @@ struct SymbolResearchView: View {
             }
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 4) {
-                    WatchlistToggleButton(symbol: overviewVM.symbol)
+                    WatchlistToggleButton(symbol: overviewVM.symbol, companyName: companyName)
                     AppToolbarRefreshButton(isRefreshing: isRefreshing) {
                         Task { await refreshCurrentTab() }
                     }
@@ -313,6 +313,7 @@ struct SymbolResearchView: View {
         .environment(AuthSession())
         .environment(AccountContext())
         .environment(ResearchSymbolBookmarks())
+        .environment(WatchlistStore())
         .environment(AssistantPresenter())
     }
 }

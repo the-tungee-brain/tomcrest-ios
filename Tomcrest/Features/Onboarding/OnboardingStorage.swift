@@ -60,6 +60,17 @@ enum OnboardingStorage {
     static func dismissWatchlistHint() {
         UserDefaults.standard.set(true, forKey: watchlistHintDismissedKey)
     }
+
+    static func clearAll() {
+        [
+            strategyDismissedKey,
+            portfolioDismissedKey,
+            researchDismissedKey,
+            strategyJourneyCollapsedKey,
+            portfolioWatchlistCollapsedKey,
+            watchlistHintDismissedKey,
+        ].forEach { UserDefaults.standard.removeObject(forKey: $0) }
+    }
 }
 
 enum SettingsFocus: Equatable {

@@ -16,6 +16,7 @@ actor APIClient {
         self.config = config
         self.session = session
         self.decoder = JSONDecoder()
+        self.decoder.keyDecodingStrategy = .convertFromSnakeCase
         self.encoder = JSONEncoder()
     }
 
@@ -127,10 +128,15 @@ actor APIClient {
         }
 
         if http.statusCode == 403 {
-            if let envelope = try? decoder.decode(APIErrorEnvelope.self, from: data),
-               case let .object(detail) = envelope.detail,
-               detail.code == "waitlist" {
-                throw APIError.waitlist(message: detail.message)
+            if let envelope = try? decoder.decode(APIErrorEnvelope.self, from: data) {
+                switch envelope.detail {
+                case let .object(detail) where detail.code == "waitlist":
+                    throw APIError.waitlist(message: detail.message)
+                case let .string(message) where message.localizedCaseInsensitiveContains("waitlist"):
+                    throw APIError.waitlist(message: message)
+                default:
+                    break
+                }
             }
         }
 

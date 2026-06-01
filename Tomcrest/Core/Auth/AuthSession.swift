@@ -47,6 +47,7 @@ final class AuthSession {
         accessToken = nil
         lastError = nil
         phase = .signedOut
+        NotificationCenter.default.post(name: .tomcrestSignedOut, object: nil)
     }
 
     func handleUnauthorized() {
@@ -58,7 +59,7 @@ final class AuthSession {
     func refreshAccessToken() async -> String? {
         guard let accessToken else { return nil }
         do {
-            let response: GoogleSignInResponse = try await api.postNoBody(
+            let response: AuthRefreshResponse = try await api.postNoBody(
                 "/auth/refresh",
                 accessToken: accessToken
             )

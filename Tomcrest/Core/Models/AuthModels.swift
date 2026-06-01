@@ -18,6 +18,11 @@ struct GoogleSignInResponse: Decodable {
     }
 }
 
+struct AuthRefreshResponse: Decodable {
+    let accessToken: String
+    let tokenType: String
+}
+
 struct SchwabConnectResponse: Decodable {
     let authURL: String
 

@@ -1,27 +1,48 @@
 import SwiftUI
 
 struct WatchlistToggleButton: View {
-    @Environment(ResearchSymbolBookmarks.self) private var bookmarks
+    @Environment(WatchlistStore.self) private var watchlistStore
     let symbol: String
+    var companyName: String?
     var iconOnly = true
 
+    @State private var isPreparing = false
+    @State private var showSaveSheet = false
+
     private var watching: Bool {
-        bookmarks.isWatchlisted(symbol)
+        watchlistStore.contains(symbol)
     }
 
     var body: some View {
         Button {
-            bookmarks.toggleWatchlist(symbol)
+            Task {
+                isPreparing = true
+                await watchlistStore.ensureLoaded()
+                isPreparing = false
+                showSaveSheet = true
+            }
         } label: {
             if iconOnly {
-                Image(systemName: watching ? "star.fill" : "star")
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(watching ? AppColors.accentHighlight : AppColors.secondaryLabel)
-                    .frame(width: Layout.minTouchTarget, height: Layout.minTouchTarget)
+                Group {
+                    if isPreparing {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        Image(systemName: watching ? "star.fill" : "star")
+                            .font(.body.weight(.semibold))
+                    }
+                }
+                .foregroundStyle(watching ? AppColors.accentHighlight : AppColors.secondaryLabel)
+                .frame(width: Layout.minTouchTarget, height: Layout.minTouchTarget)
             } else {
                 HStack(spacing: 6) {
-                    Image(systemName: watching ? "star.fill" : "star")
-                        .font(.caption.weight(.semibold))
+                    if isPreparing {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        Image(systemName: watching ? "star.fill" : "star")
+                            .font(.caption.weight(.semibold))
+                    }
                     Text(watching ? "Watching" : "Add to watchlist")
                         .font(.caption.weight(.semibold))
                 }
@@ -37,11 +58,15 @@ struct WatchlistToggleButton: View {
             }
         }
         .buttonStyle(.plain)
+        .disabled(isPreparing)
         .accessibilityLabel(
             watching
-                ? "Remove \(symbol.uppercased()) from watchlist"
-                : "Add \(symbol.uppercased()) to watchlist"
+                ? "Manage \(symbol.uppercased()) in watchlist folders"
+                : "Add \(symbol.uppercased()) to a watchlist folder"
         )
+        .sheet(isPresented: $showSaveSheet) {
+            WatchlistSaveSymbolSheet(symbol: symbol, companyName: companyName)
+        }
     }
 }
 

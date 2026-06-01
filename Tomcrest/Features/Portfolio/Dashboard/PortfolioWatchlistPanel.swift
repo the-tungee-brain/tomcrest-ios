@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct PortfolioWatchlistPanel: View {
-    @Environment(ResearchSymbolBookmarks.self) private var bookmarks
+    @Environment(WatchlistStore.self) private var watchlistStore
     let onSelect: (String) -> Void
 
     @State private var isExpanded = !OnboardingStorage.isPortfolioWatchlistCollapsed()
@@ -20,8 +20,8 @@ struct PortfolioWatchlistPanel: View {
                         .foregroundStyle(AppColors.tertiaryLabel)
                         .textCase(.uppercase)
 
-                    if !bookmarks.watchlist.isEmpty {
-                        Text("\(bookmarks.watchlist.count)")
+                    if watchlistStore.hasSymbols {
+                        Text("\(watchlistStore.allTickers.count)")
                             .font(.caption2.weight(.semibold))
                             .foregroundStyle(AppColors.secondaryLabel)
                     }
@@ -40,7 +40,7 @@ struct PortfolioWatchlistPanel: View {
 
             if isExpanded {
                 VStack(spacing: 0) {
-                    if bookmarks.watchlist.isEmpty {
+                    if watchlistStore.allTickers.isEmpty {
                         PortfolioQuickLinkRow(
                             icon: "star",
                             iconTint: AppColors.secondaryLabel,
@@ -49,7 +49,7 @@ struct PortfolioWatchlistPanel: View {
                         )
                         .allowsHitTesting(false)
                     } else {
-                        ForEach(Array(bookmarks.watchlist.enumerated()), id: \.element) { index, symbol in
+                        ForEach(Array(watchlistStore.allTickers.enumerated()), id: \.element) { index, symbol in
                             Button {
                                 onSelect(symbol)
                             } label: {
@@ -61,7 +61,7 @@ struct PortfolioWatchlistPanel: View {
                             }
                             .buttonStyle(.plain)
 
-                            if index < bookmarks.watchlist.count - 1 {
+                            if index < watchlistStore.allTickers.count - 1 {
                                 Divider().overlay(AppColors.separator).padding(.leading, 58)
                             }
                         }

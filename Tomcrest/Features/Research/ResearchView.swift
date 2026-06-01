@@ -3,6 +3,7 @@ import SwiftUI
 struct ResearchView: View {
     @Environment(AuthSession.self) private var auth
     @Environment(ResearchSymbolBookmarks.self) private var bookmarks
+    @Environment(WatchlistStore.self) private var watchlistStore
     @State private var viewModel: ResearchViewModel?
     @State private var selectedSymbol: TickerSymbolItem?
     @State private var path: [ResearchDestination] = []
@@ -11,7 +12,7 @@ struct ResearchView: View {
 
     private var researchOnboardingComplete: Bool {
         !bookmarks.recentSymbols.isEmpty
-            && !bookmarks.watchlist.isEmpty
+            && watchlistStore.hasSymbols
             && ResearchSymbolStorage.hasUsedResearchChat()
     }
 
@@ -23,7 +24,7 @@ struct ResearchView: View {
                        !researchOnboardingComplete {
                         ResearchOnboardingCard(
                             hasOpenedSymbol: !bookmarks.recentSymbols.isEmpty,
-                            hasWatchlist: !bookmarks.watchlist.isEmpty,
+                            hasWatchlist: watchlistStore.hasSymbols,
                             usedChat: ResearchSymbolStorage.hasUsedResearchChat(),
                             onDismiss: { OnboardingStorage.dismissResearchOnboarding() }
                         )
@@ -72,7 +73,7 @@ struct ResearchView: View {
             .navigationDestination(for: ResearchDestination.self) { destination in
                 switch destination {
                 case .watchlist:
-                    WatchlistScreen { symbol in
+                    WatchlistHubScreen { symbol in
                         openSymbol(symbol)
                     }
                 }
@@ -98,10 +99,10 @@ struct ResearchView: View {
                 PortfolioQuickLinkRow(
                     icon: "star.fill",
                     title: "Watchlist",
-                    subtitle: bookmarks.watchlist.isEmpty
-                        ? "Save symbols from search"
-                        : "\(bookmarks.watchlist.count) saved for research",
-                    badge: bookmarks.watchlist.count
+                    subtitle: watchlistStore.hasSymbols
+                        ? "\(watchlistStore.allTickers.count) saved for research"
+                        : "Save symbols from search",
+                    badge: watchlistStore.allTickers.count
                 )
             }
             .buttonStyle(.plain)
@@ -116,8 +117,8 @@ struct ResearchView: View {
 
     @ViewBuilder
     private var quickAccessSection: some View {
-        if !bookmarks.watchlist.isEmpty {
-            ResearchWatchlistSection(symbols: bookmarks.watchlist) { symbol in
+        if !watchlistStore.allTickers.isEmpty {
+            ResearchWatchlistSection(symbols: watchlistStore.allTickers) { symbol in
                 openSymbol(symbol)
             } onViewAll: {
                 path.append(.watchlist)
@@ -246,5 +247,6 @@ private struct SymbolSearchRowContent: View {
             .environment(AuthSession())
             .environment(AccountContext())
             .environment(ResearchSymbolBookmarks())
+            .environment(WatchlistStore())
     }
 }
