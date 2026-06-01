@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Folder-based watchlist synced to the Tomcrest API (Gallery layout).
+/// Folder-based watchlist synced to the Tomcrest API.
 struct WatchlistHubScreen: View {
     @Environment(WatchlistStore.self) private var watchlistStore
     @State private var folderFormMode: WatchlistFolderFormSheet.Mode?
@@ -9,6 +9,8 @@ struct WatchlistHubScreen: View {
     var onSelectSymbol: ((String) -> Void)?
 
     var body: some View {
+        @Bindable var store = watchlistStore
+
         ZStack(alignment: .bottom) {
             VStack(spacing: 0) {
                 if let errorMessage = watchlistStore.errorMessage {
@@ -20,11 +22,12 @@ struct WatchlistHubScreen: View {
                         .padding(.top, 8)
                 }
 
-                WatchlistGalleryVariantScreen(
-                    store: watchlistStore,
-                    isEditingFolderOrder: $isEditingFolderOrder,
-                    onSelectSymbol: onSelectSymbol
-                )
+                WatchlistDesignVariantPicker(selection: $store.designVariant)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+                    .padding(.bottom, 16)
+
+                variantContent
                     .overlay {
                         if watchlistStore.isLoading {
                             ProgressView("Loading watchlist…")
@@ -48,7 +51,7 @@ struct WatchlistHubScreen: View {
                             isEditingFolderOrder = false
                         }
                         .font(AppTypography.cardTitle)
-                    } else if !watchlistStore.folders.isEmpty {
+                    } else if !watchlistStore.folders.isEmpty, watchlistStore.designVariant == .gallery {
                         Button("Reorder") {
                             watchlistStore.folderSortMode = .custom
                             isEditingFolderOrder = true
@@ -80,6 +83,9 @@ struct WatchlistHubScreen: View {
                 isEditingFolderOrder = false
             }
         }
+        .onChange(of: watchlistStore.designVariant) { _, _ in
+            isEditingFolderOrder = false
+        }
         .appPushedScreenCanvas()
         .task {
             await watchlistStore.ensureLoaded()
@@ -96,6 +102,23 @@ struct WatchlistHubScreen: View {
                     watchlistStore.updateFolderStyle(id: id, swatchID: swatchID, accentHex: accentHex)
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private var variantContent: some View {
+        switch watchlistStore.designVariant {
+        case .gallery:
+            WatchlistGalleryVariantScreen(
+                store: watchlistStore,
+                isEditingFolderOrder: $isEditingFolderOrder,
+                onSelectSymbol: onSelectSymbol
+            )
+        case .ledger:
+            WatchlistLedgerVariantScreen(
+                store: watchlistStore,
+                onSelectSymbol: onSelectSymbol
+            )
         }
     }
 

@@ -4,6 +4,7 @@ struct WatchlistSymbolRow: View {
     @Environment(WatchlistStore.self) private var watchlistStore
 
     let symbol: WatchlistSymbol
+    var style: WatchlistSymbolRowStyle = .card
     var isDragging = false
     var onTap: (() -> Void)?
 
@@ -42,19 +43,63 @@ struct WatchlistSymbolRow: View {
                     }
                 }
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 11)
-            .background(AppColors.background.opacity(isDragging ? 0.55 : 0.35))
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .padding(.horizontal, style.horizontalPadding)
+            .padding(.vertical, style.verticalPadding)
+            .background(style.backgroundColor(isDragging: isDragging))
+            .clipShape(RoundedRectangle(cornerRadius: style.cornerRadius, style: .continuous))
             .overlay {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .strokeBorder(AppColors.separator.opacity(0.6), lineWidth: 1)
+                if style.showsBorder {
+                    RoundedRectangle(cornerRadius: style.cornerRadius, style: .continuous)
+                        .strokeBorder(AppColors.separator.opacity(0.6), lineWidth: 1)
+                }
             }
             .opacity(isDragging ? 0.65 : 1)
             .scaleEffect(isDragging ? 0.98 : 1)
         }
         .buttonStyle(.plain)
         .disabled(onTap == nil)
+    }
+}
+
+enum WatchlistSymbolRowStyle {
+    case card
+    case plain
+
+    var horizontalPadding: CGFloat {
+        switch self {
+        case .card: 14
+        case .plain: 14
+        }
+    }
+
+    var verticalPadding: CGFloat {
+        switch self {
+        case .card: 11
+        case .plain: 12
+        }
+    }
+
+    var showsBorder: Bool {
+        switch self {
+        case .card: true
+        case .plain: false
+        }
+    }
+
+    var cornerRadius: CGFloat {
+        switch self {
+        case .card: 12
+        case .plain: 0
+        }
+    }
+
+    func backgroundColor(isDragging: Bool) -> Color {
+        switch self {
+        case .card:
+            AppColors.background.opacity(isDragging ? 0.55 : 0.35)
+        case .plain:
+            .clear
+        }
     }
 }
 

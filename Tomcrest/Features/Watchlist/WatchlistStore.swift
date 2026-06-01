@@ -17,6 +17,11 @@ final class WatchlistStore {
             invalidateFolderOrderCache()
         }
     }
+    var designVariant: WatchlistDesignVariant {
+        didSet {
+            UserDefaults.standard.set(designVariant.rawValue, forKey: Self.designVariantKey)
+        }
+    }
     var isLoading = false
     var errorMessage: String?
 
@@ -32,6 +37,7 @@ final class WatchlistStore {
     @ObservationIgnored private var quoteRefreshTask: Task<Void, Never>?
     @ObservationIgnored private var isRefreshingQuotes = false
     private static let folderSortModeKey = "watchlist.folderSortMode"
+    private static let designVariantKey = "watchlist.designVariant"
     private static let legacySymbolSortModeKey = "watchlist.symbolSortMode"
     private static let quoteRefreshInterval: TimeInterval = 45
 
@@ -42,6 +48,13 @@ final class WatchlistStore {
             folderSortMode = mode
         } else {
             folderSortMode = .custom
+        }
+
+        if let raw = UserDefaults.standard.string(forKey: Self.designVariantKey),
+           let variant = WatchlistDesignVariant(rawValue: raw) {
+            designVariant = variant
+        } else {
+            designVariant = .gallery
         }
     }
 
