@@ -4,6 +4,7 @@ import SwiftUI
 struct WatchlistHubScreen: View {
     @Environment(WatchlistStore.self) private var watchlistStore
     @State private var folderFormMode: WatchlistFolderFormSheet.Mode?
+    @State private var isEditingFolderOrder = false
 
     var onSelectSymbol: ((String) -> Void)?
 
@@ -19,7 +20,11 @@ struct WatchlistHubScreen: View {
                         .padding(.top, 8)
                 }
 
-                WatchlistGalleryVariantScreen(store: watchlistStore, onSelectSymbol: onSelectSymbol)
+                WatchlistGalleryVariantScreen(
+                    store: watchlistStore,
+                    isEditingFolderOrder: $isEditingFolderOrder,
+                    onSelectSymbol: onSelectSymbol
+                )
                     .overlay {
                         if watchlistStore.isLoading {
                             ProgressView("Loading watchlist…")
@@ -37,25 +42,47 @@ struct WatchlistHubScreen: View {
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Menu {
-                    Picker("Sort folders", selection: Binding(
-                        get: { watchlistStore.folderSortMode },
-                        set: { watchlistStore.folderSortMode = $0 }
-                    )) {
-                        ForEach(WatchlistFolderSortMode.allCases) { mode in
-                            Label(mode.rawValue, systemImage: mode.systemImage)
-                                .tag(mode)
+                HStack(spacing: 16) {
+                    if isEditingFolderOrder {
+                        Button("Done") {
+                            isEditingFolderOrder = false
                         }
+                        .font(AppTypography.cardTitle)
+                    } else if !watchlistStore.folders.isEmpty {
+                        Button("Reorder") {
+                            watchlistStore.folderSortMode = .custom
+                            isEditingFolderOrder = true
+                        }
+                        .font(AppTypography.cardTitle)
                     }
-                } label: {
-                    Image(systemName: "arrow.up.arrow.down.circle")
-                        .symbolRenderingMode(.hierarchical)
+
+                    Menu {
+                        Picker("Sort folders", selection: Binding(
+                            get: { watchlistStore.folderSortMode },
+                            set: { watchlistStore.folderSortMode = $0 }
+                        )) {
+                            ForEach(WatchlistFolderSortMode.allCases) { mode in
+                                Label(mode.rawValue, systemImage: mode.systemImage)
+                                    .tag(mode)
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "arrow.up.arrow.down.circle")
+                            .symbolRenderingMode(.hierarchical)
+                    }
+                    .disabled(isEditingFolderOrder)
+                    .accessibilityLabel("Sort folders")
                 }
-                .accessibilityLabel("Sort folders")
+            }
+        }
+        .onChange(of: watchlistStore.folderSortMode) { _, _ in
+            if isEditingFolderOrder {
+                isEditingFolderOrder = false
             }
         }
         .appPushedScreenCanvas()
         .refreshable {
+            guard !isEditingFolderOrder else { return }
             await watchlistStore.refreshQuotes()
         }
         .sheet(item: $folderFormMode) { mode in
