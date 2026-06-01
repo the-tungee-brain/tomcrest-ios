@@ -3,21 +3,32 @@ import UIKit
 
 enum AppKeyboardDoneAccessoryFactory {
     static func makeToolbar() -> UIToolbar {
-        let toolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: 44))
+        let toolbar = UIToolbar()
         toolbar.barStyle = .black
         toolbar.isTranslucent = true
         toolbar.tintColor = UIColor(AppColors.accentHighlight)
+        toolbar.autoresizingMask = [.flexibleWidth, .flexibleHeight]
 
         let spacer = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
-        let done = UIBarButtonItem(
-            title: "Done",
-            style: .plain,
-            target: AppKeyboardDismissHandler.shared,
-            action: #selector(AppKeyboardDismissHandler.dismissKeyboard)
-        )
+        let done = UIBarButtonItem(customView: makeDoneButton())
         toolbar.items = [spacer, done]
         toolbar.sizeToFit()
         return toolbar
+    }
+
+    private static func makeDoneButton() -> UIButton {
+        let button = UIButton(type: .system)
+        button.setTitle("Done", for: .normal)
+        button.titleLabel?.font = .systemFont(ofSize: 17, weight: .semibold)
+        button.setTitleColor(UIColor(AppColors.accentHighlight), for: .normal)
+        button.contentEdgeInsets = UIEdgeInsets(top: 8, left: 16, bottom: 8, right: 16)
+        button.setContentHuggingPriority(.required, for: .horizontal)
+        button.setContentCompressionResistancePriority(.required, for: .horizontal)
+        button.addAction(
+            UIAction { _ in AppKeyboardDismissHandler.dismiss() },
+            for: .touchUpInside
+        )
+        return button
     }
 }
 
@@ -25,13 +36,18 @@ extension View {
     /// Fallback Done bar for standard keyboards inside navigation stacks.
     func appKeyboardDoneToolbar() -> some View {
         toolbar {
-            ToolbarItemGroup(placement: .keyboard) {
-                Spacer()
-                Button("Done") {
-                    AppKeyboardDismissHandler.dismiss()
+            ToolbarItem(placement: .keyboard) {
+                HStack(spacing: 0) {
+                    Spacer(minLength: 0)
+                    Button("Done") {
+                        AppKeyboardDismissHandler.dismiss()
+                    }
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(AppColors.accentHighlight)
+                    .fixedSize(horizontal: true, vertical: false)
+                    .padding(.horizontal, 8)
                 }
-                .buttonStyle(.plain)
-                .foregroundStyle(AppColors.accentHighlight)
+                .frame(maxWidth: .infinity)
             }
         }
     }
@@ -58,7 +74,11 @@ struct DecimalPadTextField: UIViewRepresentable {
         field.textColor = UIColor(AppColors.label)
         field.tintColor = UIColor(AppColors.accentHighlight)
         field.delegate = context.coordinator
-        field.addTarget(context.coordinator, action: #selector(Coordinator.editingChanged(_:)), for: .editingChanged)
+        field.addTarget(
+            context.coordinator,
+            action: #selector(Coordinator.editingChanged(_:)),
+            for: .editingChanged
+        )
         field.inputAccessoryView = AppKeyboardDoneAccessoryFactory.makeToolbar()
         field.setContentHuggingPriority(.defaultLow, for: .horizontal)
         field.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
@@ -66,6 +86,8 @@ struct DecimalPadTextField: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: UITextField, context: Context) {
+        context.coordinator.updateBindings(text: $text, isEditing: $isEditing)
+
         if uiView.text != text {
             uiView.text = text
         }
@@ -74,26 +96,52 @@ struct DecimalPadTextField: UIViewRepresentable {
         }
     }
 
+    static func dismantleUIView(_ uiView: UITextField, coordinator: Coordinator) {
+        uiView.resignFirstResponder()
+        coordinator.invalidate()
+        uiView.delegate = nil
+        uiView.inputAccessoryView = nil
+        uiView.removeTarget(
+            coordinator,
+            action: #selector(Coordinator.editingChanged(_:)),
+            for: .editingChanged
+        )
+    }
+
     final class Coordinator: NSObject, UITextFieldDelegate {
-        @Binding var text: String
-        @Binding var isEditing: Bool
+        private var text: Binding<String>
+        private var isEditing: Binding<Bool>
+        private var isLive = true
 
         init(text: Binding<String>, isEditing: Binding<Bool>) {
-            _text = text
-            _isEditing = isEditing
+            self.text = text
+            self.isEditing = isEditing
+        }
+
+        func updateBindings(text: Binding<String>, isEditing: Binding<Bool>) {
+            guard isLive else { return }
+            self.text = text
+            self.isEditing = isEditing
+        }
+
+        func invalidate() {
+            isLive = false
         }
 
         @objc func editingChanged(_ field: UITextField) {
-            text = field.text ?? ""
+            guard isLive else { return }
+            text.wrappedValue = field.text ?? ""
         }
 
         func textFieldDidBeginEditing(_ textField: UITextField) {
-            isEditing = true
+            guard isLive else { return }
+            isEditing.wrappedValue = true
         }
 
         func textFieldDidEndEditing(_ textField: UITextField) {
-            text = textField.text ?? ""
-            isEditing = false
+            guard isLive else { return }
+            text.wrappedValue = textField.text ?? ""
+            isEditing.wrappedValue = false
         }
     }
 }

@@ -55,6 +55,12 @@ final class WatchlistFolderEditReorderController {
         return 0
     }
 
+    /// Drop any in-flight drag when leaving edit mode.
+    func cancelReorder() {
+        session = nil
+        isDragging = false
+    }
+
     /// Long-press the folder card to lift, then drag — matches Reminders / Home Screen.
     func reorderGesture(for folder: WatchlistFolder, at index: Int) -> some Gesture {
         LongPressGesture(minimumDuration: 0.28, maximumDistance: 12)
@@ -127,13 +133,16 @@ final class WatchlistFolderEditReorderController {
 
         let from = session.startIndex
         let to = session.hoverIndex
+        let commit = onCommit
         reset()
 
         guard from != to else { return }
-        withAnimation(WatchlistFolderEditReorderMotion.settle) {
-            onCommit?(from, to)
+        Task { @MainActor in
+            withAnimation(WatchlistFolderEditReorderMotion.settle) {
+                commit?(from, to)
+            }
+            UIImpactFeedbackGenerator(style: .rigid).impactOccurred(intensity: 0.8)
         }
-        UIImpactFeedbackGenerator(style: .rigid).impactOccurred(intensity: 0.8)
     }
 
     private func reset() {
@@ -162,7 +171,7 @@ struct WatchlistFolderEditReorderSection<RowContent: View>: View {
     let title: String
     let folders: [WatchlistFolder]
     var spacing: CGFloat = 12
-    var controller: WatchlistFolderEditReorderController
+    @Bindable var controller: WatchlistFolderEditReorderController
     var onCommit: (_ from: Int, _ to: Int) -> Void
     @ViewBuilder var rowContent: (WatchlistFolder) -> RowContent
 

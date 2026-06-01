@@ -49,14 +49,8 @@ enum AppChrome {
     }
 }
 
-final class AppKeyboardDismissHandler: NSObject {
-    static let shared = AppKeyboardDismissHandler()
-
+enum AppKeyboardDismissHandler {
     static func dismiss() {
-        shared.dismissKeyboard()
-    }
-
-    @objc func dismissKeyboard() {
         UIApplication.shared.sendAction(
             #selector(UIResponder.resignFirstResponder),
             to: nil,

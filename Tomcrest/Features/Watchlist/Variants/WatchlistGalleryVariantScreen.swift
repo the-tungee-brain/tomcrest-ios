@@ -26,6 +26,12 @@ struct WatchlistGalleryVariantScreen: View {
             }
         }
         .animation(.spring(response: 0.35, dampingFraction: 0.86), value: isEditingFolderOrder)
+        .onChange(of: isEditingFolderOrder) { _, editing in
+            if !editing {
+                pinnedEditReorder.cancelReorder()
+                regularEditReorder.cancelReorder()
+            }
+        }
         .sheet(item: $folderFormMode) { mode in
             WatchlistFolderFormSheet(mode: mode) { name, iconName, swatchID, accentHex in
                 switch mode {

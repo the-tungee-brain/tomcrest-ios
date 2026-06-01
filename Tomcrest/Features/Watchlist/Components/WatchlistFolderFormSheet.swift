@@ -88,6 +88,7 @@ struct WatchlistFolderFormSheet: View {
                     .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
+            .appKeyboardDoneToolbar()
         }
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
