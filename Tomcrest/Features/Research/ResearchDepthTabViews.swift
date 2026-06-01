@@ -8,8 +8,8 @@ struct SymbolOverviewTab: View {
     @Bindable var positionViewModel: SymbolPositionViewModel
     let bundle: ResearchOverviewBundle?
     let availableTabs: [ResearchTab]
-    @Binding var selectedTab: ResearchTab
-    var onOpenMore: (ResearchMoreDestination) -> Void = { _ in }
+    let symbolItem: TickerSymbolItem
+    var onOpenHub: (SymbolResearchDestination) -> Void
     var onQuickAction: (String) -> Void = { _ in }
 
     var body: some View {
@@ -54,11 +54,10 @@ struct SymbolOverviewTab: View {
         }
 
         ResearchExploreLinks(
-            symbol: viewModel.symbol,
+            symbolItem: symbolItem,
             assetType: bundle.assetType,
             availableTabs: availableTabs,
-            selectedTab: $selectedTab,
-            onOpenMore: onOpenMore
+            onOpenHub: onOpenHub
         )
     }
 }

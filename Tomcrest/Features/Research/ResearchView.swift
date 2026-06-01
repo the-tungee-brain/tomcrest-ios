@@ -5,8 +5,7 @@ struct ResearchView: View {
     @Environment(ResearchSymbolBookmarks.self) private var bookmarks
     @Environment(WatchlistStore.self) private var watchlistStore
     @State private var viewModel: ResearchViewModel?
-    @State private var selectedSymbol: TickerSymbolItem?
-    @State private var path: [ResearchDestination] = []
+    @State private var path: [ResearchRoute] = []
     @State private var showsResearchOnboarding = !OnboardingStorage.isResearchOnboardingDismissed()
 
     private let exampleSymbols = ["NVDA", "SPY", "AAPL", "SCHD"]
@@ -66,15 +65,22 @@ struct ResearchView: View {
                 }
             }
             .appRootNavigation("Research")
-            .navigationDestination(item: $selectedSymbol) { item in
-                SymbolResearchView(symbol: item.symbol, auth: auth)
-            }
-            .navigationDestination(for: ResearchDestination.self) { destination in
-                switch destination {
+            .navigationDestination(for: ResearchRoute.self) { route in
+                switch route {
                 case .watchlist:
                     WatchlistHubScreen { symbol in
                         openSymbol(symbol)
                     }
+                case .symbol(let item):
+                    SymbolResearchView(symbolItem: item, auth: auth) { hub in
+                        path.append(.symbolHub(item, hub))
+                    }
+                case .symbolHub(let item, let hub):
+                    SymbolResearchHubView(
+                        symbolItem: item,
+                        destination: hub,
+                        auth: auth
+                    )
                 }
             }
             .task {
@@ -95,7 +101,7 @@ struct ResearchView: View {
                     path.append(.watchlist)
                 }
             } else {
-                NavigationLink(value: ResearchDestination.watchlist) {
+                NavigationLink(value: ResearchRoute.watchlist) {
                     PortfolioQuickLinkRow(
                         icon: "star.fill",
                         title: "Watchlist",
@@ -182,16 +188,20 @@ struct ResearchView: View {
 
     private func openSymbolItem(_ item: TickerSymbolItem) {
         bookmarks.recordRecent(item.symbol)
-        selectedSymbol = item
+        path.append(.symbol(item))
     }
 
     private func openSymbol(_ symbol: String) {
         bookmarks.recordRecent(symbol)
-        selectedSymbol = TickerSymbolItem(
-            symbol: symbol.uppercased(),
-            title: nil,
-            assetType: nil,
-            logoURL: nil
+        path.append(
+            .symbol(
+                TickerSymbolItem(
+                    symbol: symbol.uppercased(),
+                    title: nil,
+                    assetType: nil,
+                    logoURL: nil
+                )
+            )
         )
     }
 

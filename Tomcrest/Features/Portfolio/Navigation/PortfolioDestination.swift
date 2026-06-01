@@ -7,4 +7,6 @@ enum PortfolioDestination: Hashable {
     case holdings
     case news
     case activity
+    case symbol(TickerSymbolItem)
+    case symbolHub(TickerSymbolItem, SymbolResearchDestination)
 }

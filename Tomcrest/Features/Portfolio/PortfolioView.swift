@@ -7,7 +7,6 @@ struct PortfolioView: View {
     @Binding var selectedTab: AppTab
     @Binding var settingsFocus: SettingsFocus?
     @State private var viewModel: PortfolioViewModel?
-    @State private var researchSymbol: String?
     @State private var path: [PortfolioDestination] = []
 
     init(selectedTab: Binding<AppTab>, settingsFocus: Binding<SettingsFocus?> = .constant(nil)) {
@@ -27,9 +26,6 @@ struct PortfolioView: View {
                 }
             }
             .appRootNavigation("Portfolio")
-            .navigationDestination(item: $researchSymbol) { symbol in
-                SymbolResearchView(symbol: symbol, auth: auth)
-            }
             .navigationDestination(for: PortfolioDestination.self) { destination in
                 if let viewModel {
                     portfolioDestination(destination, viewModel: viewModel)
@@ -194,10 +190,23 @@ struct PortfolioView: View {
         }
     }
 
+    private func openResearchSymbol(_ symbol: String) {
+        path.append(
+            .symbol(
+                TickerSymbolItem(
+                    symbol: symbol.uppercased(),
+                    title: nil,
+                    assetType: nil,
+                    logoURL: nil
+                )
+            )
+        )
+    }
+
     @ViewBuilder
     private func portfolioWatchlistSection() -> some View {
         PortfolioWatchlistPanel { symbol in
-            researchSymbol = symbol
+            openResearchSymbol(symbol)
         }
     }
 
@@ -287,7 +296,7 @@ struct PortfolioView: View {
                 .padding(.horizontal, 4)
 
                 PortfolioCompactHoldingsList(summaries: top) { symbol in
-                    researchSymbol = symbol
+                    openResearchSymbol(symbol)
                 }
             }
         }
@@ -319,16 +328,22 @@ struct PortfolioView: View {
                         path.append(.portfolioAnalysis)
                         viewModel.runDiversificationAnalysis()
                     },
-                    onSymbolTap: { researchSymbol = $0 }
+                    onSymbolTap: { openResearchSymbol($0) }
                 )
             case .portfolioAnalysis:
                 PortfolioAnalysisScreen(viewModel: viewModel)
             case .holdings:
-                PortfolioHoldingsScreen(viewModel: viewModel, onSymbolTap: { researchSymbol = $0 })
+                PortfolioHoldingsScreen(viewModel: viewModel, onSymbolTap: { openResearchSymbol($0) })
             case .news:
-                PortfolioNewsScreen(viewModel: viewModel, onSymbolTap: { researchSymbol = $0 })
+                PortfolioNewsScreen(viewModel: viewModel, onSymbolTap: { openResearchSymbol($0) })
             case .activity:
-                PortfolioActivityScreen(viewModel: viewModel, onSymbolTap: { researchSymbol = $0 })
+                PortfolioActivityScreen(viewModel: viewModel, onSymbolTap: { openResearchSymbol($0) })
+            case .symbol(let item):
+                SymbolResearchView(symbolItem: item, auth: auth) { hub in
+                    path.append(.symbolHub(item, hub))
+                }
+            case .symbolHub(let item, let hub):
+                SymbolResearchHubView(symbolItem: item, destination: hub, auth: auth)
             }
         }
         .appPushedScreenCanvas()

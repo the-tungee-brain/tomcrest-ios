@@ -3,92 +3,29 @@ import SwiftUI
 // MARK: - Overview explore links
 
 struct ResearchExploreLinks: View {
-    let symbol: String
+    let symbolItem: TickerSymbolItem
     let assetType: String?
     let availableTabs: [ResearchTab]
-    @Binding var selectedTab: ResearchTab
-    var onOpenMore: (ResearchMoreDestination) -> Void
+    var onOpenHub: (SymbolResearchDestination) -> Void
 
     private struct Row: Identifiable {
-        let id: String
+        let id: SymbolResearchDestination
+        let destination: SymbolResearchDestination
         let title: String
         let subtitle: String
         let systemImage: String
-        let tab: ResearchTab?
-        let more: ResearchMoreDestination?
     }
 
     private var rows: [Row] {
-        var items: [Row] = []
-
-        if availableTabs.contains(.analysis) {
-            items.append(
-                Row(
-                    id: "analysis",
-                    title: "Analysis",
-                    subtitle: "AI insights, 5D trend, and business context",
-                    systemImage: "sparkles",
-                    tab: .analysis,
-                    more: nil
-                )
+        SymbolResearchDestination.rows(assetType: assetType, availableTabs: availableTabs).map { destination in
+            Row(
+                id: destination,
+                destination: destination,
+                title: rowTitle(for: destination),
+                subtitle: rowSubtitle(for: destination),
+                systemImage: rowIcon(for: destination)
             )
         }
-
-        if availableTabs.contains(.metrics) {
-            items.append(
-                Row(
-                    id: "metrics",
-                    title: ResearchTab.metrics.metricsLabel(for: assetType),
-                    subtitle: "Valuation, growth, and analyst views",
-                    systemImage: "gauge.with.dots.needle.67percent",
-                    tab: .metrics,
-                    more: nil
-                )
-            )
-        }
-
-        if availableTabs.contains(.news) {
-            items.append(
-                Row(
-                    id: "news",
-                    title: "News",
-                    subtitle: "Headlines and company releases",
-                    systemImage: "newspaper",
-                    tab: .news,
-                    more: nil
-                )
-            )
-        }
-
-        if availableTabs.contains(.financials) {
-            items.append(
-                Row(
-                    id: "financials",
-                    title: "Financials",
-                    subtitle: "Statements, ratios, and SEC filings",
-                    systemImage: "doc.text",
-                    tab: .financials,
-                    more: nil
-                )
-            )
-        }
-
-        if availableTabs.contains(.more) {
-            for destination in ResearchMoreDestination.destinations(for: assetType, includesOptions: true) {
-                items.append(
-                    Row(
-                        id: destination.rawValue,
-                        title: destination.label,
-                        subtitle: destination.subtitle,
-                        systemImage: destination.systemImage,
-                        tab: .more,
-                        more: destination
-                    )
-                )
-            }
-        }
-
-        return items
     }
 
     var body: some View {
@@ -97,7 +34,7 @@ struct ResearchExploreLinks: View {
                 AppGroupedList {
                     ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
                         Button {
-                            navigate(to: row)
+                            onOpenHub(row.destination)
                         } label: {
                             ResearchHubLinkRow(
                                 title: row.title,
@@ -116,15 +53,41 @@ struct ResearchExploreLinks: View {
         }
     }
 
-    private func navigate(to row: Row) {
-        if let tab = row.tab {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                selectedTab = tab
-            }
+    private func rowTitle(for destination: SymbolResearchDestination) -> String {
+        switch destination {
+        case .metrics:
+            return ResearchTab.metrics.metricsLabel(for: assetType)
+        default:
+            return destination.navigationTitle
         }
-        if let more = row.more {
-            onOpenMore(more)
+    }
+
+    private func rowSubtitle(for destination: SymbolResearchDestination) -> String {
+        switch destination {
+        case .analysis:
+            return "AI insights, 5D trend, and business context"
+        case .metrics:
+            return "Valuation, growth, and analyst views"
+        case .news:
+            return "Headlines and company releases"
+        case .financials:
+            return "Statements, ratios, and SEC filings"
+        case .portfolio:
+            return ResearchMoreDestination.portfolio.subtitle
+        case .income:
+            return ResearchMoreDestination.income.subtitle
+        case .tools:
+            return ResearchMoreDestination.tools.subtitle
+        case .composition:
+            return ResearchMoreDestination.composition.subtitle
         }
+    }
+
+    private func rowIcon(for destination: SymbolResearchDestination) -> String {
+        if let more = destination.moreDestination {
+            return more.systemImage
+        }
+        return destination.researchTab.systemImage
     }
 }
 
@@ -212,13 +175,12 @@ struct SymbolMetricsHubTab: View {
     }
 }
 
-// MARK: - More hub
+// MARK: - More hub (legacy menu removed — destinations push from overview)
 
-struct ResearchMoreTab: View {
+struct ResearchMoreDetailScreen: View {
+    let destination: ResearchMoreDestination
     let symbol: String
-    let assetType: String?
     let includesOptions: Bool
-    @Binding var destination: ResearchMoreDestination?
     @Bindable var overviewVM: SymbolOverviewViewModel
     @Bindable var depthVM: SymbolDepthViewModel
     @Bindable var positionVM: SymbolPositionViewModel
@@ -227,84 +189,27 @@ struct ResearchMoreTab: View {
     var onAssistantPrompt: (String) -> Void
 
     var body: some View {
-        if let destination {
-            moreDetail(destination)
-        } else {
-            moreMenu
+        switch destination {
+        case .portfolio:
+            SymbolPortfolioHubTab(
+                positionVM: positionVM,
+                depthVM: depthVM,
+                symbol: symbol,
+                includesOptions: includesOptions,
+                onAssistantPrompt: onAssistantPrompt
+            )
+        case .income:
+            SymbolIncomeHubTab(viewModel: depthVM)
+        case .tools:
+            SymbolBacktestTab(
+                exploreSection: $backtestExploreSection,
+                viewModel: depthVM,
+                primaryStrategy: primaryStrategy,
+                marketSharePrice: overviewVM.bundle?.snapshot.price
+            )
+        case .composition:
+            SymbolCompositionTab(viewModel: depthVM)
         }
-    }
-
-    private var moreMenu: some View {
-        AppScreenSection(title: "More") {
-            AppGroupedList {
-                ForEach(Array(availableDestinations.enumerated()), id: \.element.id) { index, item in
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            destination = item
-                        }
-                    } label: {
-                        ResearchHubLinkRow(
-                            title: item.label,
-                            subtitle: item.subtitle,
-                            systemImage: item.systemImage
-                        )
-                    }
-                    .buttonStyle(.plain)
-
-                    if index < availableDestinations.count - 1 {
-                        AppGroupedDivider()
-                    }
-                }
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func moreDetail(_ destination: ResearchMoreDestination) -> some View {
-        VStack(alignment: .leading, spacing: Layout.sectionSpacing) {
-            Button {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    self.destination = nil
-                    backtestExploreSection = nil
-                }
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "chevron.left")
-                        .font(.caption.weight(.semibold))
-                    Text("More")
-                        .font(.caption.weight(.semibold))
-                }
-                .foregroundStyle(AppColors.accentHighlight)
-            }
-            .buttonStyle(.plain)
-            .padding(.horizontal, 4)
-
-            switch destination {
-            case .portfolio:
-                SymbolPortfolioHubTab(
-                    positionVM: positionVM,
-                    depthVM: depthVM,
-                    symbol: symbol,
-                    includesOptions: includesOptions,
-                    onAssistantPrompt: onAssistantPrompt
-                )
-            case .income:
-                SymbolIncomeHubTab(viewModel: depthVM)
-            case .tools:
-                SymbolBacktestTab(
-                    exploreSection: $backtestExploreSection,
-                    viewModel: depthVM,
-                    primaryStrategy: primaryStrategy,
-                    marketSharePrice: overviewVM.bundle?.snapshot.price
-                )
-            case .composition:
-                SymbolCompositionTab(viewModel: depthVM)
-            }
-        }
-    }
-
-    private var availableDestinations: [ResearchMoreDestination] {
-        ResearchMoreDestination.destinations(for: assetType, includesOptions: includesOptions)
     }
 }
 
@@ -347,6 +252,174 @@ struct SymbolIncomeHubTab: View {
         VStack(alignment: .leading, spacing: Layout.sectionSpacing) {
             SymbolDividendsTab(viewModel: viewModel)
             SymbolEarningsTab(viewModel: viewModel)
+        }
+    }
+}
+
+// MARK: - Pushed hub screen (single navigation stack)
+
+struct SymbolResearchHubView: View {
+    @Environment(AccountContext.self) private var account
+    @Environment(AssistantPresenter.self) private var assistant
+
+    let symbolItem: TickerSymbolItem
+    let destination: SymbolResearchDestination
+    let auth: AuthSession
+
+    @State private var overviewVM: SymbolOverviewViewModel
+    @State private var depthVM: SymbolDepthViewModel
+    @State private var positionVM: SymbolPositionViewModel
+    @State private var primaryStrategy: String?
+    @State private var backtestExploreSection: BacktestExploreSection?
+
+    init(
+        symbolItem: TickerSymbolItem,
+        destination: SymbolResearchDestination,
+        auth: AuthSession,
+        initialBacktestSection: BacktestExploreSection? = nil
+    ) {
+        self.symbolItem = symbolItem
+        self.destination = destination
+        self.auth = auth
+        _overviewVM = State(initialValue: SymbolOverviewViewModel(symbol: symbolItem.symbol, auth: auth))
+        _depthVM = State(initialValue: SymbolDepthViewModel(symbol: symbolItem.symbol, auth: auth))
+        _positionVM = State(initialValue: SymbolPositionViewModel(symbol: symbolItem.symbol, auth: auth))
+        _backtestExploreSection = State(initialValue: initialBacktestSection)
+    }
+
+    private var includesOptions: Bool {
+        SymbolOptionsHelpers.shouldShowOptionsContent(
+            positions: positionVM.positions,
+            intelligence: depthVM.symbolIntelligence
+        )
+    }
+
+    var body: some View {
+        AppScrollScreen(refresh: { await refreshHub() }) {
+            hubContent
+        }
+        .navigationTitle(destination.navigationTitle)
+        .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                AppToolbarRefreshButton(isRefreshing: isRefreshing) {
+                    Task { await refreshHub() }
+                }
+            }
+        }
+        .task {
+            await loadHub()
+            if destination == .portfolio {
+                await depthVM.prefetchOptionsIntelligenceIfNeeded(
+                    hasOptionPositions: positionVM.hasOptionPositions
+                )
+            }
+            await loadStrategyContextIfNeeded()
+        }
+        .appPushedScreenCanvas()
+    }
+
+    @ViewBuilder
+    private var hubContent: some View {
+        switch destination {
+        case .analysis:
+            SymbolAnalysisHubTab(
+                overviewVM: overviewVM,
+                depthVM: depthVM,
+                bundle: overviewVM.bundle
+            )
+        case .metrics:
+            SymbolMetricsHubTab(
+                assetType: overviewVM.bundle?.assetType,
+                depthVM: depthVM
+            )
+        case .news:
+            SymbolNewsTab(viewModel: depthVM)
+        case .financials:
+            SymbolFinancialsTab(viewModel: depthVM)
+        case .portfolio, .income, .tools, .composition:
+            if let more = destination.moreDestination {
+                ResearchMoreDetailScreen(
+                    destination: more,
+                    symbol: symbolItem.symbol,
+                    includesOptions: includesOptions,
+                    overviewVM: overviewVM,
+                    depthVM: depthVM,
+                    positionVM: positionVM,
+                    backtestExploreSection: $backtestExploreSection,
+                    primaryStrategy: primaryStrategy,
+                    onAssistantPrompt: { prompt in
+                        assistant.openSymbol(symbolItem.symbol, prompt: prompt, sendImmediately: true)
+                    }
+                )
+            }
+        }
+    }
+
+    private var isRefreshing: Bool {
+        switch destination {
+        case .portfolio:
+            return positionVM.isLoading
+                || positionVM.recentOrdersLoading
+                || depthVM.loadingTab == .more
+        default:
+            return depthVM.loadingTab == destination.researchTab
+        }
+    }
+
+    private func loadHub() async {
+        if destination == .analysis {
+            await overviewVM.loadIfNeeded()
+        }
+
+        if destination == .portfolio {
+            await positionVM.loadIfNeeded()
+        }
+
+        if let more = destination.moreDestination {
+            await depthVM.loadIfNeeded(.more, more: more)
+            if more == .income {
+                await depthVM.loadEarningsDetail(
+                    includeAnalysis: account.hasProFeature(.earningsAi),
+                    force: depthVM.selectedHistoryEvent != nil
+                )
+            }
+            return
+        }
+
+        await depthVM.loadIfNeeded(destination.researchTab)
+    }
+
+    private func refreshHub() async {
+        switch destination {
+        case .portfolio:
+            await positionVM.loadIfNeeded(force: true)
+            await depthVM.reload(.more, more: .portfolio)
+        case .income:
+            await depthVM.reload(.more, more: .income)
+            await depthVM.loadEarningsDetail(
+                includeAnalysis: account.hasProFeature(.earningsAi),
+                force: true
+            )
+        case .analysis:
+            await overviewVM.reload()
+            await depthVM.reload(.analysis)
+        default:
+            if let more = destination.moreDestination {
+                await depthVM.reload(.more, more: more)
+            } else {
+                await depthVM.reload(destination.researchTab)
+            }
+        }
+    }
+
+    private func loadStrategyContextIfNeeded() async {
+        guard destination == .tools, let accessToken = auth.accessToken else { return }
+        do {
+            let profile = try await StrategyService.fetchProfile(accessToken: accessToken)
+            primaryStrategy = profile?.primaryStrategy
+        } catch {
+            // Optional for backtest defaults.
         }
     }
 }
