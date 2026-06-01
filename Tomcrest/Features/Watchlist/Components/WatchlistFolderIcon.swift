@@ -80,7 +80,13 @@ struct WatchlistFolderIconPicker: View {
     @Binding var selection: String
     var accent: Color = AppColors.accentHighlight
 
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: 10), count: 7)
+    private let columnsPerRow = 7
+
+    private var iconRows: [[(symbol: String, label: String)]] {
+        stride(from: 0, to: WatchlistFolderIcons.catalog.count, by: columnsPerRow).map { index in
+            Array(WatchlistFolderIcons.catalog[index..<min(index + columnsPerRow, WatchlistFolderIcons.catalog.count)])
+        }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -89,9 +95,13 @@ struct WatchlistFolderIconPicker: View {
                 .foregroundStyle(AppColors.secondaryLabel)
                 .textCase(.uppercase)
 
-            LazyVGrid(columns: columns, spacing: 10) {
-                ForEach(WatchlistFolderIcons.catalog, id: \.symbol) { item in
-                    iconButton(symbol: item.symbol, label: item.label)
+            Grid(horizontalSpacing: 10, verticalSpacing: 10) {
+                ForEach(Array(iconRows.enumerated()), id: \.offset) { _, row in
+                    GridRow {
+                        ForEach(row, id: \.symbol) { item in
+                            iconButton(symbol: item.symbol, label: item.label)
+                        }
+                    }
                 }
             }
         }

@@ -44,5 +44,30 @@
 		<string>googlegmail</string>
 		<string>googlechrome</string>
 	</array>
+	<key>UIAppFonts</key>
+	<array>
+		<string>Inter-Regular.ttf</string>
+		<string>Inter-Medium.ttf</string>
+		<string>Inter-SemiBold.ttf</string>
+		<string>Inter-Bold.ttf</string>
+		<string>JetBrainsMono-Regular.ttf</string>
+		<string>JetBrainsMono-Medium.ttf</string>
+		<string>JetBrainsMono-SemiBold.ttf</string>
+	</array>
+	<key>UTExportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Watchlist symbol drag payload</string>
+			<key>UTTypeIdentifier</key>
+			<string>com.tomcrest.watchlist-symbol-drag</string>
+			<key>UTTypeTagSpecification</key>
+			<dict/>
+		</dict>
+	</array>
 </dict>
 </plist>

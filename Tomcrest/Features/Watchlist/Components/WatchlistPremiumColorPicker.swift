@@ -8,20 +8,19 @@ struct WatchlistPremiumColorPicker: View {
 
     @State private var accentSelection: WatchlistSwatch.ID?
 
+    private let swatchTileWidth: CGFloat = 72
+    private let swatchLabelHeight: CGFloat = 30
+
     private var selectedSwatch: WatchlistSwatch {
         WatchlistPremiumPalette.swatch(id: selectedSwatchID)
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Background")
-                .font(AppTypography.captionEmphasis)
-                .foregroundStyle(AppColors.secondaryLabel)
-                .textCase(.uppercase)
-
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 72), spacing: 10)], spacing: 10) {
-                ForEach(WatchlistPremiumPalette.swatches) { swatch in
-                    swatchButton(swatch)
+        VStack(alignment: .leading, spacing: 18) {
+            ForEach(WatchlistFolderCompositionSection.allCases, id: \.self) { section in
+                let sectionSwatches = section.swatches
+                if !sectionSwatches.isEmpty {
+                    swatchSection(title: section.rawValue, swatches: sectionSwatches)
                 }
             }
 
@@ -32,7 +31,7 @@ struct WatchlistPremiumColorPicker: View {
                     .textCase(.uppercase)
                     .padding(.top, 4)
 
-                ScrollView(.horizontal, showsIndicators: false) {
+                AppHorizontalScrollRow {
                     HStack(spacing: 10) {
                         accentChip(label: "Auto", color: selectedSwatch.accentColor, isSelected: accentHex == nil) {
                             accentHex = nil
@@ -55,6 +54,25 @@ struct WatchlistPremiumColorPicker: View {
             }
 
             previewCard
+        }
+    }
+
+    @ViewBuilder
+    private func swatchSection(title: String, swatches: [WatchlistSwatch]) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title)
+                .font(AppTypography.captionEmphasis)
+                .foregroundStyle(AppColors.secondaryLabel)
+                .textCase(.uppercase)
+
+            AppHorizontalScrollRow {
+                HStack(spacing: 10) {
+                    ForEach(swatches) { swatch in
+                        swatchButton(swatch)
+                    }
+                }
+                .padding(.horizontal, 2)
+            }
         }
     }
 
@@ -95,15 +113,9 @@ struct WatchlistPremiumColorPicker: View {
             }
         } label: {
             VStack(spacing: 6) {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [Color(hex: swatch.gradientTop), Color(hex: swatch.gradientBottom)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(height: 52)
+                WatchlistSwatchPreviewFill(swatch: swatch)
+                    .frame(width: swatchTileWidth, height: 52)
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                     .overlay {
                         RoundedRectangle(cornerRadius: 14, style: .continuous)
                             .strokeBorder(
@@ -123,8 +135,9 @@ struct WatchlistPremiumColorPicker: View {
                     .foregroundStyle(isSelected ? AppColors.label : AppColors.tertiaryLabel)
                     .lineLimit(2)
                     .multilineTextAlignment(.center)
-                    .frame(maxWidth: .infinity)
+                    .frame(width: swatchTileWidth, height: swatchLabelHeight, alignment: .top)
             }
+            .frame(width: swatchTileWidth)
         }
         .buttonStyle(.plain)
     }

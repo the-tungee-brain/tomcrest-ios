@@ -70,6 +70,8 @@ struct WatchlistFolderFormSheet: View {
                 }
                 .padding(20)
             }
+            .scrollBounceBehavior(.basedOnSize, axes: .vertical)
+            .scrollDismissesKeyboard(.interactively)
             .background(AppColors.background)
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
@@ -92,6 +94,7 @@ struct WatchlistFolderFormSheet: View {
         }
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
+        .presentationContentInteraction(.scrolls)
     }
 }
 

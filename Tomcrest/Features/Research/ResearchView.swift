@@ -7,6 +7,7 @@ struct ResearchView: View {
     @State private var viewModel: ResearchViewModel?
     @State private var selectedSymbol: TickerSymbolItem?
     @State private var path: [ResearchDestination] = []
+    @State private var showsResearchOnboarding = !OnboardingStorage.isResearchOnboardingDismissed()
 
     private let exampleSymbols = ["NVDA", "SPY", "AAPL", "SCHD"]
 
@@ -20,13 +21,12 @@ struct ResearchView: View {
         AppRoutedNavigationCanvasStack(path: $path) {
             AppScrollScreen {
                 if let viewModel {
-                    if !OnboardingStorage.isResearchOnboardingDismissed(),
-                       !researchOnboardingComplete {
+                    if showsResearchOnboarding, !researchOnboardingComplete {
                         ResearchOnboardingCard(
                             hasOpenedSymbol: !bookmarks.recentSymbols.isEmpty,
                             hasWatchlist: watchlistStore.hasSymbols,
                             usedChat: ResearchSymbolStorage.hasUsedResearchChat(),
-                            onDismiss: { OnboardingStorage.dismissResearchOnboarding() }
+                            onDismiss: dismissResearchOnboarding
                         )
                     }
 
@@ -170,13 +170,9 @@ struct ResearchView: View {
 
     private var examplesSection: some View {
         AppScreenSection(title: "Try an example") {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(exampleSymbols, id: \.self) { symbol in
-                        AppChip(title: symbol) {
-                            openSymbol(symbol)
-                        }
-                    }
+            AppWrappingChipGrid(items: exampleSymbols, minimumChipWidth: 72) { symbol in
+                AppChip(title: symbol) {
+                    openSymbol(symbol)
                 }
             }
         }
@@ -195,6 +191,13 @@ struct ResearchView: View {
             assetType: nil,
             logoURL: nil
         )
+    }
+
+    private func dismissResearchOnboarding() {
+        OnboardingStorage.dismissResearchOnboarding()
+        withAnimation(.easeOut(duration: 0.2)) {
+            showsResearchOnboarding = false
+        }
     }
 }
 

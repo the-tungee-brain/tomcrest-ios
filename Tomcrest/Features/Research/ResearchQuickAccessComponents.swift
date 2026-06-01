@@ -125,45 +125,57 @@ private struct ResearchSymbolChipRow: View {
     let onSelect: (String) -> Void
 
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(symbols, id: \.self) { symbol in
-                    Button {
-                        onSelect(symbol)
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: style == .watchlist ? "star.fill" : "clock")
-                                .font(.caption2.weight(.semibold))
-                            Text(symbol)
-                                .font(AppTypography.monoCaptionSemibold)
-                        }
-                        .foregroundStyle(
-                            style == .watchlist
-                                ? AppColors.accentHighlight
-                                : AppColors.label
-                        )
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
-                        .background(
-                            style == .watchlist
-                                ? AppColors.accentMuted
-                                : AppColors.insetSurface
-                        )
-                        .clipShape(Capsule())
-                        .overlay {
-                            Capsule()
-                                .stroke(
-                                    style == .watchlist
-                                        ? AppColors.accentHighlight.opacity(0.3)
-                                        : AppColors.separator,
-                                    lineWidth: 1
-                                )
-                        }
+        switch style {
+        case .watchlist:
+            AppHorizontalScrollRow {
+                HStack(spacing: 8) {
+                    ForEach(symbols, id: \.self) { symbol in
+                        chipButton(for: symbol)
                     }
-                    .buttonStyle(.plain)
                 }
             }
+        case .recent:
+            AppWrappingChipGrid(items: symbols, minimumChipWidth: 96, spacing: 8) { symbol in
+                chipButton(for: symbol)
+            }
         }
+    }
+
+    @ViewBuilder
+    private func chipButton(for symbol: String) -> some View {
+        Button {
+            onSelect(symbol)
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: style == .watchlist ? "star.fill" : "clock")
+                    .font(.caption2.weight(.semibold))
+                Text(symbol)
+                    .font(AppTypography.monoCaptionSemibold)
+            }
+            .foregroundStyle(
+                style == .watchlist
+                    ? AppColors.accentHighlight
+                    : AppColors.label
+            )
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(
+                style == .watchlist
+                    ? AppColors.accentMuted
+                    : AppColors.insetSurface
+            )
+            .clipShape(Capsule())
+            .overlay {
+                Capsule()
+                    .stroke(
+                        style == .watchlist
+                            ? AppColors.accentHighlight.opacity(0.3)
+                            : AppColors.separator,
+                        lineWidth: 1
+                    )
+            }
+        }
+        .buttonStyle(.plain)
     }
 }
 
@@ -202,12 +214,8 @@ struct StrategyPlaybookQuickLinksSection: View {
                             .lineSpacing(2)
                     }
 
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
-                            ForEach(symbols, id: \.self) { symbol in
-                                playbookSymbolChip(symbol: symbol, strategyId: strategyId)
-                            }
-                        }
+                    AppWrappingChipGrid(items: symbols, minimumChipWidth: 140, spacing: 8) { symbol in
+                        playbookSymbolChip(symbol: symbol, strategyId: strategyId)
                     }
                 }
                 .padding(16)

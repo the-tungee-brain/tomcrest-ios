@@ -63,3 +63,9 @@ targets:
           - JetBrainsMono-Regular.ttf
           - JetBrainsMono-Medium.ttf
           - JetBrainsMono-SemiBold.ttf
+        UTExportedTypeDeclarations:
+          - UTTypeIdentifier: com.tomcrest.watchlist-symbol-drag
+            UTTypeDescription: Watchlist symbol drag payload
+            UTTypeConformsTo:
+              - public.data
+            UTTypeTagSpecification: {}

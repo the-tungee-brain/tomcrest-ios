@@ -128,7 +128,8 @@ struct ResearchOnboardingCard: View {
                 Button("Dismiss", action: onDismiss)
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(AppColors.secondaryLabel)
-                    .buttonStyle(.plain)
+                    .buttonStyle(.borderless)
+                    .contentShape(Rectangle())
             }
 
             checklistRow(

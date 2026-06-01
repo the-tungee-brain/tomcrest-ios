@@ -7,22 +7,7 @@ struct WatchlistFolderBackground: View {
     private var accent: Color { accentOverride ?? swatch.accentColor }
 
     var body: some View {
-        ZStack {
-            swatch.gradient
-
-            RadialGradient(
-                colors: [accent.opacity(0.22), Color.clear],
-                center: .topTrailing,
-                startRadius: 8,
-                endRadius: 180
-            )
-
-            LinearGradient(
-                colors: [Color.white.opacity(0.06), Color.clear],
-                startPoint: .top,
-                endPoint: .center
-            )
-        }
+        WatchlistFolderCompositionRenderer(swatch: swatch, accent: accent)
     }
 }
 
@@ -44,7 +29,7 @@ struct WatchlistFolderCardChrome: ViewModifier {
                         lineWidth: isTargeted ? 1.5 : 1
                     )
             }
-            .shadow(color: Color.black.opacity(0.28), radius: isTargeted ? 18 : 12, y: isTargeted ? 10 : 6)
+            .shadow(color: Color.black.opacity(0.22), radius: isTargeted ? 16 : 10, y: isTargeted ? 8 : 5)
             .scaleEffect(isTargeted ? 1.015 : 1)
             .animation(.spring(response: 0.32, dampingFraction: 0.78), value: isTargeted)
     }

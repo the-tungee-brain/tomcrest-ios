@@ -125,6 +125,7 @@ private final class ClearerViewController: UIViewController {
         super.viewDidLoad()
         view.backgroundColor = .clear
         view.isOpaque = false
+        view.isUserInteractionEnabled = false
     }
 
     override func viewDidLayoutSubviews() {

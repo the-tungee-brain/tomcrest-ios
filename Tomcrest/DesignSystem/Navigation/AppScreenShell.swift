@@ -1,7 +1,6 @@
 import SwiftUI
-import UIKit
 
-/// Standard root scroll layout — canvas shows through, consistent padding and width.
+/// Standard root scroll layout
 struct AppScrollScreen<Content: View>: View {
     var spacing: CGFloat = Layout.sectionSpacing
     var maxWidth: CGFloat = Layout.contentMaxWidth
@@ -10,8 +9,6 @@ struct AppScrollScreen<Content: View>: View {
     var scrollToToken: Binding<Int>?
     var scrollAnchor: String = AppScrollAnchor.chat
     private let content: () -> Content
-
-    @State private var viewportWidth: CGFloat = 0
 
     init(
         spacing: CGFloat = Layout.sectionSpacing,
@@ -38,18 +35,9 @@ struct AppScrollScreen<Content: View>: View {
                     content()
                 }
                 .appScreenContent(maxWidth: maxWidth, topPadding: topPadding)
-                .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
-                .frame(width: viewportWidth > 0 ? viewportWidth : nil, alignment: .leading)
-                .background(AppOuterScrollBehavior())
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .scrollBounceBehavior(.basedOnSize, axes: .vertical)
-            .background {
-                GeometryReader { proxy in
-                    Color.clear
-                        .preference(key: ScrollViewportWidthKey.self, value: proxy.size.width)
-                }
-            }
-            .onPreferenceChange(ScrollViewportWidthKey.self) { viewportWidth = $0 }
+            .scrollDismissesKeyboard(.interactively)
             .onChange(of: scrollToToken?.wrappedValue ?? 0) { _, token in
                 guard token > 0 else { return }
                 scrollToChat(using: proxy)
@@ -105,22 +93,12 @@ struct AppHorizontalScrollRow<Content: View>: View {
     var showsIndicators = false
     @ViewBuilder var content: () -> Content
 
-    @State private var availableWidth: CGFloat = 0
-
     var body: some View {
         ScrollView(.horizontal, showsIndicators: showsIndicators) {
             content()
         }
-        .frame(width: availableWidth > 0 ? availableWidth : nil, alignment: .leading)
-        .background {
-            GeometryReader { proxy in
-                Color.clear
-                    .onChange(of: proxy.size.width, initial: true) { _, width in
-                        availableWidth = width
-                    }
-            }
-        }
-        .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .clipped()
     }
 }
 
@@ -139,38 +117,6 @@ struct AppWrappingChipGrid<Item: Hashable, Chip: View>: View {
         ) {
             ForEach(items, id: \.self) { item in
                 chip(item)
-            }
-        }
-    }
-}
-
-private struct ScrollViewportWidthKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
-    }
-}
-
-/// Disables horizontal rubber-banding on the hosting vertical scroll view only.
-private struct AppOuterScrollBehavior: UIViewRepresentable {
-    func makeUIView(context: Context) -> UIView {
-        let view = UIView(frame: .zero)
-        view.isUserInteractionEnabled = false
-        view.backgroundColor = .clear
-        return view
-    }
-
-    func updateUIView(_ uiView: UIView, context: Context) {
-        DispatchQueue.main.async {
-            var ancestor = uiView.superview
-            while let current = ancestor {
-                if let scrollView = current as? UIScrollView {
-                    scrollView.alwaysBounceHorizontal = false
-                    scrollView.showsHorizontalScrollIndicator = false
-                    return
-                }
-                ancestor = current.superview
             }
         }
     }
