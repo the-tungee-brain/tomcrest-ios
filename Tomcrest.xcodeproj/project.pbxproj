@@ -81,6 +81,7 @@
 		8F0D0A88D68993A27DBDA07F /* SettingsComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = F084935B5A66C1A122711FD9 /* SettingsComponents.swift */; };
 		8F60FC9E3C7F8FB503D6AA75 /* ResearchDestination.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFF0024AA232CC74578FFE62 /* ResearchDestination.swift */; };
 		911A620BDE8B2642D0D6B2EE /* QuickActionsSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51E299943A274ACC5084A972 /* QuickActionsSupport.swift */; };
+		94DDA870C06ABF8D95107474 /* PortfolioWatchlistPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D4D25D29FF3FC7A1FB0E1F3 /* PortfolioWatchlistPanel.swift */; };
 		9594A2A02BF2A12D3AA0412D /* IntelligenceModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E895B081A99DB55BF37C35C /* IntelligenceModels.swift */; };
 		95BFFD728F1449645BAF7D52 /* SettingsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2340213ADCB169F9EAC23961 /* SettingsService.swift */; };
 		965CFFA572463C3B4BF12AC7 /* ResearchService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34B8510EAF3EAF1133A79AE3 /* ResearchService.swift */; };
@@ -211,6 +212,7 @@
 		485604ACBF7E957661B6CC8E /* ResearchNewsComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResearchNewsComponents.swift; sourceTree = "<group>"; };
 		4B20D45BBE945CE64E04DECA /* SymbolPositionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymbolPositionViewModel.swift; sourceTree = "<group>"; };
 		4D114FAE5DFFFD58359EDB0C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		4D4D25D29FF3FC7A1FB0E1F3 /* PortfolioWatchlistPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortfolioWatchlistPanel.swift; sourceTree = "<group>"; };
 		4D9A6015A2027503E22C6258 /* AppBootstrapState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBootstrapState.swift; sourceTree = "<group>"; };
 		4E8DAA587AE2824C34540E90 /* AboutSettingsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutSettingsScreen.swift; sourceTree = "<group>"; };
 		4F6857D2FE761904F809D30C /* PdfExportSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PdfExportSupport.swift; sourceTree = "<group>"; };
@@ -759,6 +761,7 @@
 			isa = PBXGroup;
 			children = (
 				B6D9B7488577CD1BA00CF8BF /* PortfolioDashboardComponents.swift */,
+				4D4D25D29FF3FC7A1FB0E1F3 /* PortfolioWatchlistPanel.swift */,
 			);
 			path = Dashboard;
 			sourceTree = "<group>";
@@ -939,6 +942,7 @@
 				F44BCF05384E6A789B23ED88 /* PortfolioService.swift in Sources */,
 				BC8C745B75A50BFFC2FE0479 /* PortfolioView.swift in Sources */,
 				F793B0C25DD5215BA233D127 /* PortfolioViewModel.swift in Sources */,
+				94DDA870C06ABF8D95107474 /* PortfolioWatchlistPanel.swift in Sources */,
 				4C5265F15A4B8AB6C003FF4F /* PressAndHorizontalDragGesture.swift in Sources */,
 				5637BC302555F4066973F293 /* ProductAnalytics.swift in Sources */,
 				911A620BDE8B2642D0D6B2EE /* QuickActionsSupport.swift in Sources */,

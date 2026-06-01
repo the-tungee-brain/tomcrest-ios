@@ -39,6 +39,20 @@ enum OnboardingStorage {
         UserDefaults.standard.set(collapsed, forKey: strategyJourneyCollapsedKey)
     }
 
+    private static let portfolioWatchlistCollapsedKey = "tomcrest-portfolio-watchlist-collapsed"
+
+    /// Defaults to expanded on first launch.
+    static func isPortfolioWatchlistCollapsed() -> Bool {
+        guard UserDefaults.standard.object(forKey: portfolioWatchlistCollapsedKey) != nil else {
+            return false
+        }
+        return UserDefaults.standard.bool(forKey: portfolioWatchlistCollapsedKey)
+    }
+
+    static func setPortfolioWatchlistCollapsed(_ collapsed: Bool) {
+        UserDefaults.standard.set(collapsed, forKey: portfolioWatchlistCollapsedKey)
+    }
+
     static func isWatchlistHintDismissed() -> Bool {
         UserDefaults.standard.bool(forKey: watchlistHintDismissedKey)
     }

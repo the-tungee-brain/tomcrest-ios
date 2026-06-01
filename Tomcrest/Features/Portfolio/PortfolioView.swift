@@ -188,7 +188,16 @@ struct PortfolioView: View {
 
             exploreSection(viewModel)
 
+            portfolioWatchlistSection()
+
             holdingsPreviewSection(viewModel)
+        }
+    }
+
+    @ViewBuilder
+    private func portfolioWatchlistSection() -> some View {
+        PortfolioWatchlistPanel { symbol in
+            researchSymbol = symbol
         }
     }
 
