@@ -64,6 +64,49 @@ struct PatternPortfolioStrategy: Codable, Sendable {
     }
 }
 
+enum ModelBenchmark {
+    static let symbols: Set<String> = ["SPY"]
+    static let notice =
+        "This symbol is the Model C benchmark. Excess return vs SPY is always zero here, " +
+        "so ranking probabilities are undefined — use pattern, trend, and regime context only."
+
+    static func isBenchmarkSymbol(_ symbol: String?) -> Bool {
+        guard let symbol else { return false }
+        return symbols.contains(symbol.trimmingCharacters(in: .whitespacesAndNewlines).uppercased())
+    }
+
+    static func filterIndicators(_ indicators: [String: Double]) -> [String: Double] {
+        indicators.filter { !$0.key.contains("rs_vs_spy") }
+    }
+}
+
+enum PatternCandlestickReference {
+    private static let descriptions: [String: String] = [
+        "hammer":
+            "A single candle with a small body near the top and a long lower shadow. Often appears after a decline when sellers were rejected — a potential bullish reversal if confirmed.",
+        "doji":
+            "Open and close are nearly equal, forming a cross. Signals indecision; the next move depends on context and follow-through.",
+        "bullish_engulfing":
+            "A large green candle whose body fully covers the prior red candle's body. Buyers overpowered sellers — a potential bullish reversal.",
+        "bearish_engulfing":
+            "A large red candle whose body fully covers the prior green candle's body. Sellers overpowered buyers — a potential bearish reversal.",
+        "morning_star":
+            "Three-candle bullish reversal: down candle, small indecision candle, then a strong up candle. Often marks a shift from decline to recovery.",
+        "evening_star":
+            "Three-candle bearish reversal: up candle, small indecision candle, then a strong down candle. Often marks a shift from advance to weakness.",
+        "shooting_star":
+            "Small body near the bottom with a long upper shadow after an advance. Buying was rejected at higher prices — a potential bearish reversal.",
+        "three_white_soldiers":
+            "Three consecutive strong green candles with higher closes. Suggests sustained bullish momentum and buyer control.",
+        "three_black_crows":
+            "Three consecutive strong red candles with lower closes. Suggests sustained bearish momentum and seller control.",
+    ]
+
+    static func description(for patternId: String) -> String? {
+        descriptions[patternId]
+    }
+}
+
 struct PatternTrendForecast: Codable, Sendable {
     let asOfDate: String
     let horizonDays: Int
@@ -82,9 +125,12 @@ struct PatternTrendForecast: Codable, Sendable {
     let nFeatures: Int?
     let featureGroups: [String]?
     let portfolioStrategy: PatternPortfolioStrategy?
+    let isBenchmark: Bool?
+    let benchmarkNotice: String?
 }
 
 struct PatternTrendForecastDisplay: Sendable {
+    let symbol: String?
     let asOfDate: String
     let horizonDays: Int
     let labelScheme: PatternLabelScheme
@@ -102,8 +148,11 @@ struct PatternTrendForecastDisplay: Sendable {
     let nFeatures: Int?
     let featureGroups: [String]
     let portfolioStrategy: PatternPortfolioStrategy?
+    let isBenchmark: Bool
+    let benchmarkNotice: String
 
     init(forecast: PatternTrendForecast) {
+        symbol = nil
         asOfDate = forecast.asOfDate
         horizonDays = forecast.horizonDays
         labelScheme = PatternLabelScheme.resolve(forecast.labelScheme)
@@ -121,9 +170,12 @@ struct PatternTrendForecastDisplay: Sendable {
         nFeatures = forecast.nFeatures
         featureGroups = forecast.featureGroups ?? []
         portfolioStrategy = forecast.portfolioStrategy
+        isBenchmark = forecast.isBenchmark == true
+        benchmarkNotice = forecast.benchmarkNotice ?? ModelBenchmark.notice
     }
 
     init(response: PatternPredictionResponse) {
+        symbol = response.symbol
         asOfDate = response.asOfDate
         horizonDays = response.horizonDays ?? 5
         labelScheme = response.resolvedLabelScheme
@@ -141,6 +193,14 @@ struct PatternTrendForecastDisplay: Sendable {
         nFeatures = response.nFeatures
         featureGroups = response.featureGroups ?? []
         portfolioStrategy = response.portfolioStrategy
+        isBenchmark =
+            response.isBenchmark == true ||
+            ModelBenchmark.isBenchmarkSymbol(response.symbol)
+        benchmarkNotice = response.benchmarkNotice ?? ModelBenchmark.notice
+    }
+
+    var resolvedIndicators: [String: Double] {
+        isBenchmark ? ModelBenchmark.filterIndicators(indicators) : indicators
     }
 
     var usesRankingPortfolio: Bool {
@@ -315,6 +375,8 @@ struct PatternPredictionResponse: Decodable, Sendable {
     let nFeatures: Int?
     let featureGroups: [String]?
     let portfolioStrategy: PatternPortfolioStrategy?
+    let isBenchmark: Bool?
+    let benchmarkNotice: String?
 
     var resolvedLabelScheme: PatternLabelScheme {
         PatternLabelScheme.resolve(labelScheme)
@@ -440,6 +502,8 @@ struct PatternSignalState: Codable, Sendable {
     let probability: Double?
     let probabilityText: String
     let tone: String
+    let isBenchmark: Bool?
+    let benchmarkNotice: String?
 }
 
 struct PatternTimeframeSlice: Codable, Sendable {
@@ -500,6 +564,7 @@ struct PatternIntelligenceResponse: Codable, Sendable {
     let setupOutcome: PatternSetupOutcome?
     let explanation: PatternExplanation
     let interpretation: PatternInterpretation?
+    let isBenchmark: Bool?
 
     var display: PatternIntelligenceDisplay {
         PatternIntelligenceDisplay(response: self)
@@ -527,6 +592,8 @@ struct PatternIntelligenceDisplay: Sendable {
     let explanation: PatternExplanation
     let interpretation: PatternInterpretation?
     let alignment: PatternAlignmentState
+    let isBenchmark: Bool
+    let benchmarkNotice: String
 
     init(response: PatternIntelligenceResponse) {
         symbol = response.symbol
@@ -541,6 +608,13 @@ struct PatternIntelligenceDisplay: Sendable {
             rawOrConfidence: response.scores.alignmentState ?? "",
             confidence: response.scores.confidence
         )
+        isBenchmark =
+            response.isBenchmark == true ||
+            response.interpretation?.signalState?.isBenchmark == true ||
+            ModelBenchmark.isBenchmarkSymbol(response.symbol)
+        benchmarkNotice =
+            response.interpretation?.signalState?.benchmarkNotice ??
+            ModelBenchmark.notice
     }
 
     var verdict: String {

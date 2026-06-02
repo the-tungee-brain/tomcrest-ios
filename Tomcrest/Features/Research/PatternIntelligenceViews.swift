@@ -9,11 +9,16 @@ struct PatternIntelligenceCard: View {
             if let signalState = intelligence.interpretation?.signalState {
                 PatternIntelligenceSignalStateCard(
                     signalState: signalState,
-                    toneColor: intelligence.verdictColor
+                    toneColor: intelligence.verdictColor,
+                    isBenchmark: intelligence.isBenchmark,
+                    benchmarkNotice: intelligence.benchmarkNotice
                 )
             }
             if let timeframe = intelligence.interpretation?.timeframe {
-                PatternIntelligenceTimeframeCard(timeframe: timeframe)
+                PatternIntelligenceTimeframeCard(
+                    timeframe: timeframe,
+                    isBenchmark: intelligence.isBenchmark
+                )
             }
             PatternIntelligenceVerdictCard(intelligence: intelligence)
             if let alignment = intelligence.interpretation?.alignment {
@@ -23,6 +28,48 @@ struct PatternIntelligenceCard: View {
             PatternIntelligenceEvidenceCard(intelligence: intelligence)
             PatternIntelligenceDisclaimer(text: intelligence.explanation.disclaimer)
         }
+    }
+}
+
+private struct PatternHelpButton: View {
+    let patternId: String
+    @State private var showHelp = false
+
+    var body: some View {
+        if let description = PatternCandlestickReference.description(for: patternId) {
+            Button {
+                showHelp = true
+            } label: {
+                Image(systemName: "questionmark.circle")
+                    .font(.title3)
+                    .foregroundStyle(AppColors.secondaryLabel)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("What is this candlestick pattern?")
+            .popover(isPresented: $showHelp, arrowEdge: .top) {
+                PatternHelpPopoverContent(description: description)
+            }
+        }
+    }
+}
+
+private struct PatternHelpPopoverContent: View {
+    let description: String
+
+    var body: some View {
+        ScrollView {
+            Text(description)
+                .font(.subheadline)
+                .foregroundStyle(AppColors.label)
+                .multilineTextAlignment(.leading)
+                .lineLimit(nil)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .scrollBounceBehavior(.basedOnSize)
+        .frame(width: 300)
+        .frame(maxHeight: 260)
+        .padding(16)
+        .presentationCompactAdaptation(.popover)
     }
 }
 
@@ -37,9 +84,12 @@ private struct PatternIntelligencePatternHeaderCard: View {
                 .textCase(.uppercase)
 
             if let pattern = intelligence.primaryPattern {
-                Text(pattern.label)
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(AppColors.label)
+                HStack(alignment: .center, spacing: 8) {
+                    Text(pattern.label)
+                        .font(.title2.weight(.semibold))
+                        .foregroundStyle(AppColors.label)
+                    PatternHelpButton(patternId: pattern.patternId)
+                }
                 Text(patternSubtitle(pattern))
                     .font(.subheadline)
                     .foregroundStyle(AppColors.secondaryLabel)
@@ -80,29 +130,42 @@ private struct PatternIntelligencePatternHeaderCard: View {
 private struct PatternIntelligenceSignalStateCard: View {
     let signalState: PatternSignalState
     let toneColor: Color
+    let isBenchmark: Bool
+    let benchmarkNotice: String
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Signal state")
+            Text(isBenchmark ? "Benchmark notice" : "Signal state")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(AppColors.secondaryLabel)
                 .textCase(.uppercase)
-            Text(signalState.label)
-                .font(.title2.weight(.semibold))
-                .foregroundStyle(toneColor)
-            Text(signalState.probabilityText)
-                .font(.subheadline)
-                .foregroundStyle(AppColors.secondaryLabel)
-                .fixedSize(horizontal: false, vertical: true)
+
+            if isBenchmark {
+                Text(signalState.benchmarkNotice ?? benchmarkNotice)
+                    .font(.subheadline)
+                    .foregroundStyle(AppColors.label)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                Text(signalState.label)
+                    .font(.title2.weight(.semibold))
+                    .foregroundStyle(toneColor)
+                Text(signalState.probabilityText)
+                    .font(.subheadline)
+                    .foregroundStyle(AppColors.secondaryLabel)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(toneColor.opacity(0.08))
+                .fill(isBenchmark ? AppColors.secondaryBackground.opacity(0.5) : toneColor.opacity(0.08))
                 .overlay {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(toneColor.opacity(0.2), lineWidth: 1)
+                        .stroke(
+                            isBenchmark ? AppColors.separator.opacity(0.35) : toneColor.opacity(0.2),
+                            lineWidth: 1
+                        )
                 }
         )
     }
@@ -110,6 +173,7 @@ private struct PatternIntelligenceSignalStateCard: View {
 
 private struct PatternIntelligenceTimeframeCard: View {
     let timeframe: PatternTimeframeInterpretation
+    let isBenchmark: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -131,7 +195,7 @@ private struct PatternIntelligenceTimeframeCard: View {
                     slice: timeframe.longTermTrend
                 )
                 timeframeTile(
-                    title: "Relative strength",
+                    title: isBenchmark ? "Market regime" : "Relative strength",
                     slice: timeframe.relativeStrength
                 )
             }
@@ -171,9 +235,13 @@ private struct PatternIntelligenceRawSignalsCard: View {
         DisclosureGroup {
             VStack(alignment: .leading, spacing: 10) {
                 if let summary {
-                    signalRow(label: "Model C", value: summary.modelC, emphasize: true)
+                    if !intelligence.isBenchmark {
+                        signalRow(label: "Model C", value: summary.modelC, emphasize: true)
+                    }
                     signalRow(label: "Trend", value: summary.trend)
-                    signalRow(label: "Relative strength", value: summary.relativeStrength)
+                    if !intelligence.isBenchmark {
+                        signalRow(label: "Relative strength", value: summary.relativeStrength)
+                    }
                     if let pattern = summary.pattern {
                         signalRow(
                             label: "Pattern",
@@ -181,7 +249,7 @@ private struct PatternIntelligenceRawSignalsCard: View {
                             warn: summary.patternWarning == true
                         )
                     }
-                } else {
+                } else if !intelligence.isBenchmark {
                     signalRow(label: "Model C", value: intelligence.explanation.modelContext)
                 }
 

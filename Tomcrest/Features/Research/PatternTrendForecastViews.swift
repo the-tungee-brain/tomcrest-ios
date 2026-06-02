@@ -5,7 +5,11 @@ struct PatternTrendForecastCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Layout.sectionSpacing) {
-            PatternTrendHeroCard(forecast: forecast)
+            if forecast.isBenchmark {
+                PatternTrendBenchmarkNoticeCard(forecast: forecast)
+            } else {
+                PatternTrendHeroCard(forecast: forecast)
+            }
 
             if !forecast.inTrainingUniverse {
                 AppInlineBanner(
@@ -14,8 +18,14 @@ struct PatternTrendForecastCard: View {
                 )
             }
 
-            PatternTrendProbabilityCard(forecast: forecast)
-            PatternTrendIndicatorsCard(indicators: forecast.indicators)
+            if !forecast.isBenchmark {
+                PatternTrendProbabilityCard(forecast: forecast)
+            }
+
+            PatternTrendIndicatorsCard(
+                indicators: forecast.resolvedIndicators,
+                isBenchmark: forecast.isBenchmark
+            )
             PatternTrendFootnote(forecast: forecast)
         }
     }
@@ -23,6 +33,58 @@ struct PatternTrendForecastCard: View {
     private var outOfUniverseMessage: String {
         let universe = forecast.trainingUniverse?.uppercased() ?? "TOP20"
         return "This symbol is outside the model's trained universe (\(universe)). Treat the forecast as exploratory."
+    }
+}
+
+private struct PatternTrendBenchmarkNoticeCard: View {
+    let forecast: PatternTrendForecastDisplay
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Benchmark notice")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(AppColors.secondaryLabel)
+                .textCase(.uppercase)
+
+            Text(forecast.benchmarkNotice)
+                .font(.subheadline)
+                .foregroundStyle(AppColors.label)
+                .fixedSize(horizontal: false, vertical: true)
+
+            LazyVGrid(
+                columns: [
+                    GridItem(.flexible(), spacing: 8),
+                    GridItem(.flexible(), spacing: 8),
+                ],
+                spacing: 8
+            ) {
+                PatternTrendMetaChip(
+                    title: "As of",
+                    value: formattedDate(forecast.asOfDate)
+                )
+                PatternTrendMetaChip(
+                    title: "Horizon",
+                    value: "\(forecast.horizonDays) sessions"
+                )
+            }
+        }
+        .padding(18)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(AppColors.secondaryBackground)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(AppColors.separator.opacity(0.35), lineWidth: 1)
+                }
+        )
+    }
+
+    private func formattedDate(_ raw: String) -> String {
+        let parser = DateFormatter()
+        parser.locale = Locale(identifier: "en_US_POSIX")
+        parser.dateFormat = "yyyy-MM-dd"
+        guard let date = parser.date(from: raw) else { return raw }
+        return date.formatted(date: .abbreviated, time: .omitted)
     }
 }
 
@@ -225,17 +287,21 @@ private struct PatternTrendProbabilityRow: View {
 
 private struct PatternTrendIndicatorsCard: View {
     let indicators: [String: Double]
+    let isBenchmark: Bool
 
     private var rows: [(title: String, key: String, format: PatternTrendIndicatorFormat)] {
-        [
-            ("RS vs SPY (21d)", "rs_vs_spy_21d", .percent),
-            ("RS vs SPY (63d)", "rs_vs_spy_63d", .percent),
-            ("RS vs SPY (126d)", "rs_vs_spy_126d", .percent),
+        var base: [(title: String, key: String, format: PatternTrendIndicatorFormat)] = [
             ("Close vs SMA 20", "close_vs_sma20", .percent),
             ("Close vs SMA 200", "close_vs_sma200", .percent),
             ("Return (21d)", "ret_21d", .percent),
             ("Return (63d)", "ret_63d", .percent),
         ]
+        if !isBenchmark {
+            base.insert(("RS vs SPY (21d)", "rs_vs_spy_21d", .percent), at: 0)
+            base.insert(("RS vs SPY (63d)", "rs_vs_spy_63d", .percent), at: 1)
+            base.insert(("RS vs SPY (126d)", "rs_vs_spy_126d", .percent), at: 2)
+        }
+        return base
     }
 
     var body: some View {
@@ -244,7 +310,9 @@ private struct PatternTrendIndicatorsCard: View {
             EmptyView()
         } else {
             VStack(alignment: .leading, spacing: 12) {
-                AppScreenSectionLabel(title: "Relative strength & trend")
+                AppScreenSectionLabel(
+                    title: isBenchmark ? "Trend & regime" : "Relative strength & trend"
+                )
 
                 LazyVGrid(
                     columns: [GridItem(.flexible()), GridItem(.flexible())],
@@ -308,16 +376,20 @@ private struct PatternTrendFootnote: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            if let trainEndDate = forecast.modelTrainEndDate {
+            if let trainEndDate = forecast.modelTrainEndDate, !forecast.isBenchmark {
                 Text("Model trained through \(trainEndDate).")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(AppColors.secondaryLabel)
             }
 
-            Text("Not investment advice. This describes a modeled 5-day alpha estimate, not a trade recommendation.")
-                .font(.caption)
-                .foregroundStyle(AppColors.tertiaryLabel)
-                .lineSpacing(2)
+            Text(
+                forecast.isBenchmark
+                    ? "Not investment advice. Pattern and trend context only — Model C ranking does not apply to the benchmark."
+                    : "Not investment advice. This describes a modeled 5-day alpha estimate, not a trade recommendation."
+            )
+            .font(.caption)
+            .foregroundStyle(AppColors.tertiaryLabel)
+            .lineSpacing(2)
         }
         .padding(.horizontal, 4)
     }

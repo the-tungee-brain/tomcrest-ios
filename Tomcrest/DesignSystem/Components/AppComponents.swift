@@ -116,6 +116,7 @@ struct AppSearchField: View {
     @Binding var text: String
     var isLoading = false
     var onSubmit: (() -> Void)?
+    var focus: FocusState<Bool>.Binding?
 
     var body: some View {
         HStack(spacing: 10) {
@@ -123,7 +124,14 @@ struct AppSearchField: View {
                 .font(.body.weight(.medium))
                 .foregroundStyle(AppColors.secondaryLabel)
 
-            TextField(placeholder, text: $text)
+            Group {
+                if let focus {
+                    TextField(placeholder, text: $text)
+                        .focused(focus)
+                } else {
+                    TextField(placeholder, text: $text)
+                }
+            }
                 .textInputAutocapitalization(.characters)
                 .autocorrectionDisabled()
                 .font(.body)

@@ -19,33 +19,30 @@ final class ResearchViewModel {
     }
 
     func updateQuery(_ text: String) {
-        query = text
-        scheduleSearch()
-    }
-
-    func selectSymbol(_ item: TickerSymbolItem) {
-        query = item.symbol
-    }
-
-    private func scheduleSearch() {
         searchTask?.cancel()
-        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard !trimmed.isEmpty else {
+            query = ""
             results = []
             isSearching = false
             searchError = nil
             return
         }
 
-        isSearching = true
         searchError = nil
 
         searchTask = Task {
             try? await Task.sleep(for: .milliseconds(300))
             guard !Task.isCancelled else { return }
+            query = trimmed
+            isSearching = true
             await performSearch(trimmed)
         }
+    }
+
+    func selectSymbol(_ item: TickerSymbolItem) {
+        query = item.symbol
     }
 
     private func performSearch(_ keyword: String) async {

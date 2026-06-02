@@ -294,3 +294,104 @@ struct StrategyPlaybookQuickLinksSection: View {
         }
     }
 }
+
+struct ResearchSearchResultsSection: View {
+    @Bindable var viewModel: ResearchViewModel
+    let searchText: String
+    let watchlistSymbols: Set<String>
+    var showsWatchlistToggle = true
+    let onSelect: (TickerSymbolItem) -> Void
+
+    private var trimmedQuery: String {
+        searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var sortedResults: [TickerSymbolItem] {
+        viewModel.results.sorted { lhs, rhs in
+            let lhsWatching = watchlistSymbols.contains(lhs.symbol.uppercased())
+            let rhsWatching = watchlistSymbols.contains(rhs.symbol.uppercased())
+            if lhsWatching != rhsWatching {
+                return lhsWatching
+            }
+            return false
+        }
+    }
+
+    var body: some View {
+        if let error = viewModel.searchError {
+            AppInlineBanner(message: error, tone: .error)
+        } else if !trimmedQuery.isEmpty,
+                  !viewModel.isSearching,
+                  viewModel.results.isEmpty {
+            AppInlineBanner(
+                message: "No symbols found for \"\(trimmedQuery.uppercased())\".",
+                tone: .neutral
+            )
+        } else if !sortedResults.isEmpty {
+            AppScreenSection(title: "Results") {
+                AppGroupedList {
+                    ForEach(Array(sortedResults.prefix(12).enumerated()), id: \.element.id) { index, item in
+                        HStack(spacing: 0) {
+                            Button {
+                                onSelect(item)
+                            } label: {
+                                SymbolSearchRowContent(item: item)
+                            }
+                            .buttonStyle(.plain)
+
+                            if showsWatchlistToggle {
+                                WatchlistToggleButton(symbol: item.symbol, companyName: item.title)
+                                    .padding(.trailing, 8)
+                            }
+                        }
+
+                        if index < min(sortedResults.count, 12) - 1 {
+                            AppGroupedDivider()
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+struct SymbolSearchRowContent: View {
+    let item: TickerSymbolItem
+
+    var body: some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.symbol)
+                    .font(AppTypography.cardTitle)
+                    .foregroundStyle(Token.textPrimary)
+                if !subtitle.isEmpty {
+                    Text(subtitle)
+                        .font(AppTypography.caption)
+                        .foregroundStyle(Token.textSecondary)
+                        .lineLimit(1)
+                }
+            }
+
+            Spacer(minLength: 8)
+
+            Image(systemName: "chevron.right")
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(Token.textTertiary)
+                .accessibilityHidden(true)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .frame(minHeight: Layout.minTouchTarget)
+        .contentShape(Rectangle())
+    }
+
+    private var subtitle: String {
+        if let title = item.title, !title.isEmpty {
+            return title
+        }
+        if let assetType = item.assetType {
+            return AssetTypeLabel.display(assetType)
+        }
+        return ""
+    }
+}

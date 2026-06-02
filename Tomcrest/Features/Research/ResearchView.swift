@@ -5,6 +5,8 @@ struct ResearchView: View {
     @Environment(ResearchSymbolBookmarks.self) private var bookmarks
     @Environment(WatchlistStore.self) private var watchlistStore
     @State private var viewModel: ResearchViewModel?
+    @State private var searchText = ""
+    @FocusState private var isSearchFocused: Bool
     @State private var path: [ResearchRoute] = []
     @State private var showsResearchOnboarding = !OnboardingStorage.isResearchOnboardingDismissed()
 
@@ -16,25 +18,30 @@ struct ResearchView: View {
             && ResearchSymbolStorage.hasUsedResearchChat()
     }
 
+    private var showsBrowseSections: Bool {
+        searchText.isEmpty && !isSearchFocused
+    }
+
     var body: some View {
         AppRoutedNavigationCanvasStack(path: $path) {
             AppScrollScreen {
                 if let viewModel {
                     AppSearchField(
                         placeholder: "Search tickers",
-                        text: Binding(
-                            get: { viewModel.query },
-                            set: { viewModel.updateQuery($0) }
-                        ),
+                        text: $searchText,
                         isLoading: viewModel.isSearching,
                         onSubmit: {
                             if let first = sortedSearchResults(viewModel.results).first {
                                 openSymbolItem(first)
                             }
-                        }
+                        },
+                        focus: $isSearchFocused
                     )
+                    .onChange(of: searchText) { _, newValue in
+                        viewModel.updateQuery(newValue)
+                    }
 
-                    if viewModel.query.isEmpty {
+                    if showsBrowseSections {
                         quickAccessSection
 
                         if showsResearchOnboarding, !researchOnboardingComplete {
@@ -51,9 +58,14 @@ struct ResearchView: View {
                         }
                     }
 
-                    searchResults(viewModel)
+                    ResearchSearchResultsSection(
+                        viewModel: viewModel,
+                        searchText: searchText,
+                        watchlistSymbols: Set(watchlistStore.allTickers.map { $0.uppercased() }),
+                        onSelect: openSymbolItem
+                    )
 
-                    if viewModel.query.isEmpty, !bookmarks.hasQuickAccess {
+                    if showsBrowseSections, !bookmarks.hasQuickAccess {
                         examplesSection
                     }
                 } else {
@@ -64,6 +76,7 @@ struct ResearchView: View {
                     )
                 }
             }
+            .animation(nil, value: showsBrowseSections)
             .appRootNavigation("Research")
             .navigationDestination(for: ResearchRoute.self) { route in
                 switch route {
@@ -127,43 +140,6 @@ struct ResearchView: View {
         }
     }
 
-    @ViewBuilder
-    private func searchResults(_ viewModel: ResearchViewModel) -> some View {
-        if let error = viewModel.searchError {
-            AppInlineBanner(message: error, tone: .error)
-        } else if !viewModel.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-                  !viewModel.isSearching,
-                  viewModel.results.isEmpty {
-            AppInlineBanner(
-                message: "No symbols found for \"\(viewModel.query.uppercased())\".",
-                tone: .neutral
-            )
-        } else if !viewModel.results.isEmpty {
-            let results = sortedSearchResults(viewModel.results)
-            AppScreenSection(title: "Results") {
-                AppGroupedList {
-                    ForEach(Array(results.prefix(12).enumerated()), id: \.element.id) { index, item in
-                        HStack(spacing: 0) {
-                            Button {
-                                openSymbolItem(item)
-                            } label: {
-                                SymbolSearchRowContent(item: item)
-                            }
-                            .buttonStyle(.plain)
-
-                            WatchlistToggleButton(symbol: item.symbol, companyName: item.title)
-                                .padding(.trailing, 8)
-                        }
-
-                        if index < min(results.count, 12) - 1 {
-                            AppGroupedDivider()
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     private var examplesSection: some View {
         AppScreenSection(title: "Try an example") {
             AppWrappingChipGrid(items: exampleSymbols, minimumChipWidth: 72) { symbol in
@@ -175,7 +151,7 @@ struct ResearchView: View {
     }
 
     private func sortedSearchResults(_ results: [TickerSymbolItem]) -> [TickerSymbolItem] {
-        let watchlist = Set(watchlistStore.allTickers)
+        let watchlist = Set(watchlistStore.allTickers.map { $0.uppercased() })
         return results.sorted { lhs, rhs in
             let lhsWatching = watchlist.contains(lhs.symbol.uppercased())
             let rhsWatching = watchlist.contains(rhs.symbol.uppercased())
@@ -210,47 +186,6 @@ struct ResearchView: View {
         withAnimation(.easeOut(duration: 0.2)) {
             showsResearchOnboarding = false
         }
-    }
-}
-
-private struct SymbolSearchRowContent: View {
-    let item: TickerSymbolItem
-
-    var body: some View {
-        HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(item.symbol)
-                    .font(AppTypography.cardTitle)
-                    .foregroundStyle(Token.textPrimary)
-                if !subtitle.isEmpty {
-                    Text(subtitle)
-                        .font(AppTypography.caption)
-                        .foregroundStyle(Token.textSecondary)
-                        .lineLimit(1)
-                }
-            }
-
-            Spacer(minLength: 8)
-
-            Image(systemName: "chevron.right")
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(Token.textTertiary)
-                .accessibilityHidden(true)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .frame(minHeight: Layout.minTouchTarget)
-        .contentShape(Rectangle())
-    }
-
-    private var subtitle: String {
-        if let title = item.title, !title.isEmpty {
-            return title
-        }
-        if let assetType = item.assetType {
-            return AssetTypeLabel.display(assetType)
-        }
-        return ""
     }
 }
 

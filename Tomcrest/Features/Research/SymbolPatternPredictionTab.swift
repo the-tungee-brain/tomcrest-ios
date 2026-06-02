@@ -8,7 +8,9 @@ struct SymbolPatternPredictionContent: View {
         if account.hasProFeature(.patternTrend) {
             AppScreenSection(
                 title: "5D Alpha",
-                footnote: "Relative strength + trend ranking · next 5 sessions"
+                footnote: viewModel.patternPrediction?.display.isBenchmark == true
+                    ? "Trend and regime indicators · Model C ranking not applicable"
+                    : "Relative strength + trend ranking · next 5 sessions"
             ) {
                 if let prediction = viewModel.patternPrediction {
                     PatternTrendForecastCard(forecast: prediction.display)
@@ -22,7 +24,9 @@ struct SymbolPatternPredictionContent: View {
 
             AppScreenSection(
                 title: "Pattern intelligence",
-                footnote: "Confirms the core model — not a standalone trade signal"
+                footnote: viewModel.patternIntelligence?.display.isBenchmark == true
+                    ? "Pattern, trend, and regime context · no Model C on benchmark"
+                    : "Confirms the core model — not a standalone trade signal"
             ) {
                 if let intelligence = viewModel.patternIntelligence {
                     PatternIntelligenceCard(intelligence: intelligence.display)
