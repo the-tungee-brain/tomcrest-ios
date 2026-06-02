@@ -427,34 +427,33 @@ struct PatternExplanation: Codable, Sendable {
     let disclaimer: String
 }
 
-struct PatternVerdictBullet: Codable, Sendable, Identifiable {
-    var id: String { text }
-    let tone: String
-    let text: String
+struct PatternSignalSummary: Codable, Sendable {
+    let modelC: String
+    let trend: String
+    let relativeStrength: String
+    let pattern: String?
+    let patternWarning: Bool?
 }
 
-struct PatternFinalVerdict: Codable, Sendable {
-    let title: String
-    let bullets: [PatternVerdictBullet]
-    let conclusion: String
-}
+struct PatternEvidence: Codable, Sendable {
+    let insight: String
+    let conditionalNote: String?
+    let summary: String
+    let setupLabel: String?
+    let occurrenceCount: Int?
+    let winRate5d: Double?
+    let avgReturn5d: Double?
+    let avgReturn20d: Double?
 
-struct PatternConfidenceContributor: Codable, Sendable, Identifiable {
-    var id: String { key }
-    let key: String
-    let label: String
-    let weightPct: Int
-    let qualitative: String
-    let emphasized: Bool
-    let score: Double
+    var hasStats: Bool {
+        occurrenceCount != nil && avgReturn5d != nil
+    }
 }
 
 struct PatternInterpretation: Codable, Sendable {
-    let actionableVerdict: String
-    let traderSummary: String
-    let finalVerdict: PatternFinalVerdict
-    let confidenceContributors: [PatternConfidenceContributor]
-    let historicalRead: String?
+    let signalSummary: PatternSignalSummary
+    let verdict: String
+    let evidence: PatternEvidence
 }
 
 struct PatternIntelligenceResponse: Codable, Sendable {
@@ -511,46 +510,21 @@ struct PatternIntelligenceDisplay: Sendable {
         )
     }
 
-    var actionableVerdict: String {
-        interpretation?.actionableVerdict ?? explanation.confidenceExplanation
+    var verdict: String {
+        interpretation?.verdict ?? explanation.confidenceExplanation
     }
 
-    var traderSummary: String {
-        interpretation?.traderSummary ?? explanation.modelContext
-    }
-
-    var historicalRead: String? {
-        interpretation?.historicalRead ?? explanation.historicalContext
-    }
-
-    var heroColor: Color {
-        let verdict = actionableVerdict.lowercased()
-        if verdict.contains("override") || verdict.contains("conflict") {
-            return AppColors.warning
-        }
-        if verdict.contains("confirm") {
+    var verdictColor: Color {
+        let text = verdict.lowercased()
+        if text.contains("dominates") || text.contains("confirms") {
             return AppColors.success
         }
+        if text.contains("reduce exposure") || text.contains("weak trend") {
+            return AppColors.warning
+        }
+        if text.contains("conflict") || text.contains("defer") {
+            return AppColors.warning
+        }
         return AppColors.secondaryLabel
-    }
-
-    var heroSystemImage: String {
-        let verdict = actionableVerdict.lowercased()
-        if verdict.contains("override") || verdict.contains("conflict") {
-            return "exclamationmark.triangle.fill"
-        }
-        if verdict.contains("confirm") {
-            return "checkmark.circle.fill"
-        }
-        return "waveform.path.ecg"
-    }
-
-    func verdictBulletSymbol(_ tone: String) -> String {
-        switch tone {
-        case "positive": return "✅"
-        case "warning": return "⚠️"
-        case "negative": return "❌"
-        default: return "•"
-        }
     }
 }
