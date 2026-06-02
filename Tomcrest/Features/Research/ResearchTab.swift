@@ -38,7 +38,7 @@ enum ResearchTab: String, CaseIterable, Identifiable, Hashable {
 
         switch normalized {
         case "ETF", "MUTUAL_FUND", "INDEX":
-            return [.overview, .metrics, .news, .more]
+            return [.overview, .analysis, .metrics, .news, .more]
         default:
             return [.overview, .analysis, .metrics, .news, .financials, .more]
         }

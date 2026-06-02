@@ -65,6 +65,10 @@ struct ResearchExploreLinks: View {
     private func rowSubtitle(for destination: SymbolResearchDestination) -> String {
         switch destination {
         case .analysis:
+            let normalized = assetType?.uppercased() ?? "STOCK"
+            if normalized == "ETF" || normalized == "MUTUAL_FUND" || normalized == "INDEX" {
+                return "5D alpha model and signals"
+            }
             return "AI insights, 5D trend, and business context"
         case .metrics:
             return "Valuation, growth, and analyst views"
@@ -137,6 +141,11 @@ struct SymbolAnalysisHubTab: View {
     @Bindable var depthVM: SymbolDepthViewModel
     let bundle: ResearchOverviewBundle?
 
+    private var isEtfLike: Bool {
+        let normalized = bundle?.assetType?.uppercased() ?? ""
+        return normalized == "ETF" || normalized == "MUTUAL_FUND" || normalized == "INDEX"
+    }
+
     var body: some View {
         ResearchDepthTabShell(tab: .analysis, viewModel: depthVM) {
             VStack(alignment: .leading, spacing: Layout.sectionSpacing) {
@@ -146,18 +155,22 @@ struct SymbolAnalysisHubTab: View {
                     }
                 }
 
-                BigPictureSection(
-                    summary: bundle?.summary,
-                    isLoading: overviewVM.isBigPictureLoading,
-                    errorMessage: overviewVM.bigPictureError,
-                    onRefresh: {
-                        Task { await overviewVM.refreshBigPicture() }
-                    }
-                )
+                if !isEtfLike {
+                    BigPictureSection(
+                        summary: bundle?.summary,
+                        isLoading: overviewVM.isBigPictureLoading,
+                        errorMessage: overviewVM.bigPictureError,
+                        onRefresh: {
+                            Task { await overviewVM.refreshBigPicture() }
+                        }
+                    )
+                }
 
                 SymbolPatternPredictionContent(viewModel: depthVM)
 
-                SymbolBusinessContent(viewModel: depthVM)
+                if !isEtfLike {
+                    SymbolBusinessContent(viewModel: depthVM)
+                }
             }
         }
     }
