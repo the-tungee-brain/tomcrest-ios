@@ -435,7 +435,33 @@ struct PatternSignalSummary: Codable, Sendable {
     let patternWarning: Bool?
 }
 
+struct PatternSignalState: Codable, Sendable {
+    let label: String
+    let probability: Double?
+    let probabilityText: String
+    let tone: String
+}
+
+struct PatternTimeframeSlice: Codable, Sendable {
+    let label: String
+    let caption: String
+}
+
+struct PatternTimeframeInterpretation: Codable, Sendable {
+    let shortTerm: PatternTimeframeSlice
+    let longTermTrend: PatternTimeframeSlice
+    let relativeStrength: PatternTimeframeSlice
+}
+
+struct PatternAlignmentBlock: Codable, Sendable {
+    let state: String
+    let headline: String
+    let explanation: String
+}
+
 struct PatternEvidence: Codable, Sendable {
+    let framing: String?
+    let statsNote: String?
     let insight: String
     let conditionalNote: String?
     let summary: String
@@ -445,12 +471,19 @@ struct PatternEvidence: Codable, Sendable {
     let avgReturn5d: Double?
     let avgReturn20d: Double?
 
+    var displayFraming: String {
+        framing ?? insight
+    }
+
     var hasStats: Bool {
         occurrenceCount != nil && avgReturn5d != nil
     }
 }
 
 struct PatternInterpretation: Codable, Sendable {
+    let signalState: PatternSignalState?
+    let timeframe: PatternTimeframeInterpretation?
+    let alignment: PatternAlignmentBlock?
     let signalSummary: PatternSignalSummary
     let verdict: String
     let evidence: PatternEvidence
@@ -515,15 +548,32 @@ struct PatternIntelligenceDisplay: Sendable {
     }
 
     var verdictColor: Color {
+        if let tone = interpretation?.signalState?.tone {
+            switch tone {
+            case "strong_bullish", "bullish", "slight_bullish":
+                return AppColors.success
+            case "strong_bearish", "bearish", "slight_bearish":
+                return AppColors.danger
+            case "warning":
+                return AppColors.warning
+            default:
+                break
+            }
+        }
+
+        if interpretation?.alignment?.state == "conflict" {
+            return AppColors.warning
+        }
+
         let text = verdict.lowercased()
-        if text.contains("dominates") || text.contains("confirms") {
+        if text.contains("bullish continuation") || text.contains("rebound") {
             return AppColors.success
         }
-        if text.contains("reduce exposure") || text.contains("weak trend") {
-            return AppColors.warning
+        if text.contains("bearish trend") || text.contains("weakness") {
+            return AppColors.danger
         }
-        if text.contains("conflict") || text.contains("defer") {
-            return AppColors.warning
+        if text.contains("mixed") || text.contains("inconclusive") {
+            return AppColors.secondaryLabel
         }
         return AppColors.secondaryLabel
     }
