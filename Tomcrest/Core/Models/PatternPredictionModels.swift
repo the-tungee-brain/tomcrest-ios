@@ -489,68 +489,43 @@ struct PatternExplanation: Codable, Sendable {
     let disclaimer: String
 }
 
-struct PatternSignalSummary: Codable, Sendable {
-    let modelC: String
-    let trend: String
-    let relativeStrength: String
-    let pattern: String?
-    let patternWarning: Bool?
-}
-
-struct PatternSignalState: Codable, Sendable {
+struct ChartAnalystOutlook: Codable, Sendable {
     let label: String
-    let probability: Double?
-    let probabilityText: String
     let tone: String
+    let probability: Double?
+    let probabilityDisplay: String?
+    let expectation: String
+    let modelContext: String?
     let isBenchmark: Bool?
     let benchmarkNotice: String?
+
+    var headline: String {
+        if let probabilityDisplay, !probabilityDisplay.isEmpty {
+            return "\(label) (\(probabilityDisplay))"
+        }
+        return label
+    }
 }
 
-struct PatternTimeframeSlice: Codable, Sendable {
+struct ChartAnalystKeyLevel: Codable, Sendable {
     let label: String
-    let caption: String
+    let price: Double?
+    let levelType: String?
+    let display: String
+    let implication: String
 }
 
-struct PatternTimeframeInterpretation: Codable, Sendable {
-    let shortTerm: PatternTimeframeSlice
-    let longTermTrend: PatternTimeframeSlice
-    let relativeStrength: PatternTimeframeSlice
+struct ChartAnalystEvidenceBullet: Codable, Sendable {
+    let text: String
+    let tone: String
 }
 
-struct PatternAlignmentBlock: Codable, Sendable {
-    let state: String
-    let headline: String
-    let explanation: String
-}
-
-struct PatternEvidence: Codable, Sendable {
-    let framing: String?
-    let statsNote: String?
-    let insight: String
-    let conditionalNote: String?
-    let summary: String
-    let setupLabel: String?
-    let occurrenceCount: Int?
-    let winRate5d: Double?
-    let avgReturn5d: Double?
-    let avgReturn20d: Double?
-
-    var displayFraming: String {
-        framing ?? insight
-    }
-
-    var hasStats: Bool {
-        occurrenceCount != nil && avgReturn5d != nil
-    }
-}
-
-struct PatternInterpretation: Codable, Sendable {
-    let signalState: PatternSignalState?
-    let timeframe: PatternTimeframeInterpretation?
-    let alignment: PatternAlignmentBlock?
-    let signalSummary: PatternSignalSummary
-    let verdict: String
-    let evidence: PatternEvidence
+struct ChartAnalystSummary: Codable, Sendable {
+    let outlook: ChartAnalystOutlook
+    let keyLevel: ChartAnalystKeyLevel
+    let whyThisOutlook: [ChartAnalystEvidenceBullet]
+    let thesis: String
+    let disclaimer: String
 }
 
 struct ChartIntelligencePoint: Codable, Sendable {
@@ -629,6 +604,12 @@ struct ChartIntelligencePayload: Codable, Sendable {
     let annotations: [ChartIntelligenceAnnotation]?
     let breakoutEvents: [ChartIntelligenceBreakoutEvent]?
     let fibChannel: ChartIntelligenceFibChannel?
+    let summary: ChartAnalystSummary?
+
+    var hasAnalystSummary: Bool {
+        guard let label = summary?.outlook.label else { return false }
+        return !label.isEmpty
+    }
 
     var hasOverlays: Bool {
         !(supportZones ?? []).isEmpty
@@ -660,7 +641,6 @@ struct PatternIntelligenceResponse: Codable, Sendable {
     let historicalStats: PatternHistoricalStats?
     let setupOutcome: PatternSetupOutcome?
     let explanation: PatternExplanation
-    let interpretation: PatternInterpretation?
     let chartIntelligence: ChartIntelligencePayload?
     let isBenchmark: Bool?
 
@@ -688,8 +668,8 @@ struct PatternIntelligenceDisplay: Sendable {
     let scores: PatternIntelligenceScores
     let setupOutcome: PatternSetupOutcome?
     let explanation: PatternExplanation
-    let interpretation: PatternInterpretation?
     let chartIntelligence: ChartIntelligencePayload?
+    let analystSummary: ChartAnalystSummary?
     let alignment: PatternAlignmentState
     let isBenchmark: Bool
     let benchmarkNotice: String
@@ -702,27 +682,27 @@ struct PatternIntelligenceDisplay: Sendable {
         scores = response.scores
         setupOutcome = response.setupOutcome
         explanation = response.explanation
-        interpretation = response.interpretation
         chartIntelligence = response.chartIntelligence
+        analystSummary = response.chartIntelligence?.summary
         alignment = PatternAlignmentState(
             rawOrConfidence: response.scores.alignmentState ?? "",
             confidence: response.scores.confidence
         )
         isBenchmark =
             response.isBenchmark == true ||
-            response.interpretation?.signalState?.isBenchmark == true ||
+            response.chartIntelligence?.summary?.outlook.isBenchmark == true ||
             ModelBenchmark.isBenchmarkSymbol(response.symbol)
         benchmarkNotice =
-            response.interpretation?.signalState?.benchmarkNotice ??
+            response.chartIntelligence?.summary?.outlook.benchmarkNotice ??
             ModelBenchmark.notice
     }
 
     var verdict: String {
-        interpretation?.verdict ?? explanation.confidenceExplanation
+        analystSummary?.thesis ?? explanation.confidenceExplanation
     }
 
     var verdictColor: Color {
-        if let tone = interpretation?.signalState?.tone {
+        if let tone = analystSummary?.outlook.tone {
             switch tone {
             case "strong_bullish", "bullish", "slight_bullish":
                 return AppColors.success
@@ -735,20 +715,10 @@ struct PatternIntelligenceDisplay: Sendable {
             }
         }
 
-        if interpretation?.alignment?.state == "conflict" {
+        if alignment == .conflict {
             return AppColors.warning
         }
 
-        let text = verdict.lowercased()
-        if text.contains("bullish continuation") || text.contains("rebound") {
-            return AppColors.success
-        }
-        if text.contains("bearish trend") || text.contains("weakness") {
-            return AppColors.danger
-        }
-        if text.contains("mixed") || text.contains("inconclusive") {
-            return AppColors.secondaryLabel
-        }
         return AppColors.secondaryLabel
     }
 }

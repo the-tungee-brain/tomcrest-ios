@@ -24,7 +24,7 @@ struct SymbolPatternPredictionContent: View {
 
             if let chartIntel = viewModel.patternIntelligence?.chartIntelligence, chartIntel.hasOverlays {
                 AppScreenSection(
-                    title: "Chart intelligence",
+                    title: "Structure chart",
                     footnote: "Support, resistance, fib channel, and breakouts on a labeled 3M chart"
                 ) {
                     NavigationLink {
@@ -39,17 +39,21 @@ struct SymbolPatternPredictionContent: View {
                 }
             }
 
-            AppScreenSection(
-                title: "Pattern intelligence",
-                footnote: viewModel.patternIntelligence?.display.isBenchmark == true
-                    ? "Pattern, trend, and regime context · no Model C on benchmark"
-                    : "Confirms the core model — not a standalone trade signal"
-            ) {
-                if let intelligence = viewModel.patternIntelligence {
-                    PatternIntelligenceCard(intelligence: intelligence.display)
-                } else {
+            if viewModel.patternIntelligence?.chartIntelligence?.hasAnalystSummary == true {
+                AppScreenSection(
+                    title: "Chart intelligence",
+                    footnote: viewModel.patternIntelligence?.display.isBenchmark == true
+                        ? "5-day outlook from structure and regime · no Model C on benchmark"
+                        : "5-day outlook · conclusion first, key evidence only"
+                ) {
+                    if let intelligence = viewModel.patternIntelligence {
+                        PatternIntelligenceCard(intelligence: intelligence.display)
+                    }
+                }
+            } else if viewModel.patternIntelligence != nil {
+                AppScreenSection(title: "Chart intelligence") {
                     AppEmptyMessage(
-                        message: "Pattern intelligence is not available for this symbol.",
+                        message: "Analyst summary is not available for this symbol.",
                         systemImage: "sparkles"
                     )
                 }

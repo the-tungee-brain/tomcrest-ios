@@ -73,6 +73,18 @@ struct ChartIntelligenceChartScreen: View {
                 } else if let errorMessage {
                     AppInlineBanner(message: errorMessage, tone: .error)
                 } else if let points = chart?.data, points.count >= 2 {
+                    if let summary = intelligence.summary {
+                        ChartAnalystSummaryPanel(
+                            summary: summary,
+                            pattern: nil,
+                            isBenchmark: summary.outlook.isBenchmark == true,
+                            benchmarkNotice: summary.outlook.benchmarkNotice
+                                ?? ModelBenchmark.notice,
+                            toneColor: outlookToneColor(summary.outlook.tone),
+                            asOfDate: points.last?.date ?? ""
+                        )
+                    }
+
                     ChartIntelligenceWebChartView(
                         points: points,
                         intelligence: intelligence
@@ -659,6 +671,19 @@ private struct ChartIntelligenceBottomLegend: View {
         case "sma200": Color(red: 0.96, green: 0.62, blue: 0.04)
         default: AppColors.accentHighlight
         }
+    }
+}
+
+private func outlookToneColor(_ tone: String) -> Color {
+    switch tone {
+    case "strong_bullish", "bullish", "slight_bullish":
+        return AppColors.success
+    case "strong_bearish", "bearish", "slight_bearish":
+        return AppColors.danger
+    case "warning":
+        return AppColors.warning
+    default:
+        return AppColors.secondaryLabel
     }
 }
 
