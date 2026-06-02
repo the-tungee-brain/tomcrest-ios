@@ -125,6 +125,7 @@
 		A6A2C24443BBC27F02A085AC /* MarkdownText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A8CD16BE7E6DE61B1398F5D /* MarkdownText.swift */; };
 		A7C4E2F1938560B2D1E0F4A8 /* PatternTrendForecastViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8D5F3A2049671C3E2F1A5B9 /* PatternTrendForecastViews.swift */; };
 		C1D2E3F4A5B60718293A4B5C /* PatternIntelligenceViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2E3F4A5B60718293A4B5C6D /* PatternIntelligenceViews.swift */; };
+		F1A2B3C4D5E60718293A4B5E /* ChartIntelligenceChartScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C4D5E60718293A4B5F /* ChartIntelligenceChartScreen.swift */; };
 		A7D5F41AFD5E67F6336B2365 /* Inter-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 7A6BFF4363B9FEF83234643C /* Inter-Bold.ttf */; };
 		AB79334EB206DA687E6CFCE5 /* JetBrainsMono-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E87F760CDDD02D0D4EA42823 /* JetBrainsMono-SemiBold.ttf */; };
 		AE882C5BB0C1ECAD2CC87328 /* WatchlistMockData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C49ECE4709E4F94A3291A23 /* WatchlistMockData.swift */; };
@@ -356,6 +357,7 @@
 		B6D9B7488577CD1BA00CF8BF /* PortfolioDashboardComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortfolioDashboardComponents.swift; sourceTree = "<group>"; };
 		B8D5F3A2049671C3E2F1A5B9 /* PatternTrendForecastViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatternTrendForecastViews.swift; sourceTree = "<group>"; };
 		D2E3F4A5B60718293A4B5C6D /* PatternIntelligenceViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatternIntelligenceViews.swift; sourceTree = "<group>"; };
+		F1A2B3C4D5E60718293A4B5F /* ChartIntelligenceChartScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartIntelligenceChartScreen.swift; sourceTree = "<group>"; };
 		BBD267BF2EB2C55F50BD1AAB /* IntelligenceHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntelligenceHelpers.swift; sourceTree = "<group>"; };
 		BCC6F358F37D7A0F5AABBC14 /* BrandTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrandTheme.swift; sourceTree = "<group>"; };
 		BD6F171E52B6F66A7CA40D34 /* LegalSettingsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegalSettingsScreen.swift; sourceTree = "<group>"; };
@@ -424,6 +426,7 @@
 				4B2B49EE296007C99829151A /* PatternPredictionService.swift */,
 				B8D5F3A2049671C3E2F1A5B9 /* PatternTrendForecastViews.swift */,
 				D2E3F4A5B60718293A4B5C6D /* PatternIntelligenceViews.swift */,
+				F1A2B3C4D5E60718293A4B5F /* ChartIntelligenceChartScreen.swift */,
 				4F6857D2FE761904F809D30C /* PdfExportSupport.swift */,
 				85DD00223176FDA0618D1B79 /* ResearchAssistantSheet.swift */,
 				9952646BAFBB92A38F812F53 /* ResearchChatPanel.swift */,
@@ -1113,6 +1116,7 @@
 				098F5F43B0807FE88953980E /* PatternPredictionService.swift in Sources */,
 				A7C4E2F1938560B2D1E0F4A8 /* PatternTrendForecastViews.swift in Sources */,
 				C1D2E3F4A5B60718293A4B5C /* PatternIntelligenceViews.swift in Sources */,
+				F1A2B3C4D5E60718293A4B5E /* ChartIntelligenceChartScreen.swift in Sources */,
 				A4A4EC4F4CB83EE257E5537A /* PdfExportSupport.swift in Sources */,
 				CE177BFF154AEB04A3EA13D4 /* PortfolioActivityComponents.swift in Sources */,
 				50C901F53AA8EE4A1B4FDFCC /* PortfolioAnalysisComponents.swift in Sources */,

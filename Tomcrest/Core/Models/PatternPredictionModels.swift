@@ -553,6 +553,103 @@ struct PatternInterpretation: Codable, Sendable {
     let evidence: PatternEvidence
 }
 
+struct ChartIntelligencePoint: Codable, Sendable {
+    let date: String
+    let price: Double
+}
+
+struct ChartIntelligenceTrendline: Codable, Sendable {
+    let label: String?
+    let style: String?
+    let ratio: Double?
+    let startDate: String?
+    let endDate: String?
+    let startPrice: Double?
+    let endPrice: Double?
+    let points: [ChartIntelligencePoint]?
+}
+
+struct ChartIntelligenceZone: Codable, Sendable {
+    let priceLow: Double?
+    let priceHigh: Double?
+    let label: String?
+    let zoneType: String?
+    let touches: Int?
+    let strength: Double?
+
+    private enum CodingKeys: String, CodingKey {
+        case priceLow, priceHigh, label, zoneType, touches, strength
+        case price_low, price_high, zone_type
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        priceLow = try container.decodeIfPresent(Double.self, forKey: .priceLow)
+            ?? container.decodeIfPresent(Double.self, forKey: .price_low)
+        priceHigh = try container.decodeIfPresent(Double.self, forKey: .priceHigh)
+            ?? container.decodeIfPresent(Double.self, forKey: .price_high)
+        label = try container.decodeIfPresent(String.self, forKey: .label)
+        zoneType = try container.decodeIfPresent(String.self, forKey: .zoneType)
+            ?? container.decodeIfPresent(String.self, forKey: .zone_type)
+        touches = try container.decodeIfPresent(Int.self, forKey: .touches)
+        strength = try container.decodeIfPresent(Double.self, forKey: .strength)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(priceLow, forKey: .priceLow)
+        try container.encodeIfPresent(priceHigh, forKey: .priceHigh)
+        try container.encodeIfPresent(label, forKey: .label)
+        try container.encodeIfPresent(zoneType, forKey: .zoneType)
+        try container.encodeIfPresent(touches, forKey: .touches)
+        try container.encodeIfPresent(strength, forKey: .strength)
+    }
+}
+
+struct ChartIntelligenceBreakoutEvent: Codable, Sendable {
+    let kind: String
+    let barIndex: Int?
+    let date: String?
+    let price: Double?
+    let zoneLabel: String?
+    let label: String?
+    let volumeRatio: Double?
+}
+
+struct ChartIntelligenceFibChannel: Codable, Sendable {
+    let bias: String?
+    let summary: String?
+    let lines: [ChartIntelligenceTrendline]?
+}
+
+struct ChartIntelligencePayload: Codable, Sendable {
+    let trendlines: [ChartIntelligenceTrendline]?
+    let supportZones: [ChartIntelligenceZone]?
+    let resistanceZones: [ChartIntelligenceZone]?
+    let annotations: [ChartIntelligenceAnnotation]?
+    let breakoutEvents: [ChartIntelligenceBreakoutEvent]?
+    let fibChannel: ChartIntelligenceFibChannel?
+
+    var hasOverlays: Bool {
+        !(supportZones ?? []).isEmpty
+            || !(resistanceZones ?? []).isEmpty
+            || !(trendlines ?? []).isEmpty
+            || !(breakoutEvents ?? []).isEmpty
+            || fibChannel?.lines?.isEmpty == false
+    }
+}
+
+struct ChartIntelligenceAnnotation: Codable, Sendable {
+    let type: String?
+    let breakoutKind: String?
+    let barIndex: Int?
+    let date: String?
+    let price: Double?
+    let label: String?
+    let direction: String?
+    let position: String?
+}
+
 struct PatternIntelligenceResponse: Codable, Sendable {
     let symbol: String
     let asOfDate: String
@@ -564,6 +661,7 @@ struct PatternIntelligenceResponse: Codable, Sendable {
     let setupOutcome: PatternSetupOutcome?
     let explanation: PatternExplanation
     let interpretation: PatternInterpretation?
+    let chartIntelligence: ChartIntelligencePayload?
     let isBenchmark: Bool?
 
     var display: PatternIntelligenceDisplay {
@@ -591,6 +689,7 @@ struct PatternIntelligenceDisplay: Sendable {
     let setupOutcome: PatternSetupOutcome?
     let explanation: PatternExplanation
     let interpretation: PatternInterpretation?
+    let chartIntelligence: ChartIntelligencePayload?
     let alignment: PatternAlignmentState
     let isBenchmark: Bool
     let benchmarkNotice: String
@@ -604,6 +703,7 @@ struct PatternIntelligenceDisplay: Sendable {
         setupOutcome = response.setupOutcome
         explanation = response.explanation
         interpretation = response.interpretation
+        chartIntelligence = response.chartIntelligence
         alignment = PatternAlignmentState(
             rawOrConfidence: response.scores.alignmentState ?? "",
             confidence: response.scores.confidence

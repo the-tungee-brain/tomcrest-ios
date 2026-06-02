@@ -22,6 +22,23 @@ struct SymbolPatternPredictionContent: View {
                 }
             }
 
+            if let chartIntel = viewModel.patternIntelligence?.chartIntelligence, chartIntel.hasOverlays {
+                AppScreenSection(
+                    title: "Chart intelligence",
+                    footnote: "Support, resistance, fib channel, and breakouts on a labeled 3M chart"
+                ) {
+                    NavigationLink {
+                        ChartIntelligenceChartScreen(
+                            symbol: viewModel.symbol,
+                            intelligence: chartIntel
+                        )
+                    } label: {
+                        ChartIntelligenceEntryCard(intelligence: chartIntel)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+
             AppScreenSection(
                 title: "Pattern intelligence",
                 footnote: viewModel.patternIntelligence?.display.isBenchmark == true
