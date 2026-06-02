@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+    />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: transparent;
+      }
+      #chart-shell {
+        width: 100%;
+        height: 100%;
+      }
+      #container {
+        width: 100%;
+        height: 100%;
+      }
+      #attribution {
+        height: 16px;
+        line-height: 16px;
+        font: 10px/16px -apple-system, sans-serif;
+        color: rgba(122, 127, 138, 0.9);
+        text-align: right;
+        padding-right: 4px;
+      }
+      #attribution a {
+        color: inherit;
+        text-decoration: none;
+      }
+    </style>
+    <script src="lightweight-charts.standalone.production.js"></script>
+  </head>
+  <body>
+    <div id="chart-shell">
+      <div id="container"></div>
+    </div>
+    <script>
+      const {
+        createChart,
+        CandlestickSeries,
+        LineSeries,
+        BaselineSeries,
+        LineStyle,
+        createSeriesMarkers,
+      } = LightweightCharts;
+
+      const SMA_COLORS = {
+        sma20: "#38bdf8",
+        sma50: "#a78bfa",
+        sma200: "#f59e0b",
+      };
+      const MAX_ZONES = 2;
+
+      let chart = null;
+      let candleTimeRange = null;
+
+      function toChartTime(dateStr) {
+        const normalized = String(dateStr).slice(0, 10);
+        return Math.floor(new Date(normalized).getTime() / 1000);
+      }
+
+      function normalizeZone(zone) {
+        const low = zone.priceLow ?? zone.price_low;
+        const high = zone.priceHigh ?? zone.price_high;
+        if (typeof low !== "number" || typeof high !== "number") return null;
+        return { priceLow: low, priceHigh: high, label: zone.label };
+      }
+
+      function normalizeTrendline(line) {
+        const points = (line.points || [])
+          .filter((p) => p && p.date && typeof p.price === "number")
+          .map((p) => ({ date: p.date, price: p.price }));
+        if (points.length >= 2) return { ...line, points };
+        const startDate = line.startDate ?? line.start_date;
+        const endDate = line.endDate ?? line.end_date;
+        const startPrice = line.startPrice ?? line.start_price;
+        const endPrice = line.endPrice ?? line.end_price;
+        if (!startDate || !endDate) return null;
+        if (typeof startPrice !== "number" || typeof endPrice !== "number") return null;
+        return {
+          ...line,
+          startDate,
+          endDate,
+          startPrice,
+          endPrice,
+        };
+      }
+
+      function fibColor(ratio) {
+        if (ratio === 0 || ratio >= 1) return "rgba(245, 158, 11, 0.85)";
+        if (ratio === 0.5) return "rgba(245, 158, 11, 0.65)";
+        return "rgba(245, 158, 11, 0.35)";
+      }
+
+      function clipSeriesPoints(points, firstTime, lastTime) {
+        return points
+          .map((p) => ({ time: toChartTime(p.date), value: p.price }))
+          .filter((p) => p.time >= firstTime && p.time <= lastTime)
+          .sort((a, b) => a.time - b.time);
+      }
+
+      function clipLineEndpoints(startDate, startPrice, endDate, endPrice, firstTime, lastTime) {
+        let t1 = toChartTime(startDate);
+        let v1 = startPrice;
+        let t2 = toChartTime(endDate);
+        let v2 = endPrice;
+
+        if (t1 === t2) return null;
+        if (t2 < firstTime || t1 > lastTime) return null;
+
+        const interpolate = (time) => v1 + ((v2 - v1) * (time - t1)) / (t2 - t1);
+
+        if (t1 < firstTime) {
+          v1 = interpolate(firstTime);
+          t1 = firstTime;
+        }
+        if (t2 > lastTime) {
+          v2 = interpolate(lastTime);
+          t2 = lastTime;
+        }
+
+        return [
+          { time: t1, value: v1 },
+          { time: t2, value: v2 },
+        ];
+      }
+
+      function focusCandleRange(timeScale, candles) {
+        if (!candles.length) return;
+        candleTimeRange = {
+          from: toChartTime(candles[0].date),
+          to: toChartTime(candles[candles.length - 1].date),
+        };
+        timeScale.setVisibleRange(candleTimeRange);
+      }
+
+      function applyOverlays(chart, priceSeries, candles, intelligence) {
+        const firstTime = toChartTime(candles[0].date);
+        const lastTime = toChartTime(candles[candles.length - 1].date);
+        const byDate = new Map();
+        candles.forEach((bar, index) => {
+          byDate.set(String(bar.date).slice(0, 10), index);
+        });
+
+        for (const rawLine of intelligence.trendlines || []) {
+          const line = normalizeTrendline(rawLine);
+          if (!line) continue;
+          const style = line.style || "sma50";
+          const color = SMA_COLORS[style] || "#64748b";
+          const isSma = style.startsWith("sma");
+          const isFib = style === "fib_channel";
+          const fibRatio = typeof rawLine.ratio === "number" ? rawLine.ratio : 0.5;
+
+          if (line.points && line.points.length >= 2) {
+            const clipped = clipSeriesPoints(line.points, firstTime, lastTime);
+            if (clipped.length < 2) continue;
+            const overlay = chart.addSeries(LineSeries, {
+              color: isFib ? fibColor(fibRatio) : color,
+              lineWidth: isFib ? (fibRatio === 0.5 ? 2 : 1) : isSma ? 1 : 2,
+              lineStyle:
+                isFib && fibRatio !== 0 && fibRatio !== 1
+                  ? LineStyle.Dotted
+                  : isSma
+                    ? LineStyle.Solid
+                    : LineStyle.Dashed,
+              priceLineVisible: false,
+              lastValueVisible: false,
+              title: "",
+              crosshairMarkerVisible: false,
+            });
+            overlay.setData(clipped);
+            continue;
+          }
+
+          if (line.startDate && line.endDate) {
+            const clipped = clipLineEndpoints(
+              line.startDate,
+              line.startPrice,
+              line.endDate,
+              line.endPrice,
+              firstTime,
+              lastTime,
+            );
+            if (!clipped) continue;
+            const overlay = chart.addSeries(LineSeries, {
+              color: "#94a3b8",
+              lineWidth: 2,
+              lineStyle: LineStyle.Dashed,
+              priceLineVisible: false,
+              lastValueVisible: false,
+              title: "",
+              crosshairMarkerVisible: false,
+            });
+            overlay.setData(clipped);
+          }
+        }
+
+        function renderZone(zoneInput, kind) {
+          const zone = normalizeZone(zoneInput);
+          if (!zone) return;
+          const top =
+            kind === "support" ? "rgba(34, 197, 94, 0.10)" : "rgba(239, 68, 68, 0.10)";
+          const bottom =
+            kind === "support" ? "rgba(34, 197, 94, 0.04)" : "rgba(239, 68, 68, 0.04)";
+          const edge =
+            kind === "support" ? "rgba(34, 197, 94, 0.45)" : "rgba(239, 68, 68, 0.45)";
+          const band = chart.addSeries(BaselineSeries, {
+            baseValue: { type: "price", price: zone.priceLow },
+            topFillColor1: top,
+            topFillColor2: top,
+            bottomFillColor1: bottom,
+            bottomFillColor2: bottom,
+            topLineColor: edge,
+            bottomLineColor: edge,
+            lineWidth: 1,
+            priceLineVisible: false,
+            lastValueVisible: false,
+            crosshairMarkerVisible: false,
+          });
+          band.setData([
+            { time: firstTime, value: zone.priceHigh },
+            { time: lastTime, value: zone.priceHigh },
+          ]);
+        }
+
+        (intelligence.supportZones || []).slice(0, MAX_ZONES).forEach((z) => renderZone(z, "support"));
+        (intelligence.resistanceZones || []).slice(0, MAX_ZONES).forEach((z) => renderZone(z, "resistance"));
+
+        const markers = (intelligence.annotations || [])
+          .map((annotation) => {
+            const date =
+              annotation.date ||
+              (annotation.barIndex != null ? candles[annotation.barIndex]?.date : null);
+            if (!date) return null;
+            const time = toChartTime(String(date).slice(0, 10));
+
+            if (annotation.type === "breakout") {
+              const kind = annotation.breakoutKind || annotation.breakout_kind || "";
+              const failed = kind.includes("failed");
+              const bullishBreak =
+                kind === "confirmed_breakout" || kind === "failed_breakdown";
+              return {
+                time,
+                position: kind.includes("breakdown") ? "belowBar" : "aboveBar",
+                shape: bullishBreak ? "arrowUp" : "arrowDown",
+                color: failed ? "#ef4444" : "#22c55e",
+                text: "",
+              };
+            }
+
+            const position =
+              annotation.position === "belowBar"
+                ? "belowBar"
+                : annotation.position === "inBar"
+                  ? "inBar"
+                  : "aboveBar";
+            const shape =
+              annotation.type === "arrow"
+                ? annotation.direction === "bullish"
+                  ? "arrowUp"
+                  : "arrowDown"
+                : "circle";
+            const color =
+              annotation.direction === "bullish"
+                ? "#22c55e"
+                : annotation.direction === "bearish"
+                  ? "#ef4444"
+                  : "#64748b";
+            return {
+              time,
+              position,
+              shape,
+              color,
+              text: "",
+            };
+          })
+          .filter(Boolean);
+
+        const highlightDates = new Set(
+          (intelligence.highlightedCandles || []).map((item) =>
+            String(item.date || candles[item.barIndex]?.date || "").slice(0, 10),
+          ),
+        );
+
+        for (const [dateKey, index] of byDate.entries()) {
+          if (!highlightDates.has(dateKey)) continue;
+          const bar = candles[index];
+          if (!bar) continue;
+          markers.push({
+            time: toChartTime(bar.date),
+            position: "inBar",
+            shape: "square",
+            color: "rgba(250, 204, 21, 0.9)",
+            text: "",
+          });
+        }
+
+        if (markers.length > 0) {
+          createSeriesMarkers(priceSeries, markers);
+        }
+      }
+
+      window.renderChart = function (payload, width, height) {
+        const container = document.getElementById("container");
+        if (chart) {
+          chart.remove();
+          chart = null;
+        }
+
+        const candles = payload.candles || [];
+        const intelligence = payload.intelligence || {};
+        const theme = payload.theme || {};
+
+        if (candles.length < 2) return;
+
+        const chartWidth = Math.max(1, Math.floor(width || container.clientWidth));
+        const chartHeight = Math.max(1, Math.floor(height || container.clientHeight));
+
+        chart = createChart(container, {
+          width: chartWidth,
+          height: chartHeight,
+          layout: {
+            background: { color: "transparent" },
+            textColor: theme.text || "#e4e6eb",
+            attributionLogo: false,
+          },
+          grid: {
+            vertLines: { color: theme.gridLine || "rgba(255, 255, 255, 0.06)" },
+            horzLines: { color: theme.gridLine || "rgba(255, 255, 255, 0.06)" },
+          },
+          crosshair: {
+            vertLine: { labelBackgroundColor: theme.accent || "#5eead4" },
+            horzLine: { labelBackgroundColor: theme.accent || "#5eead4" },
+          },
+          rightPriceScale: {
+            borderVisible: false,
+            borderColor: theme.border || "rgba(255, 255, 255, 0.12)",
+          },
+          timeScale: {
+            borderVisible: false,
+            borderColor: theme.border || "rgba(255, 255, 255, 0.12)",
+            timeVisible: true,
+            secondsVisible: false,
+          },
+          handleScroll: {
+            mouseWheel: true,
+            pressedMouseMove: true,
+            horzTouchDrag: true,
+            vertTouchDrag: false,
+          },
+          handleScale: {
+            axisPressedMouseMove: true,
+            mouseWheel: true,
+            pinch: true,
+          },
+        });
+
+        const priceSeries = chart.addSeries(CandlestickSeries, {
+          upColor: "#22c55e",
+          downColor: "#ef4444",
+          borderVisible: false,
+          wickUpColor: "#22c55e",
+          wickDownColor: "#ef4444",
+        });
+
+        const ohlc = candles.map((d) => ({
+          time: toChartTime(d.date),
+          open: d.open,
+          high: d.high,
+          low: d.low,
+          close: d.close,
+        }));
+        priceSeries.setData(ohlc);
+
+        applyOverlays(chart, priceSeries, candles, intelligence);
+        focusCandleRange(chart.timeScale(), candles);
+
+        chart.subscribeCrosshairMove((param) => {
+          if (!window.webkit || !window.webkit.messageHandlers.crosshair) return;
+          if (!param.time || !param.seriesData) {
+            window.webkit.messageHandlers.crosshair.postMessage({ clear: true });
+            return;
+          }
+          const time =
+            typeof param.time === "number"
+              ? param.time
+              : Math.floor(
+                  Date.UTC(param.time.year, param.time.month - 1, param.time.day) / 1000,
+                );
+          const bar = candles.find((c) => toChartTime(c.date) === time);
+          if (!bar) {
+            window.webkit.messageHandlers.crosshair.postMessage({ clear: true });
+            return;
+          }
+          window.webkit.messageHandlers.crosshair.postMessage({
+            clear: false,
+            date: bar.date,
+            open: bar.open,
+            high: bar.high,
+            low: bar.low,
+            close: bar.close,
+            volume: bar.volume,
+          });
+        });
+      };
+
+      window.resizeChart = function (width, height) {
+        if (!chart) return;
+        const chartWidth = Math.max(1, Math.floor(width));
+        const chartHeight = Math.max(1, Math.floor(height));
+        chart.applyOptions({ width: chartWidth, height: chartHeight });
+        if (candleTimeRange) {
+          chart.timeScale().setVisibleRange(candleTimeRange);
+        }
+      };
+    </script>
+  </body>
+</html>

@@ -126,6 +126,8 @@
 		A7C4E2F1938560B2D1E0F4A8 /* PatternTrendForecastViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8D5F3A2049671C3E2F1A5B9 /* PatternTrendForecastViews.swift */; };
 		C1D2E3F4A5B60718293A4B5C /* PatternIntelligenceViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2E3F4A5B60718293A4B5C6D /* PatternIntelligenceViews.swift */; };
 		F1A2B3C4D5E60718293A4B5E /* ChartIntelligenceChartScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C4D5E60718293A4B5F /* ChartIntelligenceChartScreen.swift */; };
+		F2A3B4C5D6E70718293A4B63 /* chart-intelligence.html in Resources */ = {isa = PBXBuildFile; fileRef = F2A3B4C5D6E70718293A4B62 /* chart-intelligence.html */; };
+		F2A3B4C5D6E70718293A4B65 /* lightweight-charts.standalone.production.js in Resources */ = {isa = PBXBuildFile; fileRef = F2A3B4C5D6E70718293A4B64 /* lightweight-charts.standalone.production.js */; };
 		A7D5F41AFD5E67F6336B2365 /* Inter-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 7A6BFF4363B9FEF83234643C /* Inter-Bold.ttf */; };
 		AB79334EB206DA687E6CFCE5 /* JetBrainsMono-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E87F760CDDD02D0D4EA42823 /* JetBrainsMono-SemiBold.ttf */; };
 		AE882C5BB0C1ECAD2CC87328 /* WatchlistMockData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C49ECE4709E4F94A3291A23 /* WatchlistMockData.swift */; };
@@ -358,6 +360,8 @@
 		B8D5F3A2049671C3E2F1A5B9 /* PatternTrendForecastViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatternTrendForecastViews.swift; sourceTree = "<group>"; };
 		D2E3F4A5B60718293A4B5C6D /* PatternIntelligenceViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatternIntelligenceViews.swift; sourceTree = "<group>"; };
 		F1A2B3C4D5E60718293A4B5F /* ChartIntelligenceChartScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartIntelligenceChartScreen.swift; sourceTree = "<group>"; };
+		F2A3B4C5D6E70718293A4B62 /* chart-intelligence.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = "chart-intelligence.html"; sourceTree = "<group>"; };
+		F2A3B4C5D6E70718293A4B64 /* lightweight-charts.standalone.production.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = "lightweight-charts.standalone.production.js"; sourceTree = "<group>"; };
 		BBD267BF2EB2C55F50BD1AAB /* IntelligenceHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntelligenceHelpers.swift; sourceTree = "<group>"; };
 		BCC6F358F37D7A0F5AABBC14 /* BrandTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrandTheme.swift; sourceTree = "<group>"; };
 		BD6F171E52B6F66A7CA40D34 /* LegalSettingsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegalSettingsScreen.swift; sourceTree = "<group>"; };
@@ -650,9 +654,19 @@
 		76DC2BC932FBFB2DD3727AD6 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				F2A3B4C5D6E70718293A4B66 /* ChartIntelligence */,
 				8D3C186EA8E9441FBDBA5E8F /* Fonts */,
 			);
 			path = Resources;
+			sourceTree = "<group>";
+		};
+		F2A3B4C5D6E70718293A4B66 /* ChartIntelligence */ = {
+			isa = PBXGroup;
+			children = (
+				F2A3B4C5D6E70718293A4B62 /* chart-intelligence.html */,
+				F2A3B4C5D6E70718293A4B64 /* lightweight-charts.standalone.production.js */,
+			);
+			path = ChartIntelligence;
 			sourceTree = "<group>";
 		};
 		7BD154E041F0080549A898CA /* Components */ = {
@@ -1028,6 +1042,8 @@
 				B51AB0D44DFAF15E88A6A923 /* JetBrainsMono-Medium.ttf in Resources */,
 				8806A7E75BC07D59EA834949 /* JetBrainsMono-Regular.ttf in Resources */,
 				AB79334EB206DA687E6CFCE5 /* JetBrainsMono-SemiBold.ttf in Resources */,
+				F2A3B4C5D6E70718293A4B63 /* chart-intelligence.html in Resources */,
+				F2A3B4C5D6E70718293A4B65 /* lightweight-charts.standalone.production.js in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

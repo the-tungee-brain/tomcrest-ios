@@ -1,4 +1,5 @@
 import SwiftUI
+import WebKit
 
 // MARK: - Entry card (Analysis tab)
 
@@ -72,15 +73,13 @@ struct ChartIntelligenceChartScreen: View {
                 } else if let errorMessage {
                     AppInlineBanner(message: errorMessage, tone: .error)
                 } else if let points = chart?.data, points.count >= 2 {
-                    ChartIntelligenceLabeledChartView(
+                    ChartIntelligenceWebChartView(
                         points: points,
                         intelligence: intelligence
                     )
 
-                    ChartIntelligenceLegendPanel(intelligence: intelligence)
-
                     Text(
-                        "Overlays are computed from daily structure. Educational context only — not investment advice."
+                        "Overlays are computed from daily structure. Educational context only — not investment advice. Charts by TradingView."
                     )
                     .font(.caption2)
                     .foregroundStyle(AppColors.tertiaryLabel)
@@ -93,6 +92,7 @@ struct ChartIntelligenceChartScreen: View {
                 }
             }
         }
+        .appPushedScreenCanvas()
         .navigationTitle("Chart intelligence")
         .navigationBarTitleDisplayMode(.inline)
         .task {
@@ -124,228 +124,476 @@ struct ChartIntelligenceChartScreen: View {
     }
 }
 
-// MARK: - Labeled canvas chart
+// MARK: - Interactive web chart (TradingView Lightweight Charts)
 
-private struct ChartIntelligenceLabeledChartView: View {
-    let points: [StockChartPoint]
-    let intelligence: ChartIntelligencePayload
+private struct ChartIntelligenceCrosshairPoint: Equatable {
+    let date: String
+    let open: Double
+    let high: Double
+    let low: Double
+    let close: Double
+    let volume: Int
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("3M · Daily · Labeled overlays")
-                .font(.caption2.weight(.medium))
-                .foregroundStyle(AppColors.tertiaryLabel)
-                .textCase(.uppercase)
-
-            GeometryReader { proxy in
-                Canvas { context, size in
-                    let layout = ChartIntelligenceLayout(points: points, size: size)
-                    drawPrice(in: &context, layout: layout)
-                    drawZones(in: &context, layout: layout)
-                    drawLines(in: &context, layout: layout)
-                    drawBreakouts(in: &context, layout: layout)
-                }
-            }
-            .frame(height: 300)
-            .background(AppColors.secondaryBackground.opacity(0.45))
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(AppColors.panelBorder, lineWidth: 1)
-            }
-        }
-        .appPanel(subtle: true)
+    init(date: String, open: Double, high: Double, low: Double, close: Double, volume: Int) {
+        self.date = date
+        self.open = open
+        self.high = high
+        self.low = low
+        self.close = close
+        self.volume = volume
     }
 
-    private func drawPrice(in context: inout GraphicsContext, layout: ChartIntelligenceLayout) {
-        guard points.count >= 2 else { return }
-        var path = Path()
-        for (index, point) in points.enumerated() {
-            let location = layout.point(index: index, price: point.close)
-            if index == 0 {
-                path.move(to: location)
-            } else {
-                path.addLine(to: location)
-            }
-        }
-        context.stroke(
-            path,
-            with: .color(AppColors.label.opacity(0.22)),
-            style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round)
-        )
-    }
-
-    private func drawZones(in context: inout GraphicsContext, layout: ChartIntelligenceLayout) {
-        let groups: [(zones: [ChartIntelligenceZone]?, fill: Color, stroke: Color, prefix: String)] = [
-            (intelligence.supportZones, AppColors.success.opacity(0.14), AppColors.success, "Support"),
-            (intelligence.resistanceZones, AppColors.error.opacity(0.14), AppColors.error, "Resistance"),
-        ]
-
-        for (zones, fill, stroke, prefix) in groups {
-            for (index, zone) in (zones ?? []).prefix(2).enumerated() {
-                guard let low = zone.priceLow, let high = zone.priceHigh else { continue }
-                let rect = layout.rect(fromPrice: high, toPrice: low)
-                context.fill(Path(rect), with: .color(fill))
-                context.stroke(Path(rect), with: .color(stroke.opacity(0.55)), lineWidth: 1)
-
-                let label = zoneLabel(prefix: prefix, index: index, count: (zones ?? []).count, low: low, high: high)
-                layout.drawPillLabel(
-                    label,
-                    at: CGPoint(x: 6, y: rect.midY),
-                    color: stroke,
-                    in: &context,
-                    anchor: .leading
-                )
-            }
-        }
-    }
-
-    private func drawLines(in context: inout GraphicsContext, layout: ChartIntelligenceLayout) {
-        for line in intelligence.trendlines ?? [] {
-            guard let mapped = layout.mappedLine(line), mapped.count >= 2 else { continue }
-            let style = line.style ?? ""
-            let ratio = line.ratio ?? -1
-            let (color, dash, width): (Color, [CGFloat], CGFloat) = {
-                if style == "fib_channel" {
-                    return (
-                        AppColors.warning.opacity(ratio == 0.5 ? 0.9 : 0.45),
-                        ratio == 0 || ratio == 1 ? [] : [4, 4],
-                        ratio == 0.5 ? 1.5 : 1
-                    )
-                }
-                if style.hasPrefix("sma") {
-                    return (smaColor(style), [], 1)
-                }
-                return (AppColors.secondaryLabel.opacity(0.75), [6, 4], 1.5)
-            }()
-
-            var path = Path()
-            path.move(to: mapped[0])
-            for point in mapped.dropFirst() {
-                path.addLine(to: point)
-            }
-            context.stroke(
-                path,
-                with: .color(color),
-                style: StrokeStyle(lineWidth: width, dash: dash)
-            )
-
-            if let last = mapped.last {
-                let title = line.label ?? defaultLineLabel(style: style, ratio: ratio)
-                layout.drawPillLabel(
-                    title,
-                    at: CGPoint(x: layout.size.width - 6, y: last.y),
-                    color: color,
-                    in: &context,
-                    anchor: .trailing
-                )
-            }
-        }
-    }
-
-    private func drawBreakouts(in context: inout GraphicsContext, layout: ChartIntelligenceLayout) {
-        for event in intelligence.breakoutEvents ?? [] {
-            let barIndex = event.barIndex ?? event.date.flatMap { layout.index(for: $0) }
-            guard let barIndex else { continue }
-            let price = event.price ?? points[safe: barIndex]?.close ?? 0
-            let center = layout.point(index: barIndex, price: price)
-            let failed = event.kind.contains("failed")
-            let color: Color = failed ? AppColors.error : AppColors.success
-
-            let marker = CGRect(x: center.x - 4, y: center.y - 4, width: 8, height: 8)
-            context.fill(Path(ellipseIn: marker), with: .color(color))
-            context.stroke(Path(ellipseIn: marker), with: .color(AppColors.background), lineWidth: 1.5)
-
-            let label = event.label ?? (failed ? "Failed" : "Breakout")
-            layout.drawPillLabel(
-                label,
-                at: CGPoint(x: center.x, y: center.y - 14),
-                color: color,
-                in: &context,
-                anchor: .center
-            )
-        }
-    }
-
-    private func zoneLabel(prefix: String, index: Int, count: Int, low: Double, high: Double) -> String {
-        let name = count > 1 ? "\(prefix) \(index + 1)" : prefix
-        return "\(name) \(CurrencyFormatter.usd(low, fractionDigits: 2))–\(CurrencyFormatter.usd(high, fractionDigits: 2))"
-    }
-
-    private func smaColor(_ style: String) -> Color {
-        switch style {
-        case "sma20": Color(red: 0.22, green: 0.74, blue: 0.97)
-        case "sma50": Color(red: 0.65, green: 0.55, blue: 0.98)
-        case "sma200": Color(red: 0.96, green: 0.62, blue: 0.04)
-        default: AppColors.accentHighlight.opacity(0.7)
-        }
-    }
-
-    private func defaultLineLabel(style: String, ratio: Double) -> String {
-        if style == "fib_channel" {
-            if ratio == 0 { return "Fib 0%" }
-            if ratio == 0.5 { return "Fib 50%" }
-            if ratio >= 1 { return "Fib 100%" }
-            return "Fib \(Int(ratio * 100))%"
-        }
-        if style.hasPrefix("sma") {
-            switch style {
-            case "sma20": return "SMA 20"
-            case "sma50": return "SMA 50"
-            case "sma200": return "SMA 200"
-            default: return style.uppercased()
-            }
-        }
-        return "Trendline"
+    init(point: StockChartPoint) {
+        date = point.date
+        open = point.open
+        high = point.high
+        low = point.low
+        close = point.close
+        volume = point.volume
     }
 }
 
-// MARK: - Legend
-
-private struct ChartIntelligenceLegendPanel: View {
+private struct ChartIntelligenceWebChartView: View {
+    let points: [StockChartPoint]
     let intelligence: ChartIntelligencePayload
+
+    @Environment(\.colorScheme) private var colorScheme
+    @State private var crosshairPoint: ChartIntelligenceCrosshairPoint?
+    @State private var latestPoint: ChartIntelligenceCrosshairPoint?
+
+    private var displayPoint: ChartIntelligenceCrosshairPoint? {
+        crosshairPoint ?? latestPoint
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("What you're seeing")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(AppColors.secondaryLabel)
-                .textCase(.uppercase)
+            if let displayPoint {
+                crosshairReadout(displayPoint, scrubbing: crosshairPoint != nil)
+            }
 
-            VStack(spacing: 8) {
-                ForEach(legendRows) { row in
-                    HStack(alignment: .top, spacing: 10) {
-                        legendSwatch(row)
-                            .frame(width: 28)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(row.title)
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(AppColors.label)
-                            if let detail = row.detail {
-                                Text(detail)
-                                    .font(.caption2)
-                                    .foregroundStyle(AppColors.secondaryLabel)
-                                    .fixedSize(horizontal: false, vertical: true)
-                            }
-                        }
-                        Spacer(minLength: 0)
+            GeometryReader { proxy in
+                ChartIntelligenceWebChartRepresentable(
+                    points: points,
+                    intelligence: intelligence,
+                    colorScheme: colorScheme,
+                    containerSize: proxy.size,
+                    onCrosshairChange: { point in
+                        crosshairPoint = point
                     }
+                )
+            }
+            .frame(height: 360)
+            .frame(maxWidth: .infinity)
+
+            ChartIntelligenceBottomLegend(intelligence: intelligence)
+
+            Text("Pinch to zoom · drag to pan")
+                .font(.caption2)
+                .foregroundStyle(AppColors.tertiaryLabel)
+        }
+        .onAppear {
+            latestPoint = points.last.map(ChartIntelligenceCrosshairPoint.init(point:))
+        }
+        .onChange(of: points.count) { _, _ in
+            crosshairPoint = nil
+            latestPoint = points.last.map(ChartIntelligenceCrosshairPoint.init(point:))
+        }
+    }
+
+    @ViewBuilder
+    private func crosshairReadout(_ point: ChartIntelligenceCrosshairPoint, scrubbing: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(DateFormatters.display(from: point.date))
+                .font(.caption2.weight(.medium))
+                .foregroundStyle(scrubbing ? AppColors.accentHighlight : AppColors.secondaryLabel)
+
+            HStack(spacing: 10) {
+                readoutMetric("O", CurrencyFormatter.usd(point.open))
+                readoutMetric("H", CurrencyFormatter.usd(point.high))
+                readoutMetric("L", CurrencyFormatter.usd(point.low))
+                readoutMetric("C", CurrencyFormatter.usd(point.close))
+                readoutMetric("Vol", ChartVolumeFormatter.compact(point.volume))
+            }
+            .lineLimit(1)
+            .minimumScaleFactor(0.75)
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(AppColors.surfaceElevated.opacity(0.65))
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+
+    private func readoutMetric(_ label: String, _ value: String) -> some View {
+        HStack(spacing: 3) {
+            Text(label)
+                .font(.caption2)
+                .foregroundStyle(AppColors.tertiaryLabel)
+            Text(value)
+                .font(.caption2.weight(.semibold).monospacedDigit())
+                .foregroundStyle(AppColors.label)
+        }
+    }
+}
+
+private enum ChartVolumeFormatter {
+    static func compact(_ value: Int) -> String {
+        let amount = Double(value)
+        if amount >= 1_000_000_000 {
+            return String(format: "%.1fB", amount / 1_000_000_000)
+        }
+        if amount >= 1_000_000 {
+            return String(format: "%.1fM", amount / 1_000_000)
+        }
+        if amount >= 1_000 {
+            return String(format: "%.1fK", amount / 1_000)
+        }
+        return String(value)
+    }
+}
+
+private struct ChartIntelligenceWebChartRepresentable: UIViewRepresentable {
+    let points: [StockChartPoint]
+    let intelligence: ChartIntelligencePayload
+    let colorScheme: ColorScheme
+    let containerSize: CGSize
+    let onCrosshairChange: (ChartIntelligenceCrosshairPoint?) -> Void
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(onCrosshairChange: onCrosshairChange)
+    }
+
+    func makeUIView(context: Context) -> WKWebView {
+        let configuration = WKWebViewConfiguration()
+        configuration.defaultWebpagePreferences.allowsContentJavaScript = true
+        configuration.userContentController.add(context.coordinator, name: "crosshair")
+
+        let webView = WKWebView(frame: .zero, configuration: configuration)
+        webView.navigationDelegate = context.coordinator
+        webView.isOpaque = false
+        webView.backgroundColor = .clear
+        webView.scrollView.backgroundColor = .clear
+        webView.scrollView.isScrollEnabled = false
+        webView.scrollView.bounces = false
+        webView.scrollView.contentInsetAdjustmentBehavior = .never
+        context.coordinator.webView = webView
+        return webView
+    }
+
+    func updateUIView(_ webView: WKWebView, context: Context) {
+        context.coordinator.onCrosshairChange = onCrosshairChange
+
+        guard containerSize.width > 0, containerSize.height > 0 else { return }
+
+        guard let htmlURL = Bundle.main.url(
+            forResource: "chart-intelligence",
+            withExtension: "html",
+            subdirectory: "ChartIntelligence"
+        ) ?? Bundle.main.url(forResource: "chart-intelligence", withExtension: "html") else {
+            return
+        }
+        let folderURL = htmlURL.deletingLastPathComponent()
+
+        let payload = ChartWebRenderPayload(
+            candles: points.map(ChartWebCandle.init(point:)),
+            intelligence: intelligence,
+            theme: ChartWebTheme(colorScheme: colorScheme)
+        )
+
+        guard let jsonData = try? JSONEncoder().encode(payload),
+              let jsonString = String(data: jsonData, encoding: .utf8) else {
+            return
+        }
+
+        let dataSignature = "\(points.count)-\(points.last?.date ?? "")-\(colorScheme)"
+        context.coordinator.pendingSize = containerSize
+
+        if context.coordinator.loadedSignature != dataSignature {
+            context.coordinator.loadedSignature = dataSignature
+            context.coordinator.lastDataSignature = nil
+            context.coordinator.pendingPayload = jsonString
+            context.coordinator.isReady = false
+            webView.loadFileURL(htmlURL, allowingReadAccessTo: folderURL)
+        } else if context.coordinator.isReady {
+            context.coordinator.renderOrResize(
+                jsonString,
+                dataSignature: dataSignature,
+                size: containerSize,
+                in: webView
+            )
+        } else {
+            context.coordinator.pendingPayload = jsonString
+        }
+    }
+
+    final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
+        var webView: WKWebView?
+        var loadedSignature: String?
+        var pendingPayload: String?
+        var pendingSize: CGSize = .zero
+        var lastDataSignature: String?
+        var lastRenderedSize: CGSize = .zero
+        var isReady = false
+        var onCrosshairChange: (ChartIntelligenceCrosshairPoint?) -> Void
+
+        init(onCrosshairChange: @escaping (ChartIntelligenceCrosshairPoint?) -> Void) {
+            self.onCrosshairChange = onCrosshairChange
+        }
+
+        func userContentController(
+            _ userContentController: WKUserContentController,
+            didReceive message: WKScriptMessage
+        ) {
+            guard message.name == "crosshair",
+                  let body = message.body as? [String: Any] else { return }
+
+            if body["clear"] as? Bool == true {
+                onCrosshairChange(nil)
+                return
+            }
+
+            guard let date = body["date"] as? String,
+                  let open = body["open"] as? Double,
+                  let high = body["high"] as? Double,
+                  let low = body["low"] as? Double,
+                  let close = body["close"] as? Double else {
+                onCrosshairChange(nil)
+                return
+            }
+
+            let volume = body["volume"] as? Int ?? 0
+            onCrosshairChange(
+                ChartIntelligenceCrosshairPoint(
+                    date: date,
+                    open: open,
+                    high: high,
+                    low: low,
+                    close: close,
+                    volume: volume
+                )
+            )
+        }
+
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            isReady = true
+            guard let pendingPayload else { return }
+            DispatchQueue.main.async { [weak self, weak webView] in
+                guard let self, let webView else { return }
+                let signature = self.loadedSignature ?? ""
+                self.renderOrResize(
+                    pendingPayload,
+                    dataSignature: signature,
+                    size: self.pendingSize,
+                    in: webView
+                )
+            }
+        }
+
+        func renderOrResize(
+            _ jsonString: String,
+            dataSignature: String,
+            size: CGSize,
+            in webView: WKWebView
+        ) {
+            let width = max(size.width, webView.bounds.width)
+            let height = max(size.height, webView.bounds.height)
+            guard width > 0, height > 0 else { return }
+
+            if lastDataSignature != dataSignature {
+                lastDataSignature = dataSignature
+                lastRenderedSize = CGSize(width: width, height: height)
+                let script = "window.renderChart(\(jsonString), \(width), \(height));"
+                webView.evaluateJavaScript(script) { _, error in
+                    if let error {
+                        NSLog("Chart intelligence render failed: \(error.localizedDescription)")
+                    }
+                }
+                return
+            }
+
+            if lastRenderedSize != CGSize(width: width, height: height) {
+                resize(width: width, height: height, in: webView)
+            }
+        }
+
+        func resize(width: CGFloat, height: CGFloat, in webView: WKWebView) {
+            guard width > 0, height > 0 else { return }
+            lastRenderedSize = CGSize(width: width, height: height)
+            let script = "window.resizeChart(\(width), \(height));"
+            webView.evaluateJavaScript(script) { _, error in
+                if let error {
+                    NSLog("Chart intelligence resize failed: \(error.localizedDescription)")
                 }
             }
         }
-        .appPanel(subtle: true)
+    }
+}
+
+private struct ChartWebCandle: Encodable {
+    let date: String
+    let open: Double
+    let high: Double
+    let low: Double
+    let close: Double
+    let volume: Int
+
+    init(point: StockChartPoint) {
+        date = point.date
+        open = point.open
+        high = point.high
+        low = point.low
+        close = point.close
+        volume = point.volume
+    }
+}
+
+private struct ChartWebTheme: Encodable {
+    let background: String
+    let text: String
+    let border: String
+    let gridLine: String
+    let accent: String
+
+    init(colorScheme: ColorScheme) {
+        background = ChartWebTheme.hex(Token.background, colorScheme: colorScheme)
+        text = ChartWebTheme.hex(Token.textPrimary, colorScheme: colorScheme)
+        border = "rgba(255, 255, 255, 0.12)"
+        gridLine = "rgba(255, 255, 255, 0.06)"
+        accent = ChartWebTheme.hex(Token.primaryHighlight, colorScheme: colorScheme)
     }
 
-    private var legendRows: [LegendRow] {
-        var rows: [LegendRow] = []
+    private static func hex(_ color: Color, colorScheme: ColorScheme) -> String {
+        let uiColor = UIColor(color)
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+        uiColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        return String(
+            format: "#%02X%02X%02X",
+            Int(red * 255),
+            Int(green * 255),
+            Int(blue * 255)
+        )
+    }
+}
+
+private struct ChartWebRenderPayload: Encodable {
+    let candles: [ChartWebCandle]
+    let intelligence: ChartIntelligencePayload
+    let theme: ChartWebTheme
+}
+
+// MARK: - Bottom overlay labels
+
+private struct ChartIntelligenceBottomLegend: View {
+    let intelligence: ChartIntelligencePayload
+
+    var body: some View {
+        let items = legendItems
+        if items.isEmpty {
+            EmptyView()
+        } else {
+            LazyVGrid(
+                columns: [GridItem(.adaptive(minimum: 108), spacing: 8, alignment: .leading)],
+                alignment: .leading,
+                spacing: 8
+            ) {
+                ForEach(items) { item in
+                    legendChip(item)
+                }
+            }
+        }
+    }
+
+    private func legendChip(_ item: OverlayLegendItem) -> some View {
+        HStack(spacing: 6) {
+            legendSwatch(item)
+            Text(item.label)
+                .font(.caption2.weight(.medium))
+                .foregroundStyle(AppColors.label)
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
+        .background(AppColors.surfaceElevated.opacity(0.55))
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+
+    @ViewBuilder
+    private func legendSwatch(_ item: OverlayLegendItem) -> some View {
+        switch item.kind {
+        case .band:
+            RoundedRectangle(cornerRadius: 2, style: .continuous)
+                .fill(item.color.opacity(0.35))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 2, style: .continuous)
+                        .stroke(item.color.opacity(0.8), lineWidth: 1)
+                }
+                .frame(width: 12, height: 8)
+        case .line:
+            Rectangle()
+                .fill(item.color)
+                .frame(width: 12, height: item.dashed ? 0 : 2)
+                .overlay {
+                    if item.dashed {
+                        Rectangle()
+                            .stroke(style: StrokeStyle(lineWidth: 2, dash: [2, 2]))
+                            .foregroundStyle(item.color)
+                            .frame(height: 2)
+                    }
+                }
+        case .marker:
+            Circle()
+                .fill(item.color)
+                .frame(width: 7, height: 7)
+        }
+    }
+
+    private var legendItems: [OverlayLegendItem] {
+        var items: [OverlayLegendItem] = []
+        var seenSma = Set<String>()
+        var structureTrendlineCount = 0
+
+        for line in intelligence.trendlines ?? [] {
+            let style = line.style ?? ""
+            if style.hasPrefix("sma") {
+                guard seenSma.insert(style).inserted else { continue }
+                items.append(
+                    OverlayLegendItem(
+                        id: style,
+                        label: smaTitle(style),
+                        kind: .line,
+                        color: smaColor(style),
+                        dashed: false
+                    )
+                )
+                continue
+            }
+            if line.points?.isEmpty == false || line.startDate != nil {
+                structureTrendlineCount += 1
+            }
+        }
+
+        if structureTrendlineCount > 0 {
+            items.append(
+                OverlayLegendItem(
+                    id: "trendline",
+                    label: structureTrendlineCount > 1 ? "Trendlines (\(structureTrendlineCount))" : "Trendline",
+                    kind: .line,
+                    color: AppColors.secondaryLabel,
+                    dashed: true
+                )
+            )
+        }
 
         for (index, zone) in (intelligence.supportZones ?? []).prefix(2).enumerated() {
             guard let low = zone.priceLow, let high = zone.priceHigh else { continue }
-            rows.append(
-                LegendRow(
+            let title = (intelligence.supportZones ?? []).count > 1 ? "Support \(index + 1)" : "Support"
+            items.append(
+                OverlayLegendItem(
                     id: "support-\(index)",
-                    title: (intelligence.supportZones ?? []).count > 1 ? "Support \(index + 1)" : "Support",
-                    detail: "Green band where price has bounced · \(priceRange(low, high))",
+                    label: "\(title) · \(priceRange(low, high))",
                     kind: .band,
                     color: AppColors.success
                 )
@@ -354,50 +602,22 @@ private struct ChartIntelligenceLegendPanel: View {
 
         for (index, zone) in (intelligence.resistanceZones ?? []).prefix(2).enumerated() {
             guard let low = zone.priceLow, let high = zone.priceHigh else { continue }
-            rows.append(
-                LegendRow(
+            let title = (intelligence.resistanceZones ?? []).count > 1 ? "Resistance \(index + 1)" : "Resistance"
+            items.append(
+                OverlayLegendItem(
                     id: "resistance-\(index)",
-                    title: (intelligence.resistanceZones ?? []).count > 1 ? "Resistance \(index + 1)" : "Resistance",
-                    detail: "Red band where rallies have stalled · \(priceRange(low, high))",
+                    label: "\(title) · \(priceRange(low, high))",
                     kind: .band,
                     color: AppColors.error
                 )
             )
         }
 
-        let smaStyles = Set((intelligence.trendlines ?? []).compactMap(\.style).filter { $0.hasPrefix("sma") })
-        for style in ["sma20", "sma50", "sma200"] where smaStyles.contains(style) {
-            rows.append(
-                LegendRow(
-                    id: style,
-                    title: smaTitle(style),
-                    detail: "Moving average overlay on the daily chart.",
-                    kind: .line,
-                    color: AppColors.accentHighlight,
-                    dashed: false
-                )
-            )
-        }
-
-        if (intelligence.trendlines ?? []).contains(where: { ($0.style ?? "") == "trendline" || ($0.style ?? "").isEmpty && $0.startDate != nil }) {
-            rows.append(
-                LegendRow(
-                    id: "trendline",
-                    title: "Structure trendline",
-                    detail: "Dashed line through recent swing structure.",
-                    kind: .line,
-                    color: AppColors.secondaryLabel,
-                    dashed: true
-                )
-            )
-        }
-
         if intelligence.fibChannel?.lines?.isEmpty == false {
-            rows.append(
-                LegendRow(
+            items.append(
+                OverlayLegendItem(
                     id: "fib",
-                    title: "Fib channel",
-                    detail: intelligence.fibChannel?.summary ?? "Parallel amber rails from swing highs and lows.",
+                    label: "Fib channel",
                     kind: .line,
                     color: AppColors.warning,
                     dashed: true
@@ -406,55 +626,21 @@ private struct ChartIntelligenceLegendPanel: View {
         }
 
         for event in intelligence.breakoutEvents ?? [] {
-            let failed = event.kind.contains("failed")
-            rows.append(
-                LegendRow(
+            items.append(
+                OverlayLegendItem(
                     id: "breakout-\(event.date ?? event.label ?? UUID().uuidString)",
-                    title: event.label ?? "Breakout event",
-                    detail: failed
-                        ? "Price pierced a level then reversed — often a trap."
-                        : "Price broke a level and held on follow-through.",
+                    label: event.label ?? "Breakout",
                     kind: .marker,
-                    color: failed ? AppColors.error : AppColors.success
+                    color: event.kind.contains("failed") ? AppColors.error : AppColors.success
                 )
             )
         }
 
-        return rows
-    }
-
-    @ViewBuilder
-    private func legendSwatch(_ row: LegendRow) -> some View {
-        switch row.kind {
-        case .band:
-            RoundedRectangle(cornerRadius: 3, style: .continuous)
-                .fill(row.color.opacity(0.25))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 3, style: .continuous)
-                        .stroke(row.color.opacity(0.7), lineWidth: 1)
-                }
-                .frame(height: 10)
-        case .line:
-            Rectangle()
-                .fill(row.color)
-                .frame(height: 2)
-                .frame(maxWidth: 22)
-                .overlay {
-                    if row.dashed {
-                        Rectangle()
-                            .stroke(style: StrokeStyle(lineWidth: 2, dash: [3, 3]))
-                            .foregroundStyle(row.color)
-                    }
-                }
-        case .marker:
-            Circle()
-                .fill(row.color)
-                .frame(width: 8, height: 8)
-        }
+        return items
     }
 
     private func priceRange(_ low: Double, _ high: Double) -> String {
-        "\(CurrencyFormatter.usd(low, fractionDigits: 2)) – \(CurrencyFormatter.usd(high, fractionDigits: 2))"
+        "\(CurrencyFormatter.usd(low, fractionDigits: 2))–\(CurrencyFormatter.usd(high, fractionDigits: 2))"
     }
 
     private func smaTitle(_ style: String) -> String {
@@ -465,112 +651,24 @@ private struct ChartIntelligenceLegendPanel: View {
         default: return style.uppercased()
         }
     }
+
+    private func smaColor(_ style: String) -> Color {
+        switch style {
+        case "sma20": Color(red: 0.22, green: 0.74, blue: 0.97)
+        case "sma50": Color(red: 0.65, green: 0.55, blue: 0.98)
+        case "sma200": Color(red: 0.96, green: 0.62, blue: 0.04)
+        default: AppColors.accentHighlight
+        }
+    }
 }
 
-private struct LegendRow: Identifiable {
+private struct OverlayLegendItem: Identifiable {
     enum Kind { case band, line, marker }
 
     let id: String
-    let title: String
-    let detail: String?
+    let label: String
     let kind: Kind
     let color: Color
     var dashed: Bool = false
 }
 
-// MARK: - Layout helpers
-
-private struct ChartIntelligenceLayout {
-    let size: CGSize
-    let minPrice: Double
-    let maxPrice: Double
-    private let dateIndex: [String: Int]
-    private let plotInsets = EdgeInsets(top: 18, leading: 8, bottom: 18, trailing: 72)
-
-    init(points: [StockChartPoint], size: CGSize) {
-        self.size = size
-        let lows = points.map(\.low)
-        let highs = points.map(\.high)
-        minPrice = (lows.min() ?? 0) * 0.992
-        maxPrice = (highs.max() ?? 1) * 1.008
-        var map: [String: Int] = [:]
-        for (index, point) in points.enumerated() {
-            map[String(point.date.prefix(10))] = index
-        }
-        dateIndex = map
-    }
-
-    private var plotSize: CGSize {
-        CGSize(
-            width: max(size.width - plotInsets.leading - plotInsets.trailing, 1),
-            height: max(size.height - plotInsets.top - plotInsets.bottom, 1)
-        )
-    }
-
-    func index(for date: String) -> Int? {
-        dateIndex[String(date.prefix(10))]
-    }
-
-    func point(index: Int, price: Double) -> CGPoint {
-        let count = max(dateIndex.count, 2)
-        let xStep = plotSize.width / CGFloat(count - 1)
-        let x = plotInsets.leading + CGFloat(index) * xStep
-        let span = max(maxPrice - minPrice, 0.01)
-        let normalized = (price - minPrice) / span
-        let y = plotInsets.top + plotSize.height * CGFloat(1 - normalized)
-        return CGPoint(x: x, y: y)
-    }
-
-    func rect(fromPrice top: Double, toPrice bottom: Double) -> CGRect {
-        let topPoint = point(index: 0, price: top)
-        let bottomPoint = point(index: 0, price: bottom)
-        return CGRect(
-            x: plotInsets.leading,
-            y: topPoint.y,
-            width: plotSize.width,
-            height: max(bottomPoint.y - topPoint.y, 1)
-        )
-    }
-
-    func mappedLine(_ line: ChartIntelligenceTrendline) -> [CGPoint]? {
-        if let series = line.points, !series.isEmpty {
-            let mapped = series.compactMap { point -> CGPoint? in
-                guard let index = index(for: point.date) else { return nil }
-                return self.point(index: index, price: point.price)
-            }
-            return mapped.count >= 2 ? mapped : nil
-        }
-        if let startDate = line.startDate,
-           let endDate = line.endDate,
-           let startPrice = line.startPrice,
-           let endPrice = line.endPrice,
-           let startIndex = index(for: startDate),
-           let endIndex = index(for: endDate) {
-            return [
-                point(index: startIndex, price: startPrice),
-                point(index: endIndex, price: endPrice),
-            ]
-        }
-        return nil
-    }
-
-    func drawPillLabel(
-        _ text: String,
-        at position: CGPoint,
-        color: Color,
-        in context: inout GraphicsContext,
-        anchor: UnitPoint
-    ) {
-        let label = Text(text)
-            .font(.system(size: 9, weight: .semibold))
-            .foregroundColor(color)
-        let resolved = context.resolve(label)
-        context.draw(resolved, at: position, anchor: anchor)
-    }
-}
-
-private extension Array {
-    subscript(safe index: Int) -> Element? {
-        indices.contains(index) ? self[index] : nil
-    }
-}
