@@ -5,13 +5,11 @@ struct SymbolPatternPredictionContent: View {
     @Bindable var viewModel: SymbolDepthViewModel
 
     var body: some View {
-        AppScreenSection(
-            title: "5D Alpha",
-            footnote: account.hasProFeature(.patternTrend)
-                ? "Relative strength + trend ranking · next 5 sessions"
-                : "Pro feature"
-        ) {
-            if account.hasProFeature(.patternTrend) {
+        if account.hasProFeature(.patternTrend) {
+            AppScreenSection(
+                title: "5D Alpha",
+                footnote: "Relative strength + trend ranking · next 5 sessions"
+            ) {
                 if let prediction = viewModel.patternPrediction {
                     PatternTrendForecastCard(forecast: prediction.display)
                 } else {
@@ -20,9 +18,28 @@ struct SymbolPatternPredictionContent: View {
                         systemImage: "waveform.path.ecg.rectangle"
                     )
                 }
-            } else {
+            }
+
+            AppScreenSection(
+                title: "Pattern intelligence",
+                footnote: "Confirms the core model — not a standalone trade signal"
+            ) {
+                if let intelligence = viewModel.patternIntelligence {
+                    PatternIntelligenceCard(intelligence: intelligence.display)
+                } else {
+                    AppEmptyMessage(
+                        message: "Pattern intelligence is not available for this symbol.",
+                        systemImage: "sparkles"
+                    )
+                }
+            }
+        } else {
+            AppScreenSection(
+                title: "5D Alpha",
+                footnote: "Pro feature"
+            ) {
                 AppInlineBanner(
-                    message: "Upgrade to Pro for the 5-day alpha ranking forecast with probabilities and relative strength signals.",
+                    message: "Upgrade to Pro for the 5-day alpha ranking forecast with pattern confirmation and relative strength signals.",
                     tone: .neutral
                 )
             }

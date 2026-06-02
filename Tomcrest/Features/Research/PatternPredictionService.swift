@@ -19,4 +19,16 @@ enum PatternPredictionService {
             accessToken: accessToken
         )
     }
+
+    static func fetchIntelligence(
+        symbol: String,
+        accessToken: String,
+        api: APIClient = .shared
+    ) async throws -> PatternIntelligenceResponse {
+        try await api.get(
+            "/pattern/intelligence",
+            query: ["symbol": symbol.uppercased()],
+            accessToken: accessToken
+        )
+    }
 }

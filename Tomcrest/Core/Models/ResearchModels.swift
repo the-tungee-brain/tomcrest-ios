@@ -43,6 +43,7 @@ struct SymbolIntelligence: Codable {
     let symbol: String
     let signals: [IntelligenceSignal]
     let patternForecast: PatternTrendForecast?
+    let patternIntelligence: PatternIntelligenceResponse?
     let partial: Bool?
 }
 

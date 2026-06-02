@@ -16,6 +16,7 @@ final class SymbolDepthViewModel {
     private(set) var symbolIntelligence: SymbolIntelligenceDetail?
     private(set) var wheelBacktest: WheelBacktestResult?
     private(set) var patternPrediction: PatternPredictionResponse?
+    private(set) var patternIntelligence: PatternIntelligenceResponse?
     private(set) var patternModelHealth: PatternPredictionHealthResponse?
     private(set) var secFilings: SecFilingsResponse?
     private(set) var secRatios: SecRatiosResponse?
@@ -114,6 +115,14 @@ final class SymbolDepthViewModel {
                     )
                 } catch {
                     patternPrediction = nil
+                }
+                do {
+                    patternIntelligence = try await PatternPredictionService.fetchIntelligence(
+                        symbol: symbol,
+                        accessToken: accessToken
+                    )
+                } catch {
+                    patternIntelligence = nil
                 }
                 do {
                     patternModelHealth = try await PatternPredictionService.fetchHealth(
@@ -285,6 +294,7 @@ final class SymbolDepthViewModel {
         }
         if tab == .analysis {
             patternPrediction = nil
+            patternIntelligence = nil
             patternModelHealth = nil
         }
         await loadIfNeeded(tab, more: more, force: true)

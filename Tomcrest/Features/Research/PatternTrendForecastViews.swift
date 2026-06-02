@@ -130,7 +130,7 @@ private struct PatternTrendHeroCard: View {
     }
 }
 
-private struct PatternTrendMetaChip: View {
+struct PatternTrendMetaChip: View {
     let title: String
     let value: String
 

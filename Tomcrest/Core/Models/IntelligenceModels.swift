@@ -72,6 +72,7 @@ struct SymbolIntelligenceDetail: Decodable {
     let optionChainPreview: OptionChainPreview?
     let rollSuggestions: [OptionRollSuggestion]?
     let patternForecast: PatternTrendForecast?
+    let patternIntelligence: PatternIntelligenceResponse?
     let partial: Bool?
     let reauthRequired: Bool?
 }

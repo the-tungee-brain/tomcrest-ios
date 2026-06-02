@@ -344,3 +344,213 @@ struct PatternPredictionModelMeta: Decodable, Sendable {
     let featureGroups: [String]?
     let portfolioStrategy: PatternPortfolioStrategy?
 }
+
+// MARK: - Pattern Intelligence
+
+enum PatternAlignmentState: String, Decodable, Sendable {
+    case confirmed
+    case conflict
+    case modelOnly = "model_only"
+
+    init(rawOrConfidence alignment: String, confidence: String) {
+        if let parsed = PatternAlignmentState(rawValue: alignment) {
+            self = parsed
+            return
+        }
+        if confidence == "conflicting" {
+            self = .conflict
+        } else {
+            self = .modelOnly
+        }
+    }
+}
+
+struct PrimaryCandlestickPattern: Codable, Sendable {
+    let patternId: String
+    let label: String
+    let direction: String
+    let strength: Double
+    let asOfDate: String
+}
+
+struct PatternTrendContextIntel: Codable, Sendable {
+    let asOfDate: String
+    let close: Double
+    let sma50: Double?
+    let sma200: Double?
+    let aboveSma50: Bool?
+    let aboveSma200: Bool?
+    let trendBias: String
+    let rsVsSpy21d: Double?
+    let rsVsSpy63d: Double?
+    let rsVsSpy126d: Double?
+    let volRatio20d: Double?
+    let volZscore20d: Double?
+}
+
+struct PatternIntelligenceScores: Codable, Sendable {
+    let patternStrength: Double
+    let trendStrength: Double
+    let relativeStrength: Double
+    let volumeConfirmation: Double
+    let modelAlignment: Double
+    let confirmationScore: Double
+    let confidence: String
+    let alignmentState: String?
+}
+
+struct PatternSetupOutcome: Codable, Sendable {
+    let label: String
+    let patternLabel: String
+    let trendLabel: String
+    let rsLabel: String
+    let occurrenceCount: Int
+    let patternOnlyCount: Int
+    let avgReturn5d: Double?
+    let avgReturn20d: Double?
+    let winRate5d: Double?
+    let winRate20d: Double?
+    let maxDrawdown20d: Double?
+
+    var hasStats: Bool {
+        occurrenceCount >= 3 && avgReturn5d != nil
+    }
+}
+
+struct PatternExplanation: Codable, Sendable {
+    let headline: String
+    let patternSummary: String
+    let trendContext: String
+    let historicalContext: String
+    let modelContext: String
+    let confidenceExplanation: String
+    let disclaimer: String
+}
+
+struct PatternVerdictBullet: Codable, Sendable, Identifiable {
+    var id: String { text }
+    let tone: String
+    let text: String
+}
+
+struct PatternFinalVerdict: Codable, Sendable {
+    let title: String
+    let bullets: [PatternVerdictBullet]
+    let conclusion: String
+}
+
+struct PatternConfidenceContributor: Codable, Sendable, Identifiable {
+    var id: String { key }
+    let key: String
+    let label: String
+    let weightPct: Int
+    let qualitative: String
+    let emphasized: Bool
+    let score: Double
+}
+
+struct PatternInterpretation: Codable, Sendable {
+    let actionableVerdict: String
+    let traderSummary: String
+    let finalVerdict: PatternFinalVerdict
+    let confidenceContributors: [PatternConfidenceContributor]
+    let historicalRead: String?
+}
+
+struct PatternIntelligenceResponse: Codable, Sendable {
+    let symbol: String
+    let asOfDate: String
+    let primaryPattern: PrimaryCandlestickPattern?
+    let activePatterns: [PrimaryCandlestickPattern]?
+    let trendContext: PatternTrendContextIntel
+    let scores: PatternIntelligenceScores
+    let historicalStats: PatternHistoricalStats?
+    let setupOutcome: PatternSetupOutcome?
+    let explanation: PatternExplanation
+    let interpretation: PatternInterpretation?
+
+    var display: PatternIntelligenceDisplay {
+        PatternIntelligenceDisplay(response: self)
+    }
+}
+
+struct PatternHistoricalStats: Codable, Sendable {
+    let patternId: String
+    let label: String
+    let occurrenceCount: Int
+    let avgReturn5d: Double?
+    let avgReturn20d: Double?
+    let winRate5d: Double?
+    let winRate20d: Double?
+    let maxDrawdown20d: Double?
+}
+
+struct PatternIntelligenceDisplay: Sendable {
+    let symbol: String
+    let asOfDate: String
+    let primaryPattern: PrimaryCandlestickPattern?
+    let trendContext: PatternTrendContextIntel
+    let scores: PatternIntelligenceScores
+    let setupOutcome: PatternSetupOutcome?
+    let explanation: PatternExplanation
+    let interpretation: PatternInterpretation?
+    let alignment: PatternAlignmentState
+
+    init(response: PatternIntelligenceResponse) {
+        symbol = response.symbol
+        asOfDate = response.asOfDate
+        primaryPattern = response.primaryPattern
+        trendContext = response.trendContext
+        scores = response.scores
+        setupOutcome = response.setupOutcome
+        explanation = response.explanation
+        interpretation = response.interpretation
+        alignment = PatternAlignmentState(
+            rawOrConfidence: response.scores.alignmentState ?? "",
+            confidence: response.scores.confidence
+        )
+    }
+
+    var actionableVerdict: String {
+        interpretation?.actionableVerdict ?? explanation.confidenceExplanation
+    }
+
+    var traderSummary: String {
+        interpretation?.traderSummary ?? explanation.modelContext
+    }
+
+    var historicalRead: String? {
+        interpretation?.historicalRead ?? explanation.historicalContext
+    }
+
+    var heroColor: Color {
+        let verdict = actionableVerdict.lowercased()
+        if verdict.contains("override") || verdict.contains("conflict") {
+            return AppColors.warning
+        }
+        if verdict.contains("confirm") {
+            return AppColors.success
+        }
+        return AppColors.secondaryLabel
+    }
+
+    var heroSystemImage: String {
+        let verdict = actionableVerdict.lowercased()
+        if verdict.contains("override") || verdict.contains("conflict") {
+            return "exclamationmark.triangle.fill"
+        }
+        if verdict.contains("confirm") {
+            return "checkmark.circle.fill"
+        }
+        return "waveform.path.ecg"
+    }
+
+    func verdictBulletSymbol(_ tone: String) -> String {
+        switch tone {
+        case "positive": return "✅"
+        case "warning": return "⚠️"
+        case "negative": return "❌"
+        default: return "•"
+        }
+    }
+}
