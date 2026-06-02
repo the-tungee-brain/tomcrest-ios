@@ -513,6 +513,11 @@ struct ChartAnalystKeyLevel: Codable, Sendable {
     let levelType: String?
     let display: String
     let implication: String
+    let available: Bool?
+
+    var isActionable: Bool {
+        available != false && price != nil
+    }
 }
 
 struct ChartAnalystEvidenceBullet: Codable, Sendable {

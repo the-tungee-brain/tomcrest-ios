@@ -61,13 +61,6 @@ struct ChartAnalystSummaryPanel: View {
                 .foregroundStyle(AppColors.label)
                 .fixedSize(horizontal: false, vertical: true)
 
-            if let modelContext = summary.outlook.modelContext {
-                Text(modelContext)
-                    .font(.subheadline)
-                    .foregroundStyle(AppColors.secondaryLabel)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
             if isBenchmark {
                 Text(summary.outlook.benchmarkNotice ?? benchmarkNotice)
                     .font(.subheadline)
@@ -94,21 +87,24 @@ struct ChartAnalystSummaryPanel: View {
         )
     }
 
+    @ViewBuilder
     private var keyLevelSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Key level")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(AppColors.secondaryLabel)
-                .textCase(.uppercase)
-            Text(summary.keyLevel.display)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(AppColors.label)
-            Text(summary.keyLevel.implication)
-                .font(.subheadline)
-                .foregroundStyle(AppColors.secondaryLabel)
-                .fixedSize(horizontal: false, vertical: true)
+        if summary.keyLevel.isActionable {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Key level")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(AppColors.secondaryLabel)
+                    .textCase(.uppercase)
+                Text(summary.keyLevel.display)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(AppColors.label)
+                Text(summary.keyLevel.implication)
+                    .font(.subheadline)
+                    .foregroundStyle(AppColors.secondaryLabel)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .appPanel(subtle: true)
         }
-        .appPanel(subtle: true)
     }
 
     private var whySection: some View {
