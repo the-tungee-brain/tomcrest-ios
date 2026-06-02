@@ -119,7 +119,7 @@ enum ResearchMoreDestination: String, CaseIterable, Identifiable, Hashable {
         case "ETF", "MUTUAL_FUND", "INDEX":
             return [.composition, .income, .tools]
         default:
-            var items: [ResearchMoreDestination] = [.portfolio, .income, .tools]
+            let items: [ResearchMoreDestination] = [.portfolio, .income, .tools]
             if includesOptions {
                 _ = includesOptions
             }

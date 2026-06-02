@@ -6,9 +6,9 @@ struct SymbolPatternPredictionContent: View {
 
     var body: some View {
         AppScreenSection(
-            title: "5D Trend",
+            title: "5D Alpha",
             footnote: account.hasProFeature(.patternTrend)
-                ? "Pattern model · next 5 sessions"
+                ? "Relative strength + trend ranking · next 5 sessions"
                 : "Pro feature"
         ) {
             if account.hasProFeature(.patternTrend) {
@@ -22,7 +22,7 @@ struct SymbolPatternPredictionContent: View {
                 }
             } else {
                 AppInlineBanner(
-                    message: "Upgrade to Pro for the 5-day pattern trend forecast with probabilities and trade signal.",
+                    message: "Upgrade to Pro for the 5-day alpha ranking forecast with probabilities and relative strength signals.",
                     tone: .neutral
                 )
             }

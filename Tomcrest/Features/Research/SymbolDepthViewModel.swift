@@ -108,15 +108,19 @@ final class SymbolDepthViewModel {
                     // Pro gate or unavailable — Analysis hub shows upsell inline.
                 }
                 do {
-                    async let healthTask = PatternPredictionService.fetchHealth(accessToken: accessToken)
-                    async let predictionTask = PatternPredictionService.fetchPrediction(
+                    patternPrediction = try await PatternPredictionService.fetchPrediction(
                         symbol: symbol,
                         accessToken: accessToken
                     )
-                    patternModelHealth = try await healthTask
-                    patternPrediction = try await predictionTask
                 } catch {
-                    // Pro gate for 5D trend — section shows upsell inline.
+                    patternPrediction = nil
+                }
+                do {
+                    patternModelHealth = try await PatternPredictionService.fetchHealth(
+                        accessToken: accessToken
+                    )
+                } catch {
+                    patternModelHealth = nil
                 }
             case .metrics:
                 fundamentals = try await ResearchService.fetchFundamentals(
