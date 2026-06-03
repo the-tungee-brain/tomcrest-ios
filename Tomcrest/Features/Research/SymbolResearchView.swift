@@ -189,11 +189,13 @@ struct SymbolResearchView: View {
             profileSymbols = StrategyPlaybookHelpers.symbols(from: profile)
             if let strategyId = profile?.primaryStrategy {
                 strategyCatalogItem = catalog.first { $0.id == strategyId }
-                strategyRecommendations = try await StrategyService.fetchRecommendations(
-                    strategyId: strategyId,
-                    accessToken: accessToken,
-                    symbol: overviewVM.symbol
-                )
+                Task { @MainActor in
+                    strategyRecommendations = try? await StrategyService.fetchRecommendations(
+                        strategyId: strategyId,
+                        accessToken: accessToken,
+                        symbol: overviewVM.symbol
+                    )
+                }
             }
         } catch {
             // Strategy context is optional on research pages.

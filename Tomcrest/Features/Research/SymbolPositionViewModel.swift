@@ -69,6 +69,14 @@ final class SymbolPositionViewModel {
         guard auth.accessToken != nil else { return }
         if loaded, !force { return }
 
+        if !force, let cached = PortfolioPositionsCache.cached() {
+            apply(fetchResult: cached)
+            loaded = true
+            schwabConnected = true
+            await loadRecentOrdersIfNeeded(force: force)
+            return
+        }
+
         isLoading = true
         loadError = nil
         defer { isLoading = false }
@@ -82,14 +90,8 @@ final class SymbolPositionViewModel {
                 accessToken: auth.accessToken!,
                 api: api
             )
-            chatAccountPayload = result.accountPayload
-            chatPositionsPayload = result.positionsPayload
-            positions = result.response.flattenedPositions
-                .filter { $0.displaySymbol.uppercased() == symbol }
-                .sorted { $0.marketValue > $1.marketValue }
-            assignmentRiskSummary = result.response.assignmentRiskSummary
-            proactiveAlerts = result.response.proactiveAlerts ?? []
-            portfolioBrief = result.response.portfolioBrief
+            PortfolioPositionsCache.store(result)
+            apply(fetchResult: result)
             loaded = true
             auth.clearError()
             await loadRecentOrdersIfNeeded(force: force)
@@ -98,6 +100,17 @@ final class SymbolPositionViewModel {
         } catch {
             loadError = error.localizedDescription
         }
+    }
+
+    private func apply(fetchResult: PortfolioFetchResult) {
+        chatAccountPayload = fetchResult.accountPayload
+        chatPositionsPayload = fetchResult.positionsPayload
+        positions = fetchResult.response.flattenedPositions
+            .filter { $0.displaySymbol.uppercased() == symbol }
+            .sorted { $0.marketValue > $1.marketValue }
+        assignmentRiskSummary = fetchResult.response.assignmentRiskSummary
+        proactiveAlerts = fetchResult.response.proactiveAlerts ?? []
+        portfolioBrief = fetchResult.response.portfolioBrief
     }
 
     func runSymbolAnalysis() async {

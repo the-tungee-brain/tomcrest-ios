@@ -327,7 +327,7 @@ final class SymbolOverviewViewModel {
                 accessToken: accessToken,
                 api: api
             )
-            await hydrateChatHistoryIfNeeded()
+            Task { await hydrateChatHistoryIfNeeded() }
         } catch {
             bundle = nil
             errorMessage = (error as? APIError)?.errorDescription ?? error.localizedDescription

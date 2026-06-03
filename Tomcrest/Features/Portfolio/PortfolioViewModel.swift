@@ -735,6 +735,7 @@ final class PortfolioViewModel {
     }
 
     private func apply(fetchResult: PortfolioFetchResult, morningBrief: MorningBrief?) {
+        PortfolioPositionsCache.store(fetchResult)
         let positionsResponse = fetchResult.response
         chatAccountPayload = fetchResult.accountPayload
         chatPositionsPayload = fetchResult.positionsPayload

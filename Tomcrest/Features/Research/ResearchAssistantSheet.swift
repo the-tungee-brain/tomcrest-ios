@@ -82,6 +82,9 @@ struct ResearchAssistantSheet: View {
                 )
             }
         }
+        .task {
+            await viewModel.hydrateChatHistoryIfNeeded()
+        }
         .onAppear {
             applyPendingActionIfNeeded()
         }

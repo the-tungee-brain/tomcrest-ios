@@ -383,17 +383,18 @@ struct SymbolResearchHubView: View {
     }
 
     private func loadHub() async {
-        if destination == .analysis {
-            await overviewVM.loadIfNeeded()
-        }
-
-        if destination == .portfolio {
-            await positionVM.loadIfNeeded()
-        }
-
-        if let more = destination.moreDestination {
-            await depthVM.loadIfNeeded(.more, more: more)
-            if more == .income,
+        switch destination {
+        case .analysis:
+            async let overview: Void = overviewVM.loadIfNeeded()
+            async let depth: Void = depthVM.loadIfNeeded(.analysis)
+            _ = await (overview, depth)
+        case .portfolio:
+            async let position: Void = positionVM.loadIfNeeded()
+            async let depth: Void = depthVM.loadIfNeeded(.more, more: .portfolio)
+            _ = await (position, depth)
+        case .income, .tools, .composition:
+            await depthVM.loadIfNeeded(.more, more: destination.moreDestination)
+            if destination == .income,
                let event = depthVM.selectedHistoryEvent,
                EarningsSelection.shouldLoadDetail(for: event) {
                 await depthVM.loadEarningsDetail(
@@ -401,10 +402,9 @@ struct SymbolResearchHubView: View {
                     force: true
                 )
             }
-            return
+        default:
+            await depthVM.loadIfNeeded(destination.researchTab)
         }
-
-        await depthVM.loadIfNeeded(destination.researchTab)
     }
 
     private func refreshHub() async {

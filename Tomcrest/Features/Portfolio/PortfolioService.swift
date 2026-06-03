@@ -209,6 +209,31 @@ enum PortfolioBriefText {
     }
 }
 
+/// Reuses a recent portfolio positions response so symbol research does not refetch on every open.
+@MainActor
+enum PortfolioPositionsCache {
+    private static var stored: PortfolioFetchResult?
+    private static var storedAt: Date?
+    private static let maxAge: TimeInterval = 120
+
+    static func store(_ result: PortfolioFetchResult) {
+        stored = result
+        storedAt = Date()
+    }
+
+    static func cached(ttl: TimeInterval? = nil) -> PortfolioFetchResult? {
+        guard let stored, let storedAt else { return nil }
+        let maxAge = ttl ?? Self.maxAge
+        guard Date().timeIntervalSince(storedAt) <= maxAge else { return nil }
+        return stored
+    }
+
+    static func clear() {
+        stored = nil
+        storedAt = nil
+    }
+}
+
 enum PortfolioAlerts {
     static func merged(
         proactive: [ProactiveAlert],

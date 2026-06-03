@@ -102,36 +102,46 @@ final class SymbolDepthViewModel {
             case .overview:
                 break
             case .analysis:
-                do {
-                    business = try await ResearchService.fetchBusinessDetails(
-                        symbol: symbol,
-                        accessToken: accessToken
-                    )
-                } catch {
-                    // Pro gate or unavailable — Analysis hub shows upsell inline.
-                }
-                do {
-                    patternPrediction = try await PatternPredictionService.fetchPrediction(
-                        symbol: symbol,
-                        accessToken: accessToken
-                    )
-                } catch {
-                    patternPrediction = nil
-                }
-                do {
-                    patternIntelligence = try await PatternPredictionService.fetchIntelligence(
-                        symbol: symbol,
-                        accessToken: accessToken
-                    )
-                } catch {
-                    patternIntelligence = nil
-                }
-                do {
-                    patternModelHealth = try await PatternPredictionService.fetchHealth(
-                        accessToken: accessToken
-                    )
-                } catch {
-                    patternModelHealth = nil
+                await withTaskGroup(of: Void.self) { group in
+                    group.addTask { @MainActor in
+                        do {
+                            self.business = try await ResearchService.fetchBusinessDetails(
+                                symbol: self.symbol,
+                                accessToken: accessToken
+                            )
+                        } catch {
+                            // Pro gate or unavailable — Analysis hub shows upsell inline.
+                        }
+                    }
+                    group.addTask { @MainActor in
+                        do {
+                            self.patternPrediction = try await PatternPredictionService.fetchPrediction(
+                                symbol: self.symbol,
+                                accessToken: accessToken
+                            )
+                        } catch {
+                            self.patternPrediction = nil
+                        }
+                    }
+                    group.addTask { @MainActor in
+                        do {
+                            self.patternIntelligence = try await PatternPredictionService.fetchIntelligence(
+                                symbol: self.symbol,
+                                accessToken: accessToken
+                            )
+                        } catch {
+                            self.patternIntelligence = nil
+                        }
+                    }
+                    group.addTask { @MainActor in
+                        do {
+                            self.patternModelHealth = try await PatternPredictionService.fetchHealth(
+                                accessToken: accessToken
+                            )
+                        } catch {
+                            self.patternModelHealth = nil
+                        }
+                    }
                 }
             case .metrics:
                 fundamentals = try await ResearchService.fetchFundamentals(

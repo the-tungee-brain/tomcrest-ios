@@ -12,6 +12,7 @@ enum SessionDataCleaner {
         researchBookmarks.reload()
         account.clearSession()
         bootstrap.clearPreloadedSession()
+        PortfolioPositionsCache.clear()
         OnboardingStorage.clearAll()
     }
 }

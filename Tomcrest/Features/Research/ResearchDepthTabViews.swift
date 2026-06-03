@@ -24,7 +24,8 @@ struct SymbolOverviewTab: View {
                 overviewSections(bundle)
             }
         }
-        .task {
+        .task(id: bundle?.symbol) {
+            guard bundle != nil else { return }
             await positionViewModel.loadIfNeeded()
         }
     }
