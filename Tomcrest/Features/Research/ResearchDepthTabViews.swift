@@ -1136,10 +1136,19 @@ struct SymbolFundamentalsTab: View {
                     }
 
                     if !isEtf {
+                        if let signals = block.overview?.valuationSignals, !signals.isEmpty {
+                            AppScreenSection(
+                                title: "Valuation signals",
+                                footnote: "Key inputs behind the thesis"
+                            ) {
+                                ValuationSignalsGrid(signals: signals)
+                            }
+                        }
+
                         if StreetAnalysisFormatters.hasStreetAnalysis(block.streetAnalysis) {
                             AppScreenSection(
                                 title: "Wall Street analysis",
-                                footnote: "Analyst consensus, price targets, and estimate trends"
+                                footnote: "Supporting consensus, targets, and estimate trends"
                             ) {
                                 StreetAnalysisSection(street: block.streetAnalysis)
                             }

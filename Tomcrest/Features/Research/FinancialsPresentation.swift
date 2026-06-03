@@ -101,16 +101,16 @@ enum FinancialsPresentation {
 
     static func investmentThesis(overview: FundamentalsOverview?) -> InvestmentThesis? {
         guard let overview else { return nil }
-        let summary = overview.valuationSummary.trimmingCharacters(in: .whitespacesAndNewlines)
+        let conclusion = overview.valuationConclusion.trimmingCharacters(in: .whitespacesAndNewlines)
         if overview.investmentThesis.bullCase.isEmpty,
            overview.investmentThesis.bearCase.isEmpty,
-           summary.isEmpty {
+           conclusion.isEmpty {
             return nil
         }
         return InvestmentThesis(
             bullCase: overview.investmentThesis.bullCase,
             bearCase: overview.investmentThesis.bearCase,
-            valuationSummary: summary
+            valuationSummary: conclusion
         )
     }
 

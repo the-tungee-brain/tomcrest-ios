@@ -2,20 +2,48 @@ import SwiftUI
 
 // MARK: - Valuation-focused fundamentals (web FundamentalsPageContent)
 
+struct ValuationSignalsGrid: View {
+    let signals: [ValuationSignal]
+
+    var body: some View {
+        LazyVGrid(
+            columns: [GridItem(.flexible()), GridItem(.flexible())],
+            alignment: .leading,
+            spacing: 8
+        ) {
+            ForEach(signals) { signal in
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(signal.label.uppercased())
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(AppColors.tertiaryLabel)
+                        .tracking(0.3)
+                    Text(signal.value)
+                        .font(AppTypography.cardTitle.monospacedDigit())
+                        .foregroundStyle(AppColors.label)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(10)
+                .background(AppColors.secondaryFill.opacity(0.6))
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            }
+        }
+    }
+}
+
 struct FundamentalsValuationSection: View {
     let overview: FundamentalsOverview?
 
     var body: some View {
         if let overview {
             VStack(alignment: .leading, spacing: 16) {
-                if !overview.valuationSummary.isEmpty {
+                if !overview.valuationConclusion.isEmpty {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("VALUATION SUMMARY")
+                        Text("VALUATION CONCLUSION")
                             .font(.caption2.weight(.semibold))
                             .foregroundStyle(AppColors.tertiaryLabel)
                             .tracking(0.4)
-                        Text(overview.valuationSummary)
-                            .font(AppTypography.bodySecondary)
+                        Text(overview.valuationConclusion)
+                            .font(AppTypography.bodySecondary.weight(.medium))
                             .foregroundStyle(AppColors.label)
                             .lineSpacing(4)
                     }
@@ -42,6 +70,27 @@ struct FundamentalsValuationSection: View {
                             )
                         }
                     }
+                }
+
+                if !overview.valuationSummary.isEmpty,
+                   overview.valuationSummary != overview.valuationConclusion {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("WHAT IS PRICED IN")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(AppColors.tertiaryLabel)
+                            .tracking(0.4)
+                        Text(overview.valuationSummary)
+                            .font(AppTypography.caption)
+                            .foregroundStyle(AppColors.secondaryLabel)
+                            .lineSpacing(3)
+                    }
+                }
+
+                if let street = overview.streetContext, !street.isEmpty {
+                    Text(street)
+                        .font(.caption2)
+                        .foregroundStyle(AppColors.tertiaryLabel)
+                        .lineSpacing(3)
                 }
             }
             .appPanel(subtle: true)

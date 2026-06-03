@@ -351,9 +351,19 @@ struct InvestmentThesis: Decodable {
     let bearCase: [String]
 }
 
+struct ValuationSignal: Decodable, Identifiable {
+    var id: String { "\(label)-\(value)" }
+    let label: String
+    let value: String
+    let note: String?
+}
+
 struct FundamentalsOverview: Decodable {
+    let valuationConclusion: String
     let valuationSummary: String
+    let valuationSignals: [ValuationSignal]
     let investmentThesis: InvestmentThesis
+    let streetContext: String?
 }
 
 struct FundamentalsBlock: Decodable {
