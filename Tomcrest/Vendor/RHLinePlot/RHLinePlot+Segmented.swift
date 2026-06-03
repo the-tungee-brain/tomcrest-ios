@@ -34,7 +34,7 @@ extension RHLinePlot {
         
         let lineSectionLength = (WIDTH/CGFloat(values.count - 1))
         
-        let (highest, lowest) = findHighestAndLowest(values: values)
+        let (highest, lowest) = verticalBounds()
         let allValuesAreEqual = highest == lowest
         
         let inverseValueHeightDifference: CGFloat? = allValuesAreEqual ? nil : 1/CGFloat(highest - lowest)

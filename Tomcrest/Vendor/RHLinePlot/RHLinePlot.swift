@@ -22,8 +22,13 @@ public struct RHLinePlot<Indicator: View>: View {
     
     /// Relative width for line plot to occupy its container. Must be `0` to `1`.
     let occupyingRelativeWidth: CGFloat
-    
-    
+
+    /// Extra Y values included in autoscale only (e.g. previous close on intraday charts).
+    let yScaleAnchors: [CGFloat]
+
+    /// Optional horizontal guide at a fixed price (drawn behind the price line).
+    let referenceLineValue: CGFloat?
+
     /// Split values into line segments, allowing to show focus effect on a segment (by setting `activeSegment`).
     ///
     /// Each element is the beginning index of **values** in each line segment.
@@ -47,6 +52,8 @@ public struct RHLinePlot<Indicator: View>: View {
     
     public init(values: [Value],
                 occupyingRelativeWidth: CGFloat = 1,
+                yScaleAnchors: [CGFloat] = [],
+                referenceLineValue: CGFloat? = nil,
                 showGlowingIndicator: Bool = false,
                 lineSegmentStartingIndices: [Int]? = nil,
                 activeSegment: Int? = nil,
@@ -65,7 +72,9 @@ public struct RHLinePlot<Indicator: View>: View {
         self.values = values
         self.showGlowingIndicator = showGlowingIndicator
         self.occupyingRelativeWidth = occupyingRelativeWidth
-        
+        self.yScaleAnchors = yScaleAnchors
+        self.referenceLineValue = referenceLineValue
+
         self.lineSegmentStartingIndices = lineSegmentStartingIndices
         self.activeSegment = activeSegment
         self.customLatestValueIndicator = {
@@ -105,6 +114,7 @@ public struct RHLinePlot<Indicator: View>: View {
             bindView(data: getAdjustedStrokeEdgesCanvasFrame(proxy: proxy, rhLinePlotConfig: self.rhLinePlotConfig)) { (canvasFrame) in
                 ZStack(alignment: .topLeading) {
                     self.plotBody(canvasFrame: canvasFrame)
+                    self.referenceLineOverlay(canvasFrame: canvasFrame)
                     if self.showGlowingIndicator {
                         self.glowingIndicator(canvasFrame: canvasFrame)
                     }
@@ -118,6 +128,8 @@ public struct RHLinePlot<Indicator: View>: View {
 public extension RHLinePlot where Indicator == GlowingIndicator {
     init(values: [Value],
          occupyingRelativeWidth: CGFloat = 1,
+         yScaleAnchors: [CGFloat] = [],
+         referenceLineValue: CGFloat? = nil,
          showGlowingIndicator: Bool = false,
          lineSegmentStartingIndices: [Int]? = nil,
          activeSegment: Int? = nil
@@ -126,6 +138,8 @@ public extension RHLinePlot where Indicator == GlowingIndicator {
             values: values,
             occupyingRelativeWidth:
             occupyingRelativeWidth,
+            yScaleAnchors: yScaleAnchors,
+            referenceLineValue: referenceLineValue,
             showGlowingIndicator: showGlowingIndicator,
             lineSegmentStartingIndices: lineSegmentStartingIndices,
             activeSegment: activeSegment,
@@ -141,10 +155,49 @@ private func bindView<D, V: View>(data: D, transform: (D) -> V) -> V {
 
 // MARK:- Misc
 extension RHLinePlot {
-    
+
+    var verticalScaleAnchors: [CGFloat] {
+        var anchors = yScaleAnchors
+        if let referenceLineValue {
+            anchors.append(referenceLineValue)
+        }
+        return anchors
+    }
+
+    func verticalBounds() -> (highest: CGFloat, lowest: CGFloat) {
+        plotVerticalBounds(values: values, anchors: verticalScaleAnchors)
+    }
+
+    @ViewBuilder
+    func referenceLineOverlay(canvasFrame: CGRect) -> some View {
+        if let referenceLineValue {
+            let fullWidth = canvasFrame.width
+            let HEIGHT = canvasFrame.height
+            let (highest, lowest) = verticalBounds()
+
+            let y: CGFloat = {
+                if highest == lowest {
+                    return canvasFrame.minY + HEIGHT / 2
+                }
+                let relativeY = CGFloat(referenceLineValue - lowest) / CGFloat(highest - lowest)
+                return canvasFrame.minY + (1 - relativeY) * HEIGHT
+            }()
+
+            Path { path in
+                path.move(to: CGPoint(x: canvasFrame.minX, y: y))
+                path.addLine(to: CGPoint(x: canvasFrame.minX + fullWidth, y: y))
+            }
+            .stroke(
+                Color.primary.opacity(0.28),
+                style: StrokeStyle(lineWidth: 1, lineCap: .round, dash: [5, 4])
+            )
+            .allowsHitTesting(false)
+        }
+    }
+
     func getGlowingIndicatorLocation(canvasFrame: CGRect) -> CGSize {
         let HEIGHT = canvasFrame.height
-        let (highest, lowest) = findHighestAndLowest(values: values)
+        let (highest, lowest) = verticalBounds()
         
         let x: CGFloat = occupyingRelativeWidth * canvasFrame.width
         

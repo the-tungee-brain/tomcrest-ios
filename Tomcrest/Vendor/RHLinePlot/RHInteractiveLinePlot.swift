@@ -28,6 +28,8 @@ public struct RHInteractiveLinePlot<StickLabel, Indicator>: View
     
     /// Relative width that the line plot is occupying (from 0 to 1)
     let occupyingRelativeWidth: CGFloat
+    let yScaleAnchors: [CGFloat]
+    let referenceLineValue: CGFloat?
     let valueStickLabelBuilder: (Value) -> StickLabel
     
     /// Notify when the index selected is changed
@@ -51,6 +53,8 @@ public struct RHInteractiveLinePlot<StickLabel, Indicator>: View
     public init(
         values: [Value],
         occupyingRelativeWidth: CGFloat = 1.0,
+        yScaleAnchors: [CGFloat] = [],
+        referenceLineValue: CGFloat? = nil,
         showGlowingIndicator: Bool = false,
         lineSegmentStartingIndices: [Int]? = nil,
         segmentSearchStrategy: SegmentSearchStrategy = .binarySearch,
@@ -63,6 +67,8 @@ public struct RHInteractiveLinePlot<StickLabel, Indicator>: View
     ) {
         self.values = values
         self.occupyingRelativeWidth = occupyingRelativeWidth
+        self.yScaleAnchors = yScaleAnchors
+        self.referenceLineValue = referenceLineValue
         self.lineSegmentStartingIndices = lineSegmentStartingIndices
         self.didSelectValueAtIndex = didSelectValueAtIndex
         self.didSelectSegmentAtIndex = didSelectSegmentAtIndex
@@ -95,6 +101,8 @@ public struct RHInteractiveLinePlot<StickLabel, Indicator>: View
         return RHLinePlot(
             values: values,
             occupyingRelativeWidth: occupyingRelativeWidth,
+            yScaleAnchors: yScaleAnchors,
+            referenceLineValue: referenceLineValue,
             showGlowingIndicator: showGlowingIndicator,
             lineSegmentStartingIndices: lineSegmentStartingIndices,
             activeSegment: currentlySelectedSegmentIndex,
@@ -185,6 +193,8 @@ public extension RHInteractiveLinePlot where Indicator == GlowingIndicator {
     init(
         values: [Value],
         occupyingRelativeWidth: CGFloat = 1.0,
+        yScaleAnchors: [CGFloat] = [],
+        referenceLineValue: CGFloat? = nil,
         showGlowingIndicator: Bool = false,
         lineSegmentStartingIndices: [Int]? = nil,
         segmentSearchStrategy: SegmentSearchStrategy = .binarySearch,
@@ -196,6 +206,8 @@ public extension RHInteractiveLinePlot where Indicator == GlowingIndicator {
         self.init(
             values: values,
             occupyingRelativeWidth: occupyingRelativeWidth,
+            yScaleAnchors: yScaleAnchors,
+            referenceLineValue: referenceLineValue,
             showGlowingIndicator: showGlowingIndicator,
             lineSegmentStartingIndices: lineSegmentStartingIndices,
             segmentSearchStrategy: segmentSearchStrategy,

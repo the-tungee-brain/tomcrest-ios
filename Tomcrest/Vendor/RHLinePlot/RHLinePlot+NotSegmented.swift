@@ -15,7 +15,7 @@ extension RHLinePlot {
         let HEIGHT = canvasFrame.height
         let lineSectionLength = (WIDTH/CGFloat(values.count - 1))
         
-        let (highest, lowest) = findHighestAndLowest(values: values)
+        let (highest, lowest) = verticalBounds()
         
         if highest == lowest {
             // All data points are equal, just draw a straight line in the middle

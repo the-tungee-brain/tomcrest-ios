@@ -24,6 +24,14 @@ func findHighestAndLowest<V: Comparable>(values: [V]) -> (highest: V, lowest: V)
     return (highest, lowest)
 }
 
+/// Y-scale bounds for the plot, optionally including values that are not drawn (e.g. prior close).
+func plotVerticalBounds(values: [CGFloat], anchors: [CGFloat] = []) -> (highest: CGFloat, lowest: CGFloat) {
+    if anchors.isEmpty {
+        return findHighestAndLowest(values: values)
+    }
+    return findHighestAndLowest(values: values + anchors)
+}
+
 /// Find the index of `value` on a **sorted** `array`. If not found, return the index to the left.
 ///
 /// I.e. for `[1, 3, 5, 10, 30, 55]

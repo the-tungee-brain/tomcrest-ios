@@ -97,6 +97,7 @@ struct InteractiveStockPriceChart: View {
                     values: closeValues,
                     occupyingRelativeWidth: occupyingRelativeWidth,
                     lineColor: lineColor,
+                    previousClose: showsIntradayAxis ? previousClose : nil,
                     selectedIndex: $selectedIndex
                 )
 
@@ -116,12 +117,19 @@ private struct StockPriceLinePlot: View {
     let values: [CGFloat]
     let occupyingRelativeWidth: CGFloat
     let lineColor: Color
+    var previousClose: Double?
     @Binding var selectedIndex: Int?
+
+    private var referenceLineValue: CGFloat? {
+        guard let previousClose else { return nil }
+        return CGFloat(previousClose)
+    }
 
     var body: some View {
         RHInteractiveLinePlot(
             values: values,
             occupyingRelativeWidth: occupyingRelativeWidth,
+            referenceLineValue: referenceLineValue,
             showGlowingIndicator: true,
             didSelectValueAtIndex: { index in
                 selectedIndex = index
@@ -168,6 +176,9 @@ extension InteractiveStockPriceChart {
                 readoutMetric("H", CurrencyFormatter.usd(point.high))
                 readoutMetric("L", CurrencyFormatter.usd(point.low))
                 readoutMetric("C", CurrencyFormatter.usd(point.close))
+                if let previousClose, showsIntradayAxis, !scrubbing {
+                    readoutMetric("Prev", CurrencyFormatter.usd(previousClose))
+                }
                 readoutMetric("Vol", ChartVolumeFormatter.compact(point.volume))
             }
             .lineLimit(1)
