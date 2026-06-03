@@ -199,12 +199,17 @@ final class TopMoversViewModel {
         patternIntelligenceBySymbol[symbol.uppercased()]
     }
 
+    func collapseExpanded() {
+        guard expandedSymbol != nil else { return }
+        expandedSymbol = nil
+        breakdownTask?.cancel()
+        breakdownTask = nil
+    }
+
     func toggleExpanded(_ symbol: String) {
         let key = symbol.uppercased()
         if expandedSymbol == key {
-            expandedSymbol = nil
-            breakdownTask?.cancel()
-            breakdownTask = nil
+            collapseExpanded()
         } else {
             expandedSymbol = key
             breakdownTask?.cancel()

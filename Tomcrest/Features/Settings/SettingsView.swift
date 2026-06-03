@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(AuthSession.self) private var auth
+    @Environment(TabBarReselectCoordinator.self) private var tabReselect
     @Binding var settingsFocus: SettingsFocus?
     @State private var viewModel: SettingsViewModel?
     @State private var path: [SettingsDestination] = []
@@ -39,6 +40,9 @@ struct SettingsView: View {
                 guard focus == .strategy else { return }
                 path = [.strategy]
                 settingsFocus = nil
+            }
+            .onChange(of: tabReselect.settingsReselectCount) { _, _ in
+                path = []
             }
         }
     }

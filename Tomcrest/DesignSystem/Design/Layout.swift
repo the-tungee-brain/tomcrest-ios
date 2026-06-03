@@ -20,6 +20,7 @@ enum Layout {
 /// Scroll targets for `AppScrollScreen` — matches web `#assistant-chat`.
 enum AppScrollAnchor {
     static let chat = "tomcrest.scroll.chat"
+    static let top = "tomcrest.scroll.top"
 }
 
 private struct AppContentWidth: ViewModifier {

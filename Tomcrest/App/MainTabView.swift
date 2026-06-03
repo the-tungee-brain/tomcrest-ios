@@ -12,6 +12,9 @@ struct MainTabView: View {
     @Environment(AccountContext.self) private var account
     @State private var selectedTab: AppTab = .portfolio
     @State private var settingsFocus: SettingsFocus?
+    @State private var tabReselect = TabBarReselectCoordinator()
+
+    private let tabOrder: [AppTab] = [.portfolio, .movers, .research, .settings]
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -42,6 +45,18 @@ struct MainTabView: View {
         .tint(BrandPrimary.color)
         .appMainTabBarChrome()
         .appClearUIKitBackground()
+        .background {
+            TabBarReselectObserver(
+                coordinator: tabReselect,
+                tabs: tabOrder,
+                selectedTab: selectedTab,
+                reinstallToken: tabReselect.reinstallToken
+            )
+        }
+        .onChange(of: selectedTab) { _, _ in
+            tabReselect.scheduleReinstall()
+        }
+        .environment(tabReselect)
         .task(id: auth.accessToken) {
             guard let accessToken = auth.accessToken else { return }
             await account.loadPlanIfNeeded(accessToken: accessToken)

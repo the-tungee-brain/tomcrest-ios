@@ -101,6 +101,8 @@
 		8A0596DBD784D5F9F553918A /* SymbolDepthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EDECBD7FA0089B449BCCE6A /* SymbolDepthViewModel.swift */; };
 		8A5438DDB46DEECCFD345694 /* ChatModelPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 601A77F30073C67B8520BC1C /* ChatModelPicker.swift */; };
 		8CCF6D79897477F2600BE362 /* AppRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D56F0B035F413C3747E68D2 /* AppRouter.swift */; };
+		TABRESELECT02A1B2C3D4E5F601 /* TabBarReselectCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = TABRESELECT01A1B2C3D4E5F601 /* TabBarReselectCoordinator.swift */; };
+		TABRESELECT02A1B2C3D4E5F602 /* TabBarReselectObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = TABRESELECT01A1B2C3D4E5F602 /* TabBarReselectObserver.swift */; };
 		8CDC49279DDE539571F12E8B /* WatchlistLedgerVariantScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3CFA8921EB80FC3EF085E56 /* WatchlistLedgerVariantScreen.swift */; };
 		8E9B361BCDC8B8D49C13BA48 /* WatchlistSaveSymbolSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 782978320AAC4B0E2BD0E347 /* WatchlistSaveSymbolSheet.swift */; };
 		8F0D0A88D68993A27DBDA07F /* SettingsComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = F084935B5A66C1A122711FD9 /* SettingsComponents.swift */; };
@@ -233,6 +235,8 @@
 		18E39CD0191BE87D771C3652 /* BusinessModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BusinessModels.swift; sourceTree = "<group>"; };
 		1C4819359B5D321404416971 /* BrandMarketLine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrandMarketLine.swift; sourceTree = "<group>"; };
 		1D56F0B035F413C3747E68D2 /* AppRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRouter.swift; sourceTree = "<group>"; };
+		TABRESELECT01A1B2C3D4E5F601 /* TabBarReselectCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarReselectCoordinator.swift; sourceTree = "<group>"; };
+		TABRESELECT01A1B2C3D4E5F602 /* TabBarReselectObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarReselectObserver.swift; sourceTree = "<group>"; };
 		1DD45D3F0C2E8473DBA8D2B8 /* AuthModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthModels.swift; sourceTree = "<group>"; };
 		2228D920D44B3FC560E96252 /* AppToast.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppToast.swift; sourceTree = "<group>"; };
 		226B59633E582014D4A3553B /* Inter-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Medium.ttf"; sourceTree = "<group>"; };
@@ -737,6 +741,8 @@
 			children = (
 				62BB8D2B4B2E83AE96C7A914 /* AppDeepLinks.swift */,
 				1D56F0B035F413C3747E68D2 /* AppRouter.swift */,
+				TABRESELECT01A1B2C3D4E5F601 /* TabBarReselectCoordinator.swift */,
+				TABRESELECT01A1B2C3D4E5F602 /* TabBarReselectObserver.swift */,
 			);
 			path = Navigation;
 			sourceTree = "<group>";
@@ -1099,6 +1105,8 @@
 				F926705DBBECA39BAD6CB132 /* AppPanels.swift in Sources */,
 				D02B5BC82DB98556B7B1E277 /* AppPreview.swift in Sources */,
 				8CCF6D79897477F2600BE362 /* AppRouter.swift in Sources */,
+				TABRESELECT02A1B2C3D4E5F601 /* TabBarReselectCoordinator.swift in Sources */,
+				TABRESELECT02A1B2C3D4E5F602 /* TabBarReselectObserver.swift in Sources */,
 				ED0E62E7DFAD4F7F7C59C569 /* AppScreenShell.swift in Sources */,
 				F0D40091BB3F7AD1FF76D9C4 /* AppSectionHeader.swift in Sources */,
 				85321DA2A6BBB586E5A6AA7B /* AppSegmentedTabBar.swift in Sources */,

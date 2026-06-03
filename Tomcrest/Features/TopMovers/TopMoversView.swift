@@ -2,14 +2,20 @@ import SwiftUI
 
 struct TopMoversView: View {
     @Environment(AuthSession.self) private var auth
+    @Environment(TabBarReselectCoordinator.self) private var tabReselect
     @State private var viewModel: TopMoversViewModel?
     @State private var path: [ResearchRoute] = []
+    @State private var scrollToTopToken = 0
 
     var body: some View {
         AppRoutedNavigationCanvasStack(path: $path) {
             Group {
                 if let viewModel {
-                    AppScrollScreen(refresh: { await viewModel.refresh() }) {
+                    AppScrollScreen(
+                        refresh: { await viewModel.refresh() },
+                        scrollToToken: $scrollToTopToken,
+                        scrollAnchor: AppScrollAnchor.top
+                    ) {
                         content(viewModel)
                     }
                 } else {
@@ -21,6 +27,11 @@ struct TopMoversView: View {
                 }
             }
             .appRootNavigation("Top Movers")
+            .onChange(of: tabReselect.moversReselectCount) { _, _ in
+                path = []
+                viewModel?.collapseExpanded()
+                scrollToTopToken += 1
+            }
             .navigationDestination(for: ResearchRoute.self) { route in
                 switch route {
                 case .watchlist:
@@ -54,6 +65,9 @@ struct TopMoversView: View {
 
     @ViewBuilder
     private func content(_ viewModel: TopMoversViewModel) -> some View {
+        Color.clear
+            .appTopScrollAnchor()
+
         TopMoversHeader(hasMlMetrics: viewModel.hasMlMetrics)
 
         MarketRegimeCard(

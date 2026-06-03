@@ -554,10 +554,6 @@ struct TopMoverRow: View {
 
     private var detailHeader: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("\(rankContext.rankLabel) · \(rankContext.subtitle)")
-                .font(.headline.weight(.semibold))
-                .foregroundStyle(Token.textPrimary)
-
             HStack(spacing: 8) {
                 ConvictionBadge(conviction: rowConviction)
                 if detailConviction.tier != rowConviction.tier {

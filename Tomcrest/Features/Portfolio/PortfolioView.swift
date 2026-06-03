@@ -4,6 +4,7 @@ struct PortfolioView: View {
     @Environment(AuthSession.self) private var auth
     @Environment(AppBootstrapState.self) private var bootstrap
     @Environment(AssistantPresenter.self) private var assistant
+    @Environment(TabBarReselectCoordinator.self) private var tabReselect
     @Binding var selectedTab: AppTab
     @Binding var settingsFocus: SettingsFocus?
     @State private var viewModel: PortfolioViewModel?
@@ -63,6 +64,9 @@ struct PortfolioView: View {
                 default:
                     break
                 }
+            }
+            .onChange(of: tabReselect.portfolioReselectCount) { _, _ in
+                path = []
             }
             .overlay(alignment: .bottomTrailing) {
                 if let viewModel, viewModel.screenState == .content {

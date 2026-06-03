@@ -40,18 +40,22 @@ struct AppScrollScreen<Content: View>: View {
             .scrollDismissesKeyboard(.interactively)
             .onChange(of: scrollToToken?.wrappedValue ?? 0) { _, token in
                 guard token > 0 else { return }
-                scrollToChat(using: proxy)
+                scrollToTarget(using: proxy)
             }
         }
         .appCanvasScreen()
         .modifier(RefreshableModifier(refresh: refresh))
     }
 
-    private func scrollToChat(using proxy: ScrollViewProxy) {
-        // Brief delay so tab switches and chat expand layout finish before scrolling.
+    private func scrollToTarget(using proxy: ScrollViewProxy) {
+        let anchor: UnitPoint =
+            scrollAnchor == AppScrollAnchor.top
+            ? .top
+            : UnitPoint(x: 0.5, y: 0.12)
+        // Brief delay so tab switches and layout finish before scrolling.
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
             withAnimation(.easeInOut(duration: 0.35)) {
-                proxy.scrollTo(scrollAnchor, anchor: UnitPoint(x: 0.5, y: 0.12))
+                proxy.scrollTo(scrollAnchor, anchor: anchor)
             }
         }
     }
@@ -126,6 +130,13 @@ extension View {
     /// Anchor for scroll-to-chat — pair with `AppScrollScreen(scrollToToken:)`.
     func appChatScrollAnchor() -> some View {
         id(AppScrollAnchor.chat)
+    }
+
+    /// Anchor for scroll-to-top — pair with `AppScrollScreen(scrollToToken:scrollAnchor:)`.
+    func appTopScrollAnchor() -> some View {
+        Color.clear
+            .frame(height: 0)
+            .id(AppScrollAnchor.top)
     }
 
     /// Horizontal padding + max content width used inside scroll stacks.

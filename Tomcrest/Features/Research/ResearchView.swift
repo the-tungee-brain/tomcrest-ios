@@ -4,10 +4,12 @@ struct ResearchView: View {
     @Environment(AuthSession.self) private var auth
     @Environment(ResearchSymbolBookmarks.self) private var bookmarks
     @Environment(WatchlistStore.self) private var watchlistStore
+    @Environment(TabBarReselectCoordinator.self) private var tabReselect
     @State private var viewModel: ResearchViewModel?
     @State private var searchText = ""
     @FocusState private var isSearchFocused: Bool
     @State private var path: [ResearchRoute] = []
+    @State private var scrollToTopToken = 0
     @State private var showsResearchOnboarding = !OnboardingStorage.isResearchOnboardingDismissed()
 
     private let exampleSymbols = ["NVDA", "SPY", "AAPL", "SCHD"]
@@ -24,7 +26,13 @@ struct ResearchView: View {
 
     var body: some View {
         AppRoutedNavigationCanvasStack(path: $path) {
-            AppScrollScreen {
+            AppScrollScreen(
+                scrollToToken: $scrollToTopToken,
+                scrollAnchor: AppScrollAnchor.top
+            ) {
+                Color.clear
+                    .appTopScrollAnchor()
+
                 if let viewModel {
                     AppSearchField(
                         placeholder: "Search tickers",
@@ -78,6 +86,11 @@ struct ResearchView: View {
             }
             .animation(nil, value: showsBrowseSections)
             .appRootNavigation("Research")
+            .onChange(of: tabReselect.researchReselectCount) { _, _ in
+                path = []
+                isSearchFocused = false
+                scrollToTopToken += 1
+            }
             .navigationDestination(for: ResearchRoute.self) { route in
                 switch route {
                 case .watchlist:
