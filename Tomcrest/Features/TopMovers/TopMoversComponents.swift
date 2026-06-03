@@ -615,11 +615,10 @@ private struct TopMoverActionStyle: ButtonStyle {
             .padding(.vertical, 10)
             .frame(minHeight: Layout.minTouchTarget)
             .background(
-                primary
-                    ? Token.primary.opacity(configuration.isPressed ? 0.75 : 1)
-                    : Token.surfaceFillSecondary
+                (primary ? AppLightButtonColors.fill : Token.surfaceFillSecondary)
+                    .opacity(configuration.isPressed ? 0.88 : 1)
             )
-            .foregroundStyle(primary ? Token.onPrimary : Token.textPrimary)
+            .foregroundStyle(primary ? AppLightButtonColors.label : Token.textPrimary)
             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 }

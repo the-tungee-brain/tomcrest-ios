@@ -128,13 +128,7 @@ struct StrategyStockScreenerSheet: View {
                     Button("Run screener") {
                         Task { await viewModel.runSearch() }
                     }
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(AppColors.onAccent)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-                    .background(AppColors.accent)
-                    .clipShape(Capsule())
-                    .buttonStyle(.plain)
+                    .buttonStyle(AppCompactButtonStyle())
                 }
             }
             .appRootNavigation("Stock screener")

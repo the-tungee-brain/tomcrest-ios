@@ -1,7 +1,6 @@
 import SwiftUI
 
 struct SymbolFinancialsTab: View {
-    @Environment(AccountContext.self) private var account
     let viewModel: SymbolDepthViewModel
 
     @State private var useQuarterly = false
@@ -10,21 +9,53 @@ struct SymbolFinancialsTab: View {
         ResearchDepthTabShell(tab: .financials, viewModel: viewModel) {
             if let block = viewModel.fundamentals {
                 VStack(alignment: .leading, spacing: Layout.sectionSpacing) {
-                    if account.hasProFeature(.financialStrength), let strength = block.strength {
-                        AppScreenSection(title: "Financial strength", footnote: strength.rating.capitalized) {
+                    AppScreenSection(
+                        title: "Financial overview",
+                        footnote: block.strength?.profile
+                    ) {
+                        if let strength = block.strength {
                             FinancialStrengthCard(strength: strength)
+
+                            let keyMetrics = strength.keyMetrics.flatMap {
+                                FinancialsPresentation.pickKeyMetricsFromRows($0)
+                            } ?? FinancialsPresentation.pickKeyMetrics(block.metrics)
+                            if !keyMetrics.isEmpty {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Key metrics")
+                                        .font(.caption2.weight(.medium))
+                                        .foregroundStyle(AppColors.tertiaryLabel)
+                                        .textCase(.uppercase)
+                                        .padding(.top, 8)
+                                    FinancialKeyMetricsGrid(metrics: keyMetrics)
+                                }
+                            }
+
+                            let strengths = FinancialsPresentation.financialStrengths(
+                                strength: strength,
+                                overview: block.overview
+                            )
+                            let risks = FinancialsPresentation.financialRisks(
+                                strength: strength,
+                                overview: block.overview
+                            )
+                            FinancialBulletSection(title: "Financial strengths", items: strengths)
+                            FinancialBulletSection(title: "Financial risks", items: risks, tone: .risk)
+                        } else if !block.metrics.isEmpty {
+                            let keyMetrics = FinancialsPresentation.pickKeyMetrics(block.metrics)
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Key metrics")
+                                    .font(.caption2.weight(.medium))
+                                    .foregroundStyle(AppColors.tertiaryLabel)
+                                    .textCase(.uppercase)
+                                FinancialKeyMetricsGrid(metrics: keyMetrics)
+                            }
                         }
-                    } else if block.strength == nil {
-                        AppInlineBanner(
-                            message: "Upgrade to Pro for AI financial strength analysis.",
-                            tone: .neutral
-                        )
                     }
 
                     let snapshot = useQuarterly ? block.quarterlyFinancials : block.annualFinancials
                     if let snapshot {
                         AppScreenSection(
-                            title: "Statements",
+                            title: "Financial statements",
                             footnote: useQuarterly ? "Quarterly" : "Annual"
                         ) {
                             Picker("Period", selection: $useQuarterly) {
@@ -38,56 +69,12 @@ struct SymbolFinancialsTab: View {
                         }
                     }
 
-                    if !block.metrics.isEmpty {
-                        AppScreenSection(title: "Key metrics") {
-                            GroupedKeyMetricsSection(metrics: block.metrics)
-                        }
-                    }
-
-                    AppScreenSection(title: "SEC filings") {
-                        SecFilingsSectionView(filings: viewModel.secFilings)
-                    }
-
-                    AppScreenSection(title: "Financial trends (SEC)") {
-                        SecFinancialTrendSectionView(financials: viewModel.secFinancials)
-                    }
-
-                    AppScreenSection(title: "Ratios (SEC)") {
-                        SecRatiosSectionView(ratios: viewModel.secRatios)
+                    AppScreenSection(title: "Recent SEC filings") {
+                        SecFilingsRecentSectionView(filings: viewModel.secFilings)
                     }
                 }
             }
         }
-    }
-}
-
-struct FinancialStrengthCard: View {
-    let strength: FinancialStrength
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(strength.headline)
-                .font(AppTypography.cardTitle)
-                .foregroundStyle(AppColors.label)
-            Text("Score \(strength.score)/100")
-                .font(AppTypography.caption)
-                .foregroundStyle(AppColors.secondaryLabel)
-            if !strength.strengths.isEmpty {
-                ForEach(strength.strengths.prefix(3), id: \.self) { item in
-                    Text("• \(item)")
-                        .font(.caption)
-                        .foregroundStyle(AppColors.label)
-                }
-            }
-            if !strength.risks.isEmpty {
-                ForEach(strength.risks.prefix(3), id: \.self) { item in
-                    Text("• \(item)")
-                        .font(.caption)
-                        .foregroundStyle(AppColors.warning)
-                }
-            }
-        }
-        .appPanel(subtle: true)
     }
 }
 

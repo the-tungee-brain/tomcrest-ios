@@ -154,7 +154,7 @@ enum ResearchService {
         symbol: String,
         reportDate: String,
         accessToken: String,
-        includeAnalysis: Bool = true,
+        includeAnalysis: Bool = false,
         includeTranscript: Bool = true,
         api: APIClient = .shared
     ) async throws -> EarningsDetailResponse {
@@ -246,11 +246,17 @@ enum ResearchService {
     static func fetchFundamentals(
         symbol: String,
         accessToken: String,
+        includeAiOverview: Bool = false,
+        includeStreetAnalysis: Bool = false,
         api: APIClient = .shared
     ) async throws -> FundamentalsBlock {
         try await api.get(
             "/research/fundamentals",
-            query: ["symbol": symbol.uppercased()],
+            query: [
+                "symbol": symbol.uppercased(),
+                "include_ai_overview": includeAiOverview ? "true" : "false",
+                "include_street_analysis": includeStreetAnalysis ? "true" : "false",
+            ],
             accessToken: accessToken,
             keyDecoding: .camelCase
         )

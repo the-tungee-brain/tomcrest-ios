@@ -296,20 +296,64 @@ struct FundamentalMetric: Decodable, Identifiable {
     let note: String?
 }
 
-struct FinancialStrength: Decodable {
-    let rating: String
+struct FinancialCategoryScore: Decodable {
     let score: Int
+    let rankLabel: String
+}
+
+struct FinancialScoreBreakdown: Decodable {
+    let growth: FinancialCategoryScore
+    let profitability: FinancialCategoryScore
+    let balanceSheet: FinancialCategoryScore
+    let cashFlow: FinancialCategoryScore
+}
+
+struct FinancialStrength: Decodable {
+    let profile: String
+    let score: Int
+    let financialVerdict: String
+    let scoreExplanation: String
+    let businessContext: String
+    let scoreBreakdown: FinancialScoreBreakdown
+    let rating: String
     let headline: String
     let strengths: [String]
     let risks: [String]
     let highlights: [String]?
+    let keyMetrics: [FundamentalMetric]?
+
+    enum CodingKeys: String, CodingKey {
+        case profile, score, financialVerdict, scoreExplanation, scoreBreakdown
+        case businessContext, rating, headline, strengths, risks, highlights, keyMetrics
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        profile = try container.decode(String.self, forKey: .profile)
+        score = try container.decode(Int.self, forKey: .score)
+        let verdict = try container.decodeIfPresent(String.self, forKey: .financialVerdict)
+        let explanation = try container.decodeIfPresent(String.self, forKey: .scoreExplanation) ?? ""
+        financialVerdict = verdict ?? explanation
+        scoreExplanation = explanation.isEmpty ? financialVerdict : explanation
+        businessContext = try container.decodeIfPresent(String.self, forKey: .businessContext) ?? ""
+        scoreBreakdown = try container.decode(FinancialScoreBreakdown.self, forKey: .scoreBreakdown)
+        rating = try container.decode(String.self, forKey: .rating)
+        headline = try container.decode(String.self, forKey: .headline)
+        strengths = try container.decodeIfPresent([String].self, forKey: .strengths) ?? []
+        risks = try container.decodeIfPresent([String].self, forKey: .risks) ?? []
+        highlights = try container.decodeIfPresent([String].self, forKey: .highlights)
+        keyMetrics = try container.decodeIfPresent([FundamentalMetric].self, forKey: .keyMetrics)
+    }
+}
+
+struct InvestmentThesis: Decodable {
+    let bullCase: [String]
+    let bearCase: [String]
 }
 
 struct FundamentalsOverview: Decodable {
-    let atAGlance: String?
-    let valuationTake: String?
-    let strengths: [String]?
-    let concerns: [String]?
+    let valuationSummary: String
+    let investmentThesis: InvestmentThesis
 }
 
 struct FundamentalsBlock: Decodable {
@@ -585,6 +629,31 @@ enum StreetAnalysisFormatters {
     static func formatUpside(_ value: Double?) -> String {
         guard let value else { return "—" }
         return String(format: "%+.1f%%", value)
+    }
+
+    static func formatPremiumDiscountToTarget(
+        current: Double?,
+        mean: Double?,
+        upsideToMeanPct: Double?
+    ) -> String {
+        if let upside = upsideToMeanPct {
+            if upside >= 0.5 {
+                return String(format: "%.1f%% below mean target", upside)
+            }
+            if upside <= -0.5 {
+                return String(format: "%.1f%% above mean target", abs(upside))
+            }
+            return "At mean target"
+        }
+        guard let current, let mean, mean != 0 else { return "—" }
+        let pct = ((current - mean) / mean) * 100
+        if pct <= -0.5 {
+            return String(format: "%.1f%% below mean target", abs(pct))
+        }
+        if pct >= 0.5 {
+            return String(format: "%.1f%% above mean target", pct)
+        }
+        return "At mean target"
     }
 
     static func formatShares(_ value: Double) -> String {

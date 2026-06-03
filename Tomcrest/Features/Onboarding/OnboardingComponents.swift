@@ -17,13 +17,7 @@ struct PortfolioStrategyNudge: View {
 
             HStack(spacing: 10) {
                 Button("Start onboarding", action: onStart)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(AppColors.onAccent)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(AppColors.accent)
-                    .clipShape(Capsule())
-                    .buttonStyle(.plain)
+                    .buttonStyle(AppCompactButtonStyle())
 
                 Button("Open settings", action: onOpenSettings)
                     .font(.caption.weight(.semibold))

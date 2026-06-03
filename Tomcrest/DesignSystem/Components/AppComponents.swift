@@ -24,7 +24,13 @@ struct AppToolbarRefreshButton: View {
 
 // MARK: - Buttons
 
-/// Filled primary action — Sign in, Connect, Save.
+/// Matches web `Button` default: `bg-foreground` fill with `text-background` label.
+enum AppLightButtonColors {
+    static let fill = Token.textPrimary
+    static let label = Token.background
+}
+
+/// Brand-filled CTA — sign-in and other single high-commitment actions only.
 struct AppPrimaryButtonStyle: ButtonStyle {
     var destructive = false
 
@@ -60,23 +66,46 @@ struct AppTertiaryButtonStyle: ButtonStyle {
     }
 }
 
-/// Bordered / subtle secondary action.
+/// Full-width action — web default / outline-style light button (not accent fill).
 struct AppSecondaryButtonStyle: ButtonStyle {
     var destructive = false
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.body.weight(.semibold))
-            .foregroundStyle(destructive ? AppColors.error : AppColors.label)
+            .foregroundStyle(foregroundColor)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
             .frame(minHeight: Layout.minTouchTarget)
-            .background(AppColors.secondaryFill.opacity(configuration.isPressed ? 0.7 : 1))
+            .background(backgroundColor.opacity(configuration.isPressed ? 0.88 : 1))
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(AppColors.separator, lineWidth: 1)
-            }
+    }
+
+    private var foregroundColor: Color {
+        destructive ? AppColors.error : AppLightButtonColors.label
+    }
+
+    private var backgroundColor: Color {
+        destructive ? AppColors.secondaryFill : AppLightButtonColors.fill
+    }
+}
+
+/// Compact inline action — web `Button` size `sm`.
+struct AppCompactButtonStyle: ButtonStyle {
+    var destructive = false
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(destructive ? AppColors.error : AppLightButtonColors.label)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 9)
+            .frame(minHeight: 36)
+            .background(
+                (destructive ? AppColors.secondaryFill : AppLightButtonColors.fill)
+                    .opacity(configuration.isPressed ? 0.88 : 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 }
 
@@ -530,7 +559,7 @@ struct AppEmptyState: View {
             }
 
             Button(actionTitle, action: action)
-                .buttonStyle(AppPrimaryButtonStyle())
+                .buttonStyle(AppSecondaryButtonStyle())
         }
         .padding(24)
         .appPanel(subtle: true)
@@ -586,7 +615,7 @@ struct AppErrorState: View {
         VStack(spacing: 14) {
             AppInlineBanner(message: message, tone: .error)
             Button(retryTitle, action: retry)
-                .buttonStyle(AppPrimaryButtonStyle())
+                .buttonStyle(AppSecondaryButtonStyle())
         }
         .frame(maxWidth: .infinity)
         .padding(16)

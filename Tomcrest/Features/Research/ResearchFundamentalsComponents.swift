@@ -1,5 +1,74 @@
 import SwiftUI
 
+// MARK: - Valuation-focused fundamentals (web FundamentalsPageContent)
+
+struct FundamentalsValuationSection: View {
+    let overview: FundamentalsOverview?
+
+    var body: some View {
+        if let overview {
+            VStack(alignment: .leading, spacing: 16) {
+                if !overview.valuationSummary.isEmpty {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("VALUATION SUMMARY")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(AppColors.tertiaryLabel)
+                            .tracking(0.4)
+                        Text(overview.valuationSummary)
+                            .font(AppTypography.bodySecondary)
+                            .foregroundStyle(AppColors.label)
+                            .lineSpacing(4)
+                    }
+                }
+
+                if !overview.investmentThesis.bullCase.isEmpty
+                    || !overview.investmentThesis.bearCase.isEmpty {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("INVESTMENT THESIS")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(AppColors.tertiaryLabel)
+                            .tracking(0.4)
+
+                        HStack(alignment: .top, spacing: 12) {
+                            thesisColumn(
+                                title: "Bull case",
+                                items: overview.investmentThesis.bullCase,
+                                tone: .success
+                            )
+                            thesisColumn(
+                                title: "Bear case",
+                                items: overview.investmentThesis.bearCase,
+                                tone: .danger
+                            )
+                        }
+                    }
+                }
+            }
+            .appPanel(subtle: true)
+        }
+    }
+
+    @ViewBuilder
+    private func thesisColumn(
+        title: String,
+        items: [String],
+        tone: Color
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title.uppercased())
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(tone)
+            ForEach(items, id: \.self) { item in
+                Text("• \(item)")
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.label)
+                    .lineSpacing(3)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
 // MARK: - Wall Street analysis (web StreetAnalysisSection)
 
 struct StreetAnalysisSection: View {
@@ -75,10 +144,35 @@ struct StreetAnalysisSection: View {
     @ViewBuilder
     private func priceTargetsBlock(_ targets: AnalystPriceTargets) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("PRICE TARGETS")
+            Text("PRICE VS STREET")
                 .font(.caption2.weight(.semibold))
                 .foregroundStyle(AppColors.tertiaryLabel)
                 .tracking(0.4)
+
+            LazyVGrid(
+                columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())],
+                alignment: .leading,
+                spacing: 8
+            ) {
+                targetTile("Current", StreetAnalysisFormatters.formatPrice(targets.current))
+                targetTile("Mean target", StreetAnalysisFormatters.formatPrice(targets.mean))
+                targetTile(
+                    "Vs mean",
+                    StreetAnalysisFormatters.formatPremiumDiscountToTarget(
+                        current: targets.current,
+                        mean: targets.mean,
+                        upsideToMeanPct: targets.upsideToMeanPct
+                    )
+                )
+            }
+
+            if targets.upsideToMeanPct != nil {
+                Text(
+                    "Implied upside to mean target: \(StreetAnalysisFormatters.formatUpside(targets.upsideToMeanPct))"
+                )
+                .font(.caption2)
+                .foregroundStyle(AppColors.secondaryLabel)
+            }
 
             LazyVGrid(
                 columns: [GridItem(.flexible()), GridItem(.flexible())],
@@ -87,8 +181,6 @@ struct StreetAnalysisSection: View {
             ) {
                 targetTile("Low", StreetAnalysisFormatters.formatPrice(targets.low))
                 targetTile("High", StreetAnalysisFormatters.formatPrice(targets.high))
-                targetTile("Mean", StreetAnalysisFormatters.formatPrice(targets.mean))
-                targetTile("Upside", StreetAnalysisFormatters.formatUpside(targets.upsideToMeanPct))
             }
         }
     }

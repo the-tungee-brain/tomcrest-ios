@@ -173,7 +173,7 @@ struct NewsAnalyzePromptCard: View {
                 .foregroundStyle(AppColors.secondaryLabel)
                 .lineSpacing(3)
             Button(isAnalyzing ? "Analyzing…" : "Analyze news", action: onAnalyze)
-                .buttonStyle(AppPrimaryButtonStyle())
+                .buttonStyle(AppCompactButtonStyle())
                 .disabled(isAnalyzing || storyCount == 0)
         }
         .appPanel(subtle: true)

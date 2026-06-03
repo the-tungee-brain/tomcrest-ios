@@ -94,16 +94,8 @@ struct PortfolioAnalysisSection: View {
                     .foregroundStyle(AppColors.secondaryLabel)
             }
         } else {
-            Button(action: onAnalyze) {
-                Text("Run analysis")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(AppColors.onAccent)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-                    .background(AppColors.accent)
-                    .clipShape(Capsule())
-            }
-            .buttonStyle(.plain)
+            Button("Run analysis", action: onAnalyze)
+                .buttonStyle(AppCompactButtonStyle())
         }
 
         if let errorMessage, !errorMessage.isEmpty {

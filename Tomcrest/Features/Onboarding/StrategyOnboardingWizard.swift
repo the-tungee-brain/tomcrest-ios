@@ -172,14 +172,9 @@ struct StrategyOnboardingWizard: View {
             Button(primaryButtonTitle) {
                 Task { await advance() }
             }
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(AppColors.onAccent)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(canAdvance ? AppColors.accent : AppColors.secondaryFill)
-            .clipShape(Capsule())
-            .buttonStyle(.plain)
+            .buttonStyle(AppCompactButtonStyle())
             .disabled(!canAdvance || isSaving)
+            .opacity(canAdvance ? 1 : 0.45)
         }
     }
 

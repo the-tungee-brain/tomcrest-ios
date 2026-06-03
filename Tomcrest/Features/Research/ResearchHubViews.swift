@@ -397,10 +397,7 @@ struct SymbolResearchHubView: View {
             if destination == .income,
                let event = depthVM.selectedHistoryEvent,
                EarningsSelection.shouldLoadDetail(for: event) {
-                await depthVM.loadEarningsDetail(
-                    includeAnalysis: account.hasProFeature(.earningsAi),
-                    force: true
-                )
+                await depthVM.loadEarningsDetail(includeAnalysis: false, force: true)
             }
         default:
             await depthVM.loadIfNeeded(destination.researchTab)
@@ -416,10 +413,7 @@ struct SymbolResearchHubView: View {
             await depthVM.reload(.more, more: .income)
             if let event = depthVM.selectedHistoryEvent,
                EarningsSelection.shouldLoadDetail(for: event) {
-                await depthVM.loadEarningsDetail(
-                    includeAnalysis: account.hasProFeature(.earningsAi),
-                    force: true
-                )
+                await depthVM.loadEarningsDetail(includeAnalysis: false, force: true)
             }
         case .analysis:
             await overviewVM.reload()

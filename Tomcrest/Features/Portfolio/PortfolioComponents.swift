@@ -666,15 +666,9 @@ private struct PortfolioAttentionRow: View {
                         Image(systemName: "sparkles")
                             .font(.caption2.weight(.semibold))
                         Text("Ask AI")
-                            .font(.caption2.weight(.semibold))
                     }
-                    .foregroundStyle(AppColors.onAccent)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 7)
-                    .background(AppColors.accent)
-                    .clipShape(Capsule())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(AppCompactButtonStyle())
 
                 if canDismiss, let onDismiss {
                     Button(action: onDismiss) {

@@ -133,14 +133,8 @@ struct WatchlistHubScreen: View {
                 Text("New folder")
                     .font(AppTypography.cardTitle)
             }
-            .foregroundStyle(AppColors.onAccent)
-            .padding(.horizontal, 22)
-            .padding(.vertical, 14)
-            .background(AppColors.accent)
-            .clipShape(Capsule())
-            .shadow(color: AppColors.accent.opacity(0.35), radius: 16, y: 8)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(AppSecondaryButtonStyle())
         .padding(.bottom, 20)
     }
 }

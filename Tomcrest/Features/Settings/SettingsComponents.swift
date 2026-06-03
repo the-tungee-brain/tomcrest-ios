@@ -45,7 +45,7 @@ struct SchwabConnectionCard: View {
                     .disabled(isLoading)
             } else {
                 Button("Connect Schwab", action: onConnect)
-                    .buttonStyle(AppPrimaryButtonStyle())
+                    .buttonStyle(AppSecondaryButtonStyle())
                     .disabled(isLoading)
             }
         }

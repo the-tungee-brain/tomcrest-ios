@@ -1,5 +1,69 @@
 import SwiftUI
 
+struct SecFilingsRecentSectionView: View {
+    let filings: SecFilingsResponse?
+    @State private var showAll = false
+
+    var body: some View {
+        if let filings, !filings.filings.isEmpty {
+            let highlighted = FinancialsPresentation.pickHighlightFilings(filings.filings)
+            let visible = showAll ? filings.filings : highlighted
+            let hasMore = filings.filings.count > highlighted.count
+
+            VStack(alignment: .leading, spacing: 10) {
+                filingsList(visible)
+                if hasMore {
+                    Button(showAll ? "Show latest filings only" : "View all filings") {
+                        showAll.toggle()
+                    }
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(AppColors.accentHighlight)
+                }
+            }
+        } else {
+            AppEmptyMessage(message: "No recent SEC filings found.", systemImage: "folder")
+        }
+    }
+
+    @ViewBuilder
+    private func filingsList(_ items: [SecFilingSummary]) -> some View {
+        AppGroupedList {
+            ForEach(Array(items.enumerated()), id: \.element.id) { index, filing in
+                filingRow(filing)
+                if index < items.count - 1 {
+                    AppGroupedDivider()
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func filingRow(_ filing: SecFilingSummary) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 8) {
+                Text(filing.form)
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(AppColors.accentHighlight)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(AppColors.accentMuted.opacity(0.45))
+                    .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+                Text("Filed \(DateFormatters.display(from: filing.filingDate))")
+                    .font(.caption2)
+                    .foregroundStyle(AppColors.secondaryLabel)
+            }
+            if !filing.reportDate.isEmpty {
+                Text("Report \(DateFormatters.display(from: filing.reportDate))")
+                    .font(.caption2)
+                    .foregroundStyle(AppColors.tertiaryLabel)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+    }
+}
+
 struct SecFilingsSectionView: View {
     let filings: SecFilingsResponse?
 
@@ -128,6 +192,62 @@ struct SecFinancialTrendSectionView: View {
             .padding(12)
             .background(AppColors.secondaryBackground.opacity(0.55))
             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        }
+    }
+}
+
+struct FinancialKeyMetricsGrid: View {
+    let metrics: [FinancialKeyMetric]
+
+    var body: some View {
+        if metrics.isEmpty {
+            AppEmptyMessage(message: "Metrics unavailable.", systemImage: "chart.bar")
+        } else {
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                ForEach(metrics) { metric in
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(metric.label)
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(AppColors.tertiaryLabel)
+                            .lineLimit(2)
+                        Text(metric.value)
+                            .font(AppTypography.monoCaptionSemibold)
+                            .foregroundStyle(AppColors.label)
+                    }
+                    .padding(10)
+                    .frame(maxWidth: .infinity, minHeight: 52, alignment: .topLeading)
+                    .background(AppColors.secondaryBackground.opacity(0.55))
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                }
+            }
+        }
+    }
+}
+
+struct FinancialBulletSection: View {
+    let title: String
+    let items: [String]
+    var tone: FinancialBulletTone = .neutral
+
+    enum FinancialBulletTone {
+        case neutral
+        case risk
+    }
+
+    var body: some View {
+        if !items.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(title)
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(tone == .risk ? AppColors.warning : AppColors.tertiaryLabel)
+                    .textCase(.uppercase)
+                ForEach(items, id: \.self) { item in
+                    Text("• \(item)")
+                        .font(.caption)
+                        .foregroundStyle(tone == .risk ? AppColors.warning : AppColors.label)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
         }
     }
 }

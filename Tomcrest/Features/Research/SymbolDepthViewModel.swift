@@ -33,6 +33,7 @@ final class SymbolDepthViewModel {
     private(set) var earningsDetailError: String?
     private(set) var incomeEarningsError: String?
     private(set) var incomeDividendsError: String?
+    private(set) var earningsAnalysisRequested = false
 
     private(set) var loadingTab: ResearchTab?
     private(set) var tabErrors: [ResearchTab: String] = [:]
@@ -371,12 +372,18 @@ final class SymbolDepthViewModel {
         }
     }
 
-    func selectHistoryEvent(_ event: EarningsEvent, includeAnalysis: Bool) async {
+    func selectHistoryEvent(_ event: EarningsEvent) async {
         selectedHistoryEvent = event
         earningsDetail = nil
         earningsDetailError = nil
+        earningsAnalysisRequested = false
         guard EarningsSelection.shouldLoadDetail(for: event) else { return }
-        await loadEarningsDetail(includeAnalysis: includeAnalysis)
+        await loadEarningsDetail(includeAnalysis: false)
+    }
+
+    func requestEarningsAnalysis() async {
+        earningsAnalysisRequested = true
+        await loadEarningsDetail(includeAnalysis: true, force: true)
     }
 
     func loadEarningsDetail(includeAnalysis: Bool, force: Bool = false) async {

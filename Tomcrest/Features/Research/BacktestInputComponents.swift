@@ -287,18 +287,13 @@ struct BacktestRunButton: View {
                 Text(isLoading ? loadingTitle : title)
                     .font(.caption.weight(.semibold))
             }
-            .foregroundStyle(isLoading ? AppColors.secondaryLabel : AppColors.accentHighlight)
+            .foregroundStyle(isLoading ? AppColors.secondaryLabel : AppLightButtonColors.label)
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
-            .background(AppColors.insetSurface)
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .stroke(
-                        isLoading ? AppColors.separator : AppColors.accentHighlight.opacity(0.4),
-                        lineWidth: 1
-                    )
-            }
+            .background(
+                (isLoading ? AppColors.secondaryFill : AppLightButtonColors.fill)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         }
         .buttonStyle(BacktestRunButtonStyle())
         .disabled(isLoading || isDisabled)

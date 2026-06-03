@@ -222,10 +222,7 @@ struct SymbolEarningsTab: View {
                                 selection: viewModel.selectedHistoryEvent
                             ) { event in
                                 Task {
-                                    await viewModel.selectHistoryEvent(
-                                        event,
-                                        includeAnalysis: account.hasProFeature(.earningsAi)
-                                    )
+                                    await viewModel.selectHistoryEvent(event)
                                 }
                             }
 
@@ -236,7 +233,11 @@ struct SymbolEarningsTab: View {
                                         detail: viewModel.earningsDetail,
                                         isLoading: viewModel.earningsDetailLoading,
                                         error: viewModel.earningsDetailError,
-                                        earningsAiAllowed: account.hasProFeature(.earningsAi)
+                                        earningsAiAllowed: account.hasProFeature(.earningsAi),
+                                        analysisRequested: viewModel.earningsAnalysisRequested,
+                                        onRequestAnalysis: {
+                                            Task { await viewModel.requestEarningsAnalysis() }
+                                        }
                                     )
                                 } else {
                                     AppEmptyMessage(
@@ -256,9 +257,7 @@ struct SymbolEarningsTab: View {
                 .task(id: viewModel.selectedHistoryEvent?.id) {
                     guard let event = viewModel.selectedHistoryEvent,
                           EarningsSelection.shouldLoadDetail(for: event) else { return }
-                    await viewModel.loadEarningsDetail(
-                        includeAnalysis: account.hasProFeature(.earningsAi)
-                    )
+                    await viewModel.loadEarningsDetail(includeAnalysis: false)
                 }
             }
         }
@@ -350,6 +349,8 @@ private struct EarningsDetailSection: View {
     let isLoading: Bool
     let error: String?
     let earningsAiAllowed: Bool
+    let analysisRequested: Bool
+    let onRequestAnalysis: () -> Void
 
     @State private var aiExpanded = false
     @State private var analysisDetailsExpanded = false
@@ -372,15 +373,7 @@ private struct EarningsDetailSection: View {
 
             if earningsAiAllowed {
                 AppDisclosureSection(title: "Analysis", isExpanded: $aiExpanded) {
-                    if isLoading, detail?.analysis == nil {
-                        earningsAnalysisSkeleton
-                    } else if let analysis = detail?.analysis {
-                        earningsAnalysisBlock(analysis)
-                    } else if !isLoading, error == nil {
-                        Text("AI analysis is not available for this quarter.")
-                            .font(AppTypography.caption)
-                            .foregroundStyle(AppColors.secondaryLabel)
-                    }
+                    earningsAnalysisContent
                 }
             } else {
                 proUpsellBanner
@@ -423,6 +416,36 @@ private struct EarningsDetailSection: View {
             message: "Upgrade to Pro for AI earnings summaries and investor takeaways.",
             tone: .neutral
         )
+    }
+
+    private var isAnalysisLoading: Bool {
+        analysisRequested && isLoading && detail?.analysis == nil
+    }
+
+    @ViewBuilder
+    private var earningsAnalysisContent: some View {
+        if !analysisRequested {
+            VStack(alignment: .leading, spacing: 10) {
+                Text(
+                    "Summarize this quarter — highlights, surprises, guidance, and investor takeaway."
+                )
+                .font(AppTypography.caption)
+                .foregroundStyle(AppColors.secondaryLabel)
+                .lineSpacing(3)
+
+                Button("Run AI analysis", action: onRequestAnalysis)
+                    .buttonStyle(AppCompactButtonStyle())
+                    .disabled(isLoading && detail == nil)
+            }
+        } else if isAnalysisLoading {
+            earningsAnalysisSkeleton
+        } else if let analysis = detail?.analysis {
+            earningsAnalysisBlock(analysis)
+        } else if !isLoading, error == nil {
+            Text("AI analysis is not available for this quarter.")
+                .font(AppTypography.caption)
+                .foregroundStyle(AppColors.secondaryLabel)
+        }
     }
 
     private var earningsAnalysisSkeleton: some View {
@@ -1083,12 +1106,10 @@ private struct BusinessOverviewContent: View {
 // MARK: - Fundamentals tab
 
 struct SymbolFundamentalsTab: View {
-    @Environment(AccountContext.self) private var account
     let viewModel: SymbolDepthViewModel
     let assetType: String?
 
-    @State private var overviewExpanded = false
-    @State private var strengthExpanded = false
+    @State private var secProfileExpanded = false
 
     private var isEtf: Bool {
         let normalized = assetType?.uppercased() ?? "STOCK"
@@ -1099,57 +1120,19 @@ struct SymbolFundamentalsTab: View {
         ResearchDepthTabShell(tab: .metrics, viewModel: viewModel) {
             if let block = viewModel.fundamentals {
                 VStack(alignment: .leading, spacing: Layout.sectionSpacing) {
+                    AppScreenSection(
+                        title: isEtf ? "Fund valuation" : "Valuation",
+                        footnote: isEtf
+                            ? "Cost, yield, and composition"
+                            : "Is the stock attractive at today's price?"
+                    ) {
+                        FundamentalsValuationSection(overview: block.overview)
+                    }
+
                     if isEtf, let funds = block.etfFunds {
                         AppScreenSection(title: "Fund profile") {
                             EtfFundsOverviewSection(funds: funds)
                         }
-                    }
-
-                    // Metrics first — the tab’s primary job; narrative blocks stay collapsed.
-                    if !block.metrics.isEmpty {
-                        AppScreenSection(
-                            title: ResearchTab.metrics.metricsLabel(for: assetType)
-                        ) {
-                            GroupedKeyMetricsSection(metrics: block.metrics)
-                        }
-                    }
-
-                    if let overview = block.overview?.atAGlance, !overview.isEmpty {
-                        AppDisclosureSection(title: "Overview", isExpanded: $overviewExpanded) {
-                            Text(overview)
-                                .font(AppTypography.bodySecondary)
-                                .foregroundStyle(AppColors.label)
-                                .lineSpacing(4)
-                        }
-                    } else if let note = block.overviewNote, !note.isEmpty {
-                        AppDisclosureSection(title: "Overview", isExpanded: $overviewExpanded) {
-                            Text(note)
-                                .font(AppTypography.bodySecondary)
-                                .foregroundStyle(AppColors.secondaryLabel)
-                                .lineSpacing(3)
-                        }
-                    }
-
-                    if account.hasProFeature(.financialStrength), let strength = block.strength {
-                        AppDisclosureSection(
-                            title: "Financial strength",
-                            footnote: strength.rating.capitalized,
-                            isExpanded: $strengthExpanded
-                        ) {
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text(strength.headline)
-                                    .font(AppTypography.cardTitle)
-                                    .foregroundStyle(AppColors.label)
-                                Text("Score \(strength.score)/100")
-                                    .font(AppTypography.caption)
-                                    .foregroundStyle(AppColors.secondaryLabel)
-                            }
-                        }
-                    } else if !account.hasProFeature(.financialStrength), !isEtf {
-                        AppInlineBanner(
-                            message: "Upgrade to Pro for financial strength analysis.",
-                            tone: .neutral
-                        )
                     }
 
                     if !isEtf {
@@ -1172,6 +1155,16 @@ struct SymbolFundamentalsTab: View {
                                     dataAsOf: block.streetAnalysis?.dataAsOf
                                 )
                             }
+                        }
+
+                        AppDisclosureSection(
+                            title: "SEC company profile",
+                            footnote: "Registrant details from EDGAR",
+                            isExpanded: $secProfileExpanded
+                        ) {
+                            Text("Open the Financials tab for filings, or view registrant metadata in a future SEC detail screen.")
+                                .font(AppTypography.caption)
+                                .foregroundStyle(AppColors.secondaryLabel)
                         }
                     }
                 }
