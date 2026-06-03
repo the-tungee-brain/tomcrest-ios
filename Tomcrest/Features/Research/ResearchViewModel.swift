@@ -87,9 +87,6 @@ final class SymbolOverviewViewModel {
     private(set) var chartError: String?
     var chartPeriod: StockChartPeriod = .oneDay
 
-    private(set) var isBigPictureLoading = false
-    private(set) var bigPictureError: String?
-
     private(set) var chatSessions: [ChatSessionSummary] = []
     private(set) var chatSessionsLoading = false
     var showChatHistory = false
@@ -379,25 +376,6 @@ final class SymbolOverviewViewModel {
             values: chart.data.map { CGFloat($0.close) },
             occupyingRelativeWidth: 1
         )
-    }
-
-    func refreshBigPicture() async {
-        guard let accessToken = auth.accessToken else { return }
-
-        isBigPictureLoading = true
-        bigPictureError = nil
-        defer { isBigPictureLoading = false }
-
-        do {
-            bundle = try await ResearchService.fetchOverviewBundle(
-                symbol: symbol,
-                accessToken: accessToken,
-                includeSummary: true,
-                api: api
-            )
-        } catch {
-            bigPictureError = (error as? APIError)?.errorDescription ?? error.localizedDescription
-        }
     }
 
     func startNewChat() {

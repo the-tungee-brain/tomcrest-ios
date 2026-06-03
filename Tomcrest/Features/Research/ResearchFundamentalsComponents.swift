@@ -61,12 +61,12 @@ struct FundamentalsValuationSection: View {
                             thesisColumn(
                                 title: "Bull case",
                                 items: overview.investmentThesis.bullCase,
-                                tone: .success
+                                tone: AppColors.success
                             )
                             thesisColumn(
                                 title: "Bear case",
                                 items: overview.investmentThesis.bearCase,
-                                tone: .danger
+                                tone: AppColors.danger
                             )
                         }
                     }

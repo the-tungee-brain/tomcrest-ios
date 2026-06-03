@@ -156,19 +156,6 @@ struct SymbolAnalysisHubTab: View {
                 }
 
                 if !isEtfLike {
-                    BigPictureSection(
-                        summary: bundle?.summary,
-                        isLoading: overviewVM.isBigPictureLoading,
-                        errorMessage: overviewVM.bigPictureError,
-                        onRefresh: {
-                            Task { await overviewVM.refreshBigPicture() }
-                        }
-                    )
-                }
-
-                SymbolPatternPredictionContent(viewModel: depthVM)
-
-                if !isEtfLike {
                     SymbolBusinessContent(viewModel: depthVM)
                 }
             }
@@ -336,7 +323,8 @@ struct SymbolResearchHubView: View {
 
     @ViewBuilder
     private var hubContent: some View {
-        switch destination {
+        VStack(alignment: .leading, spacing: Layout.sectionSpacing) {
+            switch destination {
         case .analysis:
             SymbolAnalysisHubTab(
                 overviewVM: overviewVM,
@@ -367,6 +355,7 @@ struct SymbolResearchHubView: View {
                         assistant.openSymbol(symbolItem.symbol, prompt: prompt, sendImmediately: true)
                     }
                 )
+            }
             }
         }
     }

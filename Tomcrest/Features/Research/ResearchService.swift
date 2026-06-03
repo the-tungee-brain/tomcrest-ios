@@ -307,6 +307,19 @@ enum ResearchService {
         )
     }
 
+    static func fetchTradeDecision(
+        symbol: String,
+        accessToken: String,
+        api: APIClient = .shared
+    ) async throws -> TradeDecision {
+        try await api.get(
+            "/research/trade-decision",
+            query: ["symbol": symbol.uppercased()],
+            accessToken: accessToken,
+            keyDecoding: .camelCase
+        )
+    }
+
     static func fetchSymbolIntelligence(
         symbol: String,
         accessToken: String,

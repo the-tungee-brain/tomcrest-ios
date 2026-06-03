@@ -4,6 +4,7 @@ import Charts
 // MARK: - Overview tab (quote, performance, signals, chat)
 
 struct SymbolOverviewTab: View {
+    @Environment(AuthSession.self) private var auth
     @Bindable var viewModel: SymbolOverviewViewModel
     @Bindable var positionViewModel: SymbolPositionViewModel
     let bundle: ResearchOverviewBundle?
@@ -31,8 +32,21 @@ struct SymbolOverviewTab: View {
     }
 
     @ViewBuilder
+    private var isEtfLike: Bool {
+        let normalized = bundle?.assetType?.uppercased() ?? ""
+        return normalized == "ETF" || normalized == "MUTUAL_FUND" || normalized == "INDEX"
+    }
+
+    @ViewBuilder
     private func overviewSections(_ bundle: ResearchOverviewBundle) -> some View {
         SymbolQuoteHeroCard(bundle: bundle)
+
+        if !isEtfLike {
+            TradeDecisionPanelView(
+                symbol: viewModel.symbol,
+                accessToken: auth.accessToken
+            )
+        }
 
         if positionViewModel.hasPosition, !positionViewModel.symbolAlerts.isEmpty {
             SymbolAlertStrip(

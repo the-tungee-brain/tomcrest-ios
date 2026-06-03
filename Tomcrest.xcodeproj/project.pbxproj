@@ -61,6 +61,8 @@
 		B8C9D0E1F2A3456789012B03 /* FinancialStrengthCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8C9D0E1F2A3456789012B04 /* FinancialStrengthCard.swift */; };
 		4A4FFBCA4C4798A9A6217616 /* NotificationNames.swift in Sources */ = {isa = PBXBuildFile; fileRef = 188C7077D6C3FD981D69FF99 /* NotificationNames.swift */; };
 		4BC6F0880288987BC7C0D971 /* BusinessModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18E39CD0191BE87D771C3652 /* BusinessModels.swift */; };
+		TDE001A1B2C3D4E5F6071829 /* TradeDecisionModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = TDE002A1B2C3D4E5F6071829 /* TradeDecisionModels.swift */; };
+		TDE003A1B2C3D4E5F6071829 /* TradeDecisionPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TDE004A1B2C3D4E5F6071829 /* TradeDecisionPanelView.swift */; };
 		4C4DFE6AB9F5F8C593857A4F /* AppChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3CC047ED52D48648DEB73FA /* AppChrome.swift */; };
 		4C5265F15A4B8AB6C003FF4F /* PressAndHorizontalDragGesture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85EC97728F1993387989923A /* PressAndHorizontalDragGesture.swift */; };
 		50C901F53AA8EE4A1B4FDFCC /* PortfolioAnalysisComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2DEF1D4B58C9CBB697935F7 /* PortfolioAnalysisComponents.swift */; };
@@ -235,6 +237,8 @@
 		17C5FF5E4B24A4259FAAB0E4 /* ChatModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatModels.swift; sourceTree = "<group>"; };
 		188C7077D6C3FD981D69FF99 /* NotificationNames.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationNames.swift; sourceTree = "<group>"; };
 		18E39CD0191BE87D771C3652 /* BusinessModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BusinessModels.swift; sourceTree = "<group>"; };
+		TDE002A1B2C3D4E5F6071829 /* TradeDecisionModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TradeDecisionModels.swift; sourceTree = "<group>"; };
+		TDE004A1B2C3D4E5F6071829 /* TradeDecisionPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TradeDecisionPanelView.swift; sourceTree = "<group>"; };
 		1C4819359B5D321404416971 /* BrandMarketLine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrandMarketLine.swift; sourceTree = "<group>"; };
 		1D56F0B035F413C3747E68D2 /* AppRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRouter.swift; sourceTree = "<group>"; };
 		TABRESELECT01A1B2C3D4E5F601 /* TabBarReselectCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarReselectCoordinator.swift; sourceTree = "<group>"; };
@@ -461,6 +465,7 @@
 				55232C90C6EC1B73C4F317D0 /* ResearchExtendedTabs.swift */,
 				60HUBV1EW5S0URC3F1L3R3F /* ResearchHubViews.swift */,
 				7981764E4F2F6278ADE708C5 /* ResearchFundamentalsComponents.swift */,
+				TDE004A1B2C3D4E5F6071829 /* TradeDecisionPanelView.swift */,
 				485604ACBF7E957661B6CC8E /* ResearchNewsComponents.swift */,
 				2F7D42BB285D3287FD44230C /* ResearchOverviewComponents.swift */,
 				E538CE475AB22DE15657A7AA /* ResearchOverviewExtended.swift */,
@@ -605,6 +610,7 @@
 				E602487F089A48405CF108D6 /* APIModels.swift */,
 				1DD45D3F0C2E8473DBA8D2B8 /* AuthModels.swift */,
 				18E39CD0191BE87D771C3652 /* BusinessModels.swift */,
+				TDE002A1B2C3D4E5F6071829 /* TradeDecisionModels.swift */,
 				04892852768CEFAD4FBA4CD5 /* ChatHistoryModels.swift */,
 				17C5FF5E4B24A4259FAAB0E4 /* ChatModels.swift */,
 				8E895B081A99DB55BF37C35C /* IntelligenceModels.swift */,
@@ -1133,6 +1139,8 @@
 				D5056BDF998EA2D7EE7711C8 /* BrandTips.swift in Sources */,
 				F89C7461454B080E19B0D1E3 /* BrokerageSettingsScreen.swift in Sources */,
 				4BC6F0880288987BC7C0D971 /* BusinessModels.swift in Sources */,
+				TDE001A1B2C3D4E5F6071829 /* TradeDecisionModels.swift in Sources */,
+				TDE003A1B2C3D4E5F6071829 /* TradeDecisionPanelView.swift in Sources */,
 				AEA08B3E80EF3C89AD067241 /* ChatComponents.swift in Sources */,
 				59611E1342E669CB7A7E0026 /* ChatFollowUpSuggestions.swift in Sources */,
 				EB18FDD9E0CBA3686A8FF1A7 /* ChatHistoryModels.swift in Sources */,
