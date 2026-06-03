@@ -2,6 +2,7 @@ import SwiftUI
 
 enum AppTab: Hashable {
     case portfolio
+    case movers
     case research
     case settings
 }
@@ -19,6 +20,12 @@ struct MainTabView: View {
                     Label("Portfolio", systemImage: selectedTab == .portfolio ? "chart.pie.fill" : "chart.pie")
                 }
                 .tag(AppTab.portfolio)
+
+            TopMoversView()
+                .tabItem {
+                    Label("Movers", systemImage: selectedTab == .movers ? "arrow.up.right.circle.fill" : "arrow.up.right.circle")
+                }
+                .tag(AppTab.movers)
 
             ResearchView()
                 .tabItem {
