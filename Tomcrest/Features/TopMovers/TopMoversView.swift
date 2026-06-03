@@ -99,17 +99,21 @@ struct TopMoversView: View {
                     let symbol = item.symbol.uppercased()
                     TopMoverRow(
                         item: item,
-                        companyName: viewModel.companyName(for: symbol),
-                        percentileLabel: viewModel.topUniverseLabel(for: item),
-                        rowTrend: viewModel.trendDisplayForRow(for: symbol),
-                        detailTrend: viewModel.trendDisplayForDetail(symbol: symbol),
+                        rankContext: viewModel.rankContext(for: item),
+                        rowConviction: viewModel.convictionForRow(for: item),
+                        detailConviction: viewModel.convictionForDetail(
+                            symbol: symbol,
+                            item: item
+                        ),
+                        priceTrend: viewModel.priceTrendLabel(for: symbol),
+                        sparkline: viewModel.sparklineValues(for: symbol),
+                        sparklinePending: !viewModel.hasPatternIntelligence(for: symbol),
                         hasMlMetrics: viewModel.hasMlMetrics,
                         isExpanded: viewModel.expandedSymbol == symbol,
                         inPortfolio: viewModel.isInPortfolio(symbol),
                         segments: viewModel.breakdownSegments(for: symbol),
-                        signals: viewModel.keySignals(for: symbol),
-                        signalStrength: viewModel.signalStrength(for: symbol),
-                        insightHeadline: viewModel.insightHeadline(for: symbol),
+                        researchInsight: viewModel.researchInsight(for: item, symbol: symbol),
+                        portfolioRole: viewModel.portfolioRole(for: item, symbol: symbol),
                         breakdownLoading: viewModel.breakdownLoadingSymbols.contains(symbol),
                         onToggle: { viewModel.toggleExpanded(symbol) },
                         onResearch: { openSymbol(symbol) }

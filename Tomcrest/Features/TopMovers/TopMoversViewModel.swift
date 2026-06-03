@@ -16,17 +16,14 @@ final class TopMoversViewModel {
 
     var expandedSymbol: String?
     private(set) var patternIntelligenceBySymbol: [String: PatternIntelligenceResponse] = [:]
-    private(set) var companyNames: [String: String] = [:]
     private(set) var breakdownLoadingSymbols: Set<String> = []
     private var breakdownTask: Task<Void, Never>?
 
     private let auth: AuthSession
     private var pollTask: Task<Void, Never>?
-    private var namesTask: Task<Void, Never>?
     private var prefetchTask: Task<Void, Never>?
     private static let cacheKey = "rankings_top_v1"
-    private static let companyNamePrefetchLimit = 12
-    private static let breakdownPrefetchLimit = 5
+    private static let breakdownPrefetchConcurrency = 4
 
     private static let apiDecoder: JSONDecoder = {
         let decoder = JSONDecoder()
@@ -59,8 +56,6 @@ final class TopMoversViewModel {
     func stop() {
         pollTask?.cancel()
         pollTask = nil
-        namesTask?.cancel()
-        namesTask = nil
         breakdownTask?.cancel()
         breakdownTask = nil
         prefetchTask?.cancel()
@@ -120,43 +115,74 @@ final class TopMoversViewModel {
             portfolioSymbols = portfolio
         }
 
-        prefetchCompanyNames(accessToken: token)
-        prefetchTopBreakdowns(accessToken: token)
+        prefetchAllBreakdowns(accessToken: token)
     }
 
-    func topUniverseLabel(for item: RankingItem) -> String {
-        TopMoversFormatting.topUniverseLabel(
-            rank: item.rank,
-            universeSize: universeSize,
-            listCount: items.count
+    func rankContext(for item: RankingItem) -> RankContext {
+        TopMoversInsightEngine.rankContext(item: item, items: items)
+    }
+
+    func researchInsight(for item: RankingItem, symbol: String) -> MoverResearchInsight {
+        let key = symbol.uppercased()
+        let intel = patternIntelligenceBySymbol[key]
+        let segments = breakdownSegments(for: key)
+        return TopMoversInsightEngine.build(
+            item: item,
+            intel: intel,
+            segments: segments,
+            regimeId: regimeId,
+            listCount: max(items.count, 1),
+            inPortfolio: isInPortfolio(symbol)
         )
     }
 
-    func trendDisplayForRow(for symbol: String) -> TrendDisplay {
-        let key = symbol.uppercased()
-        let rank = items.first(where: { $0.symbol.uppercased() == key })?.rank ?? items.count
-        return TopMoversFormatting.trendDisplayForRow(
-            rank: rank,
+    func portfolioRole(for item: RankingItem, symbol: String) -> String? {
+        let tier = TopMoversInsightEngine.convictionFromListPercentile(
+            TopMoversInsightEngine.listRankPercentile(
+                rank: item.rank,
+                listCount: max(items.count, 1)
+            )
+        )
+        return TopMoversInsightEngine.portfolioRole(
+            item: item,
+            listCount: max(items.count, 1),
+            inPortfolio: isInPortfolio(symbol),
+            listTier: tier,
+            regimeId: regimeId
+        )
+    }
+
+    func convictionForRow(for item: RankingItem) -> ConvictionDisplay {
+        TopMoversFormatting.convictionForRow(
+            rank: item.rank,
             listCount: max(items.count, 1)
         )
     }
 
-    func trendDisplayForDetail(symbol: String) -> TrendDisplay? {
-        guard let intel = patternIntelligenceBySymbol[symbol.uppercased()] else {
-            return nil
-        }
-        return TopMoversFormatting.trendDisplayFromIntelligence(intel)
-    }
-
-    func signalStrength(for symbol: String) -> String? {
-        TopMoversFormatting.signalStrengthLabel(
+    func convictionForDetail(symbol: String, item: RankingItem) -> ConvictionDisplay {
+        TopMoversFormatting.convictionForDetail(
+            rank: item.rank,
+            listCount: max(items.count, 1),
             scores: patternIntelligenceBySymbol[symbol.uppercased()]?.scores
         )
     }
 
-    func keySignals(for symbol: String) -> [KeySignalItem] {
-        TopMoversFormatting.keySignals(
-            from: patternIntelligenceBySymbol[symbol.uppercased()]
+    func priceTrendLabel(for symbol: String) -> String? {
+        TopMoversFormatting.priceTrendLabel(
+            patternIntelligenceBySymbol[symbol.uppercased()]
+        )
+    }
+
+    func strengthsAndGaps(for symbol: String) -> StrengthsAndGaps {
+        let key = symbol.uppercased()
+        let intel = patternIntelligenceBySymbol[key]
+        let segments = breakdownSegments(for: key)
+        return TopMoversFormatting.strengthsAndGaps(intel: intel, segments: segments)
+    }
+
+    func sparklineValues(for symbol: String) -> [Double] {
+        TopMoversFormatting.sparklineValues(
+            from: breakdownSegments(for: symbol.uppercased())
         )
     }
 
@@ -188,74 +214,61 @@ final class TopMoversViewModel {
         }
     }
 
-    func companyName(for symbol: String) -> String? {
-        let key = symbol.uppercased()
-        return companyNames[key]
-    }
-
-    private func prefetchCompanyNames(accessToken: String) {
-        namesTask?.cancel()
-        let symbols = items
-            .prefix(Self.companyNamePrefetchLimit)
-            .map { $0.symbol.uppercased() }
-        guard !symbols.isEmpty else { return }
-
-        namesTask = Task { [weak self] in
-            guard let self else { return }
-            await loadCompanyNames(symbols: symbols, accessToken: accessToken)
-        }
-    }
-
-    private func loadCompanyNames(symbols: [String], accessToken: String) async {
-        await withTaskGroup(of: (String, String?).self) { group in
-            for symbol in symbols {
-                group.addTask {
-                    guard !Task.isCancelled else { return (symbol, nil) }
-                    guard let item = try? await RankingService.lookupSymbol(
-                        symbol: symbol,
-                        accessToken: accessToken
-                    ) else {
-                        return (symbol, nil)
-                    }
-                    let title = item.title?.trimmingCharacters(in: .whitespacesAndNewlines)
-                    guard let title, !title.isEmpty else { return (symbol, nil) }
-                    return (symbol, title)
-                }
-            }
-
-            for await (symbol, name) in group {
-                if Task.isCancelled { break }
-                if let name {
-                    companyNames[symbol] = name
-                }
-            }
-        }
-    }
-
     func breakdownSegments(for symbol: String) -> [ScoreBreakdownSegment] {
         let scores = patternIntelligenceBySymbol[symbol.uppercased()]?.scores
         return TopMoversFormatting.segments(from: scores)
     }
 
-    /// Score bars use `/pattern/intelligence` only — not the full research overview bundle.
-    private func prefetchTopBreakdowns(accessToken: String) {
+    /// Loads pattern intelligence for every ranked symbol (list sparklines + detail).
+    private func prefetchAllBreakdowns(accessToken: String) {
         prefetchTask?.cancel()
-        let symbols = items
-            .prefix(Self.breakdownPrefetchLimit)
-            .map { $0.symbol.uppercased() }
+        let symbols = items.map { $0.symbol.uppercased() }
         guard !symbols.isEmpty else { return }
 
         prefetchTask = Task { [weak self] in
             guard let self else { return }
-            for symbol in symbols {
-                if Task.isCancelled { break }
-                await loadScoreBreakdown(symbol: symbol)
+            await prefetchBreakdowns(symbols: symbols, accessToken: accessToken)
+        }
+    }
+
+    private func prefetchBreakdowns(symbols: [String], accessToken: String) async {
+        let concurrency = Self.breakdownPrefetchConcurrency
+        var nextIndex = 0
+
+        await withTaskGroup(of: Void.self) { group in
+            var inFlight = 0
+
+            while nextIndex < symbols.count || inFlight > 0 {
+                if Task.isCancelled {
+                    group.cancelAll()
+                    break
+                }
+
+                while inFlight < concurrency, nextIndex < symbols.count {
+                    let symbol = symbols[nextIndex]
+                    nextIndex += 1
+                    inFlight += 1
+                    group.addTask { [weak self] in
+                        await self?.loadScoreBreakdown(
+                            symbol: symbol,
+                            accessToken: accessToken
+                        )
+                    }
+                }
+
+                await group.next()
+                inFlight -= 1
             }
         }
     }
 
-    private func loadScoreBreakdown(symbol: String) async {
-        guard let token = auth.accessToken else { return }
+    func hasPatternIntelligence(for symbol: String) -> Bool {
+        patternIntelligenceBySymbol[symbol.uppercased()] != nil
+    }
+
+    private func loadScoreBreakdown(symbol: String, accessToken: String? = nil) async {
+        let token = accessToken ?? auth.accessToken
+        guard let token else { return }
         let key = symbol.uppercased()
         if patternIntelligenceBySymbol[key] != nil { return }
 

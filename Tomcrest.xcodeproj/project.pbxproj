@@ -24,6 +24,7 @@
 		A1B2C3D401234567890ABC06 /* TopMoversViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D401234567890ABC05 /* TopMoversViewModel.swift */; };
 		A1B2C3D401234567890ABC08 /* TopMoversComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D401234567890ABC07 /* TopMoversComponents.swift */; };
 		A1B2C3D401234567890ABC0A /* TopMoversView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D401234567890ABC09 /* TopMoversView.swift */; };
+		A1B2C3D401234567890ABC0D /* TopMoversInsight.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D401234567890ABC0C /* TopMoversInsight.swift */; };
 		1AC66644463AC2C0CC810E93 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 536DB0E375E94676910F3EC9 /* MainTabView.swift */; };
 		1C5296B195B50EE5862EA452 /* OnboardingStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 089351FDBA4E2E58F33A3247 /* OnboardingStorage.swift */; };
 		23728EDEFEA59356CF52E3DB /* ResearchChatPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9952646BAFBB92A38F812F53 /* ResearchChatPanel.swift */; };
@@ -416,6 +417,7 @@
 		A1B2C3D401234567890ABC05 /* TopMoversViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopMoversViewModel.swift; sourceTree = "<group>"; };
 		A1B2C3D401234567890ABC07 /* TopMoversComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopMoversComponents.swift; sourceTree = "<group>"; };
 		A1B2C3D401234567890ABC09 /* TopMoversView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopMoversView.swift; sourceTree = "<group>"; };
+		A1B2C3D401234567890ABC0C /* TopMoversInsight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopMoversInsight.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -773,6 +775,7 @@
 			children = (
 				A1B2C3D401234567890ABC03 /* RankingService.swift */,
 				A1B2C3D401234567890ABC07 /* TopMoversComponents.swift */,
+				A1B2C3D401234567890ABC0C /* TopMoversInsight.swift */,
 				A1B2C3D401234567890ABC09 /* TopMoversView.swift */,
 				A1B2C3D401234567890ABC05 /* TopMoversViewModel.swift */,
 			);
@@ -1192,6 +1195,7 @@
 				A1B2C3D401234567890ABC02 /* RankingModels.swift in Sources */,
 				A1B2C3D401234567890ABC04 /* RankingService.swift in Sources */,
 				A1B2C3D401234567890ABC08 /* TopMoversComponents.swift in Sources */,
+				A1B2C3D401234567890ABC0D /* TopMoversInsight.swift in Sources */,
 				A1B2C3D401234567890ABC0A /* TopMoversView.swift in Sources */,
 				A1B2C3D401234567890ABC06 /* TopMoversViewModel.swift in Sources */,
 				F0F02587E4CE7D6603B3B352 /* ResearchModels.swift in Sources */,

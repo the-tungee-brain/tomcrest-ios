@@ -47,6 +47,8 @@ struct MarketRegimeCard: View {
                 .foregroundStyle(Token.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
 
+            regimeImpactBlock
+
             HStack(spacing: 8) {
                 regimePill(TopMoversFormatting.riskLabel(regimeId: regimeId), tone: .accent)
                 regimePill(statusPillText, tone: statusTone)
@@ -59,6 +61,25 @@ struct MarketRegimeCard: View {
         .appPanel(subtle: true)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Market environment, \(narrative.title)")
+    }
+
+    private var regimeImpactBlock: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("REGIME IMPACT")
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(Token.textTertiary)
+                .tracking(0.5)
+            Text(narrative.signalImpact)
+                .font(.footnote.weight(.medium))
+                .foregroundStyle(Token.textPrimary)
+            Text(narrative.confidenceNote)
+                .font(.footnote)
+                .foregroundStyle(Token.textSecondary)
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Token.surfaceFillSecondary.opacity(0.45))
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 
     private var statusPillText: String {
@@ -118,6 +139,79 @@ struct CompositeModelBanner: View {
     }
 }
 
+struct ConvictionBadge: View {
+    let conviction: ConvictionDisplay
+
+    var body: some View {
+        Text(conviction.label)
+            .font(.caption.weight(.bold))
+            .foregroundStyle(foreground)
+            .padding(.horizontal, 9)
+            .padding(.vertical, 4)
+            .background(foreground.opacity(0.14))
+            .clipShape(Capsule())
+            .accessibilityLabel("Conviction \(conviction.label)")
+    }
+
+    private var foreground: Color {
+        switch conviction.tier {
+        case .elite: Token.primary
+        case .strong: AppColors.success
+        case .rising: AppColors.warning
+        case .mixed: Token.textSecondary
+        }
+    }
+}
+
+struct ContributionSparkline: View {
+    let values: [Double]
+    var pending: Bool = false
+
+    var body: some View {
+        Group {
+            if pending || values.allSatisfy({ $0 == 0 }) {
+                sparklinePlaceholder
+            } else {
+                HStack(alignment: .bottom, spacing: 2) {
+                    ForEach(Array(values.enumerated()), id: \.offset) { _, value in
+                        RoundedRectangle(cornerRadius: 1, style: .continuous)
+                            .fill(sparklineColor(value))
+                            .frame(
+                                width: 4,
+                                height: TopMoversFormatting.sparklineBarHeight(value)
+                            )
+                    }
+                }
+            }
+        }
+        .frame(width: 28, height: 22, alignment: .bottom)
+        .accessibilityLabel(pending ? "Loading signal bars" : "Signal shape sparkline")
+    }
+
+    private var sparklinePlaceholder: some View {
+        HStack(alignment: .bottom, spacing: 2) {
+            ForEach([0.45, 0.65, 0.55, 0.35, 0.25], id: \.self) { stub in
+                RoundedRectangle(cornerRadius: 1, style: .continuous)
+                    .fill(Token.gridLine.opacity(0.85))
+                    .frame(width: 4, height: max(4, 22 * stub))
+            }
+        }
+    }
+
+    private func sparklineColor(_ value: Double) -> Color {
+        switch TopMoversFormatting.sparklineBarTier(value) {
+        case .strong:
+            return Token.primary.opacity(0.92)
+        case .moderate:
+            return Token.primary.opacity(0.55)
+        case .weak:
+            return AppColors.warning
+        case .missing:
+            return Token.gridLine
+        }
+    }
+}
+
 struct ScoreBreakdownView: View {
     let segments: [ScoreBreakdownSegment]
     let isLoading: Bool
@@ -132,71 +226,212 @@ struct ScoreBreakdownView: View {
             if isLoading {
                 ProgressView()
                     .controlSize(.regular)
-                    .frame(maxWidth: .infinity, alignment: .leading)
             } else if segments.isEmpty {
-                Text("Contribution bars load from the latest pattern intelligence for this symbol.")
+                Text("Contribution profile loads from pattern intelligence.")
                     .font(.footnote)
                     .foregroundStyle(Token.textSecondary)
             } else {
                 ForEach(segments) { segment in
-                    scoreBar(segment)
+                    contributionRow(segment)
                 }
             }
         }
     }
 
-    private func scoreBar(_ segment: ScoreBreakdownSegment) -> some View {
+    private func contributionRow(_ segment: ScoreBreakdownSegment) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            HStack {
+            HStack(alignment: .firstTextBaseline) {
                 Text(segment.label)
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(Token.textPrimary)
-                Spacer()
-                Text("\(Int((segment.value * 100).rounded()))")
-                    .font(.subheadline.monospacedDigit().weight(.semibold))
-                    .foregroundStyle(Token.textSecondary)
+                Spacer(minLength: 8)
+                tierChip(segment.tier, label: segment.tierLabel)
             }
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
+
+            segmentedBar(
+                fill: segment.value,
+                tier: segment.tier,
+                barWidthPct: TopMoversFormatting.contributionBarWidth(
+                    tier: segment.tier,
+                    value: segment.value
+                )
+            )
+        }
+    }
+
+    private func tierChip(_ tier: ContributionTier, label: String) -> some View {
+        Text(label)
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(tierForeground(tier))
+            .padding(.horizontal, 7)
+            .padding(.vertical, 3)
+            .background(tierForeground(tier).opacity(0.12))
+            .clipShape(Capsule())
+    }
+
+    private func segmentedBar(
+        fill: Double,
+        tier: ContributionTier,
+        barWidthPct: Double
+    ) -> some View {
+        let showFill = TopMoversFormatting.showsContributionFill(tier: tier, value: fill)
+        return GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(Token.gridLine)
+                if showFill {
                     Capsule()
-                        .fill(Token.gridLine)
-                    Capsule()
-                        .fill(Token.primary.opacity(0.88))
-                        .frame(width: max(4, geo.size.width * segment.value))
+                        .fill(tierForeground(tier))
+                        .frame(width: geo.size.width * (barWidthPct / 100))
                 }
             }
-            .frame(height: 6)
+        }
+        .frame(height: 10)
+        .accessibilityValue(Text("\(segmentTierAccessibility(tier))"))
+    }
+
+    private func segmentTierAccessibility(_ tier: ContributionTier) -> String {
+        switch tier {
+        case .strong: "strong contribution"
+        case .moderate: "moderate contribution"
+        case .weak: "weak contribution"
+        case .missing: "missing contribution"
+        }
+    }
+
+    private func tierForeground(_ tier: ContributionTier) -> Color {
+        switch tier {
+        case .strong: Token.primary.opacity(0.92)
+        case .moderate: Token.primary.opacity(0.55)
+        case .weak: AppColors.warning
+        case .missing: Token.textTertiary
         }
     }
 }
 
-struct KeySignalsView: View {
-    let signals: [KeySignalItem]
+struct RegimeCompactCard: View {
+    let regime: RegimeCompact
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("CURRENT REGIME")
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(Token.textTertiary)
+                .tracking(0.5)
+            Text(regime.title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Token.textPrimary)
+            Text("Impact: \(regime.impact)")
+                .font(.caption)
+                .foregroundStyle(Token.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Token.surfaceFillSecondary.opacity(0.3))
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+}
+
+struct MoverResearchInsightSection: View {
+    let insight: MoverResearchInsight
     let isLoading: Bool
 
     var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            thesisBlock
+            bulletSection(
+                title: "WHAT SUPPORTS THE SIGNAL",
+                lines: insight.supports,
+                icon: "checkmark.circle.fill",
+                color: AppColors.success
+            )
+            bulletSection(
+                title: "WHAT IS STILL MISSING",
+                lines: insight.missing,
+                icon: "exclamationmark.circle.fill",
+                color: AppColors.warning,
+                bullet: true
+            )
+            if !insight.confirmations.isEmpty {
+                bulletSection(
+                    title: "NEXT CONFIRMATION TO WATCH",
+                    lines: insight.confirmations,
+                    icon: "circle",
+                    color: Token.textTertiary,
+                    bullet: true
+                )
+            }
+        }
+        .opacity(isLoading ? 0.55 : 1)
+    }
+
+    private var thesisBlock: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("KEY SIGNALS")
+            Text("INVESTMENT THESIS")
                 .font(.caption2.weight(.semibold))
                 .foregroundStyle(Token.textSecondary)
                 .tracking(0.6)
+            Text(insight.thesis)
+                .font(.subheadline)
+                .foregroundStyle(Token.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
 
-            if isLoading {
-                ProgressView()
-                    .controlSize(.small)
-            } else if signals.isEmpty {
-                Text("Signals appear when pattern intelligence is available.")
+            VStack(alignment: .leading, spacing: 6) {
+                Text("DECISION SUMMARY")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(Token.textTertiary)
+                    .tracking(0.5)
+                Text(insight.decisionSummary.headline)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Token.textPrimary)
+                Text("Reason")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(Token.textSecondary)
+                ForEach(Array(insight.decisionSummary.reasons.enumerated()), id: \.offset) { _, reason in
+                    Text(reason)
+                        .font(.subheadline)
+                        .foregroundStyle(Token.textPrimary)
+                }
+            }
+            .padding(.top, 4)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Token.surfaceFillSecondary.opacity(0.5))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
+    @ViewBuilder
+    private func bulletSection(
+        title: String,
+        lines: [InsightLine],
+        icon: String,
+        color: Color,
+        bullet: Bool = false
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(Token.textSecondary)
+                .tracking(0.6)
+            if lines.isEmpty {
+                Text("—")
                     .font(.footnote)
                     .foregroundStyle(Token.textSecondary)
             } else {
-                ForEach(signals) { signal in
+                ForEach(lines) { line in
                     HStack(alignment: .top, spacing: 8) {
-                        Image(systemName: signal.isPositive ? "checkmark.circle.fill" : "minus.circle")
-                            .font(.subheadline)
-                            .foregroundStyle(
-                                signal.isPositive ? AppColors.success : Token.textTertiary
-                            )
-                        Text(signal.label)
+                        if bullet {
+                            Text("•")
+                                .font(.subheadline.weight(.bold))
+                                .foregroundStyle(color)
+                        } else {
+                            Image(systemName: icon)
+                                .font(.subheadline)
+                                .foregroundStyle(color)
+                        }
+                        Text(line.label)
                             .font(.subheadline)
                             .foregroundStyle(Token.textPrimary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -209,17 +444,18 @@ struct KeySignalsView: View {
 
 struct TopMoverRow: View {
     let item: RankingItem
-    let companyName: String?
-    let percentileLabel: String
-    let rowTrend: TrendDisplay
-    let detailTrend: TrendDisplay?
+    let rankContext: RankContext
+    let rowConviction: ConvictionDisplay
+    let detailConviction: ConvictionDisplay
+    let priceTrend: String?
+    let sparkline: [Double]
+    let sparklinePending: Bool
     let hasMlMetrics: Bool
     let isExpanded: Bool
     let inPortfolio: Bool
     let segments: [ScoreBreakdownSegment]
-    let signals: [KeySignalItem]
-    let signalStrength: String?
-    let insightHeadline: String?
+    let researchInsight: MoverResearchInsight
+    let portfolioRole: String?
     let breakdownLoading: Bool
     let onToggle: () -> Void
     let onResearch: () -> Void
@@ -227,7 +463,7 @@ struct TopMoverRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Button(action: onToggle) {
-                HStack(alignment: .center, spacing: 12) {
+                HStack(alignment: .center, spacing: 10) {
                     symbolBlock
                     Spacer(minLength: 4)
                     trailingBlock
@@ -252,22 +488,19 @@ struct TopMoverRow: View {
 
     private var symbolBlock: some View {
         HStack(alignment: .top, spacing: 8) {
-            Text("\(item.rank)")
-                .font(.body.weight(.medium).monospacedDigit())
-                .foregroundStyle(Token.textSecondary)
-                .frame(width: rankColumnWidth, alignment: .leading)
+            Text(rankContext.rankLabel)
+                .font(.body.weight(.semibold).monospacedDigit())
+                .foregroundStyle(Token.textPrimary)
+                .frame(minWidth: 28, alignment: .leading)
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(item.symbol.uppercased())
                     .font(.body.weight(.semibold))
                     .foregroundStyle(Token.textPrimary)
 
-                if let companyName, !companyName.isEmpty {
-                    Text(companyName)
-                        .font(.subheadline)
-                        .foregroundStyle(Token.textSecondary)
-                        .lineLimit(2)
-                }
+                Text(rankContext.subtitle)
+                    .font(.caption)
+                    .foregroundStyle(Token.textSecondary)
 
                 if hasMlMetrics {
                     mlMetricsLine
@@ -292,110 +525,86 @@ struct TopMoverRow: View {
     }
 
     private var trailingBlock: some View {
-        VStack(alignment: .trailing, spacing: 4) {
-            Text(percentileLabel)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(Token.primary)
-                .multilineTextAlignment(.trailing)
-
-            TrendChip(trend: rowTrend)
+        VStack(alignment: .trailing, spacing: 6) {
+            ConvictionBadge(conviction: rowConviction)
+            ContributionSparkline(values: sparkline, pending: sparklinePending)
         }
     }
 
-    private var rankColumnWidth: CGFloat {
-        item.rank >= 10 ? 22 : 14
-    }
-
     private var expandedContent: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            Divider()
-                .overlay(Token.gridLine)
+        VStack(alignment: .leading, spacing: 14) {
+            Divider().overlay(Token.gridLine)
 
-            VStack(alignment: .leading, spacing: 6) {
-                Text(percentileLabel)
-                    .font(.headline.weight(.semibold))
-                    .foregroundStyle(Token.textPrimary)
+            detailHeader
 
-                if let signalStrength {
-                    Text(signalStrength)
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(Token.primary)
-                }
-
-                if let detailTrend {
-                    HStack(spacing: 6) {
-                        Text("Price trend")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(Token.textTertiary)
-                        TrendChip(trend: detailTrend)
-                    }
-                }
-
-                if inPortfolio {
-                    Label("In model portfolio", systemImage: "briefcase.fill")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(Token.textSecondary)
-                }
-
-                #if DEBUG
-                Text("Final score \(item.finalScore, format: .number.precision(.fractionLength(2)))")
-                    .font(.caption2.monospacedDigit())
-                    .foregroundStyle(Token.textTertiary)
-                #endif
-            }
+            MoverResearchInsightSection(
+                insight: researchInsight,
+                isLoading: breakdownLoading
+            )
 
             ScoreBreakdownView(segments: segments, isLoading: breakdownLoading)
 
-            KeySignalsView(signals: signals, isLoading: breakdownLoading)
+            RegimeCompactCard(regime: researchInsight.regimeCompact)
 
-            if let insightHeadline {
-                Text(insightHeadline)
-                    .font(.subheadline)
-                    .foregroundStyle(Token.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+            investigateActions
+        }
+        .padding(.horizontal, 16)
+        .padding(.bottom, 16)
+    }
+
+    private var detailHeader: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("\(rankContext.rankLabel) · \(rankContext.subtitle)")
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(Token.textPrimary)
+
+            HStack(spacing: 8) {
+                ConvictionBadge(conviction: rowConviction)
+                if detailConviction.tier != rowConviction.tier {
+                    Text("Signal")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Token.textTertiary)
+                    ConvictionBadge(conviction: detailConviction)
+                }
+                if let priceTrend {
+                    Text("· Price \(priceTrend)")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(Token.textSecondary)
+                }
             }
 
+            if let portfolioRole {
+                Text("Portfolio role: \(portfolioRole)")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(Token.textSecondary)
+            } else if inPortfolio {
+                Label("In model portfolio", systemImage: "briefcase.fill")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Token.textSecondary)
+            }
+
+            #if DEBUG
+            Text("Final score \(item.finalScore, format: .number.precision(.fractionLength(2)))")
+                .font(.caption2.monospacedDigit())
+                .foregroundStyle(Token.textTertiary)
+            #endif
+        }
+    }
+
+    private var investigateActions: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("INVESTIGATE NEXT")
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(Token.textTertiary)
+                .tracking(0.5)
             HStack(spacing: 10) {
                 Button(action: onResearch) {
                     Label("Research", systemImage: "doc.text.magnifyingglass")
                 }
                 .buttonStyle(TopMoverActionStyle(primary: true))
 
-                WatchlistToggleButton(
-                    symbol: item.symbol,
-                    companyName: companyName,
-                    iconOnly: false
-                )
+                WatchlistToggleButton(symbol: item.symbol, iconOnly: false)
             }
-        }
-        .padding(.horizontal, 16)
-        .padding(.bottom, 16)
-    }
-}
-
-struct TrendChip: View {
-    let trend: TrendDisplay
-
-    var body: some View {
-        HStack(spacing: 3) {
-            Text(trend.glyph)
-                .font(.caption.weight(.bold))
-            Text(trend.label)
-                .font(.caption2.weight(.medium))
-                .lineLimit(1)
-        }
-        .foregroundStyle(trendColor)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(trendColor.opacity(0.12))
-        .clipShape(Capsule())
-    }
-
-    private var trendColor: Color {
-        switch trend.tone {
-        case .positive: AppColors.success
-        case .negative: AppColors.error
-        case .neutral: Token.textSecondary
         }
     }
 }
@@ -406,7 +615,6 @@ private struct TopMoverActionStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.subheadline.weight(.semibold))
-            .lineLimit(1)
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
             .frame(minHeight: Layout.minTouchTarget)

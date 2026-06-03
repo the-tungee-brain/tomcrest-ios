@@ -53,10 +53,36 @@ struct SystemHealthResponse: Decodable, Sendable {
     let universeSize: Int?
 }
 
+enum ContributionTier: String, Sendable {
+    case strong
+    case moderate
+    case weak
+    case missing
+}
+
+enum ConvictionTier: String, Sendable {
+    case elite
+    case strong
+    case rising
+    case mixed
+}
+
+struct ConvictionDisplay: Sendable {
+    let tier: ConvictionTier
+    let label: String
+}
+
+struct RankContext: Sendable {
+    let rankLabel: String
+    let subtitle: String
+}
+
 struct ScoreBreakdownSegment: Identifiable, Sendable {
     let id: String
     let label: String
     let value: Double
+    let tier: ContributionTier
+    let tierLabel: String
 }
 
 struct KeySignalItem: Identifiable, Sendable {
@@ -74,6 +100,18 @@ struct TrendDisplay: Sendable {
 struct RegimeNarrative: Sendable {
     let title: String
     let guidance: String
+    let signalImpact: String
+    let confidenceNote: String
+}
+
+struct InsightLine: Identifiable, Sendable {
+    let id: String
+    let label: String
+}
+
+struct StrengthsAndGaps: Sendable {
+    let strengths: [InsightLine]
+    let gaps: [InsightLine]
 }
 
 enum TopMoversFormatting {
@@ -81,33 +119,40 @@ enum TopMoversFormatting {
         items.contains { $0.mlProbability != nil || $0.expectedExcessReturn != nil }
     }
 
-    static func topUniverseLabel(
-        rank: Int,
-        universeSize: Int?,
-        listCount: Int
-    ) -> String {
-        let universe = universeSize ?? listCount
-        guard universe > 0 else { return "Rank #\(rank)" }
-        let topPct = Double(rank) / Double(universe) * 100
-        if topPct <= 1 { return "Top 1% of universe" }
-        if topPct <= 5 { return "Top 5% of universe" }
-        if topPct <= 10 { return "Top 10% of universe" }
-        if topPct <= 25 { return "Top 25% of universe" }
-        return "Top \(Int(ceil(topPct)))% of universe"
+    static func convictionLabel(_ tier: ConvictionTier) -> String {
+        switch tier {
+        case .elite: "Elite"
+        case .strong: "Strong"
+        case .rising: "Rising"
+        case .mixed: "Mixed"
+        }
     }
 
-    static func signalStrengthLabel(scores: PatternIntelligenceScores?) -> String? {
-        guard let scores else { return nil }
-        let avg = (
-            scores.relativeStrength
-                + scores.trendStrength
-                + scores.volumeConfirmation
-                + scores.modelAlignment
-                + scores.patternStrength
-        ) / 5
-        if avg >= 0.72 { return "Strong signal" }
-        if avg >= 0.52 { return "Moderate signal" }
-        return "Developing signal"
+    static func convictionForRow(rank: Int, listCount: Int) -> ConvictionDisplay {
+        let tier = TopMoversInsightEngine.convictionFromListPercentile(
+            TopMoversInsightEngine.listRankPercentile(rank: rank, listCount: listCount)
+        )
+        return ConvictionDisplay(tier: tier, label: convictionLabel(tier))
+    }
+
+    static func convictionForDetail(
+        rank: Int,
+        listCount: Int,
+        scores: PatternIntelligenceScores?
+    ) -> ConvictionDisplay {
+        let tier: ConvictionTier
+        if let scores {
+            tier = TopMoversInsightEngine.convictionFromSignalAverage(averageScore(scores))
+        } else {
+            tier = TopMoversInsightEngine.convictionFromListPercentile(
+                TopMoversInsightEngine.listRankPercentile(rank: rank, listCount: listCount)
+            )
+        }
+        return ConvictionDisplay(tier: tier, label: convictionLabel(tier))
+    }
+
+    static func rankContext(item: RankingItem, items: [RankingItem]) -> RankContext {
+        TopMoversInsightEngine.rankContext(item: item, items: items)
     }
 
     static func regimeNarrative(_ regimeId: String?) -> RegimeNarrative {
@@ -116,28 +161,85 @@ enum TopMoversFormatting {
         case "risk_on_trend":
             return RegimeNarrative(
                 title: "Risk-on · Trending market",
-                guidance: "Momentum signals are active. Favor leaders with strong relative strength and volume confirmation."
+                guidance: "Momentum signals are active. Favor leaders with strong relative strength and volume confirmation.",
+                signalImpact: "Momentum signals historically perform well in this regime.",
+                confidenceNote: "Signal confidence is generally elevated for trend leaders."
             )
         case "risk_on_chop":
             return RegimeNarrative(
                 title: "Risk-on · Choppy market",
-                guidance: "Momentum signals are active, but expect more false breakouts. Be selective and wait for confirmation."
+                guidance: "Momentum signals are active, but expect more false breakouts. Be selective and wait for confirmation.",
+                signalImpact: "False breakouts are more common; confirmation matters more.",
+                confidenceNote: "Treat conviction as one notch lower unless volume confirms."
             )
         case "high_vol_chop":
             return RegimeNarrative(
                 title: "High volatility · Choppy",
-                guidance: "Larger swings and whipsaws. Reduce size and require stronger confirmation before acting."
+                guidance: "Larger swings and whipsaws. Reduce size and require stronger confirmation before acting.",
+                signalImpact: "Whipsaws can invalidate short-term momentum reads quickly.",
+                confidenceNote: "Signal confidence is reduced — favor Elite/Strong only."
             )
         case "risk_off":
             return RegimeNarrative(
                 title: "Risk-off · Defensive",
-                guidance: "Defensive posture. Prioritize quality and avoid aggressive breakout chasing."
+                guidance: "Defensive posture. Prioritize quality and avoid aggressive breakout chasing.",
+                signalImpact: "Breakout and momentum signals underperform more often.",
+                confidenceNote: "Downgrade discretionary conviction; focus on quality factors."
             )
         default:
             return RegimeNarrative(
                 title: regimeLabel(regimeId),
-                guidance: "Rankings adapt to the current SPY trend and volatility regime."
+                guidance: "Rankings adapt to the current SPY trend and volatility regime.",
+                signalImpact: "Signal quality depends on the active regime.",
+                confidenceNote: "Compare conviction and missing signals before acting."
             )
+        }
+    }
+
+    private static func averageScore(_ scores: PatternIntelligenceScores) -> Double {
+        (
+            scores.relativeStrength
+                + scores.trendStrength
+                + scores.volumeConfirmation
+                + scores.modelAlignment
+                + scores.patternStrength
+        ) / 5
+    }
+
+    static func contributionTier(for value: Double) -> ContributionTier {
+        if value >= 0.68 { return .strong }
+        if value >= 0.45 { return .moderate }
+        if value >= 0.2 { return .weak }
+        return .missing
+    }
+
+    static func contributionTierLabel(_ tier: ContributionTier) -> String {
+        switch tier {
+        case .strong: "Strong"
+        case .moderate: "Moderate"
+        case .weak: "Weak"
+        case .missing: "Missing"
+        }
+    }
+
+    static func showsContributionFill(tier: ContributionTier, value: Double) -> Bool {
+        if tier == .missing || value < 0.08 { return false }
+        return true
+    }
+
+    static func contributionBarWidth(tier: ContributionTier, value: Double) -> Double {
+        guard showsContributionFill(tier: tier, value: value) else { return 0 }
+        let clamped = min(1, max(0, value))
+        let pct = clamped * 100
+        switch tier {
+        case .strong:
+            return pct
+        case .moderate:
+            return max(pct, 10)
+        case .weak:
+            return max(pct, 14)
+        case .missing:
+            return 0
         }
     }
 
@@ -184,94 +286,115 @@ enum TopMoversFormatting {
         return "Updated \(date.formatted(date: .abbreviated, time: .omitted))"
     }
 
-    /// Stable chip for list rows — does not change when pattern intelligence loads.
-    static func trendDisplayForRow(rank: Int, listCount: Int) -> TrendDisplay {
-        trendFromRank(rank: rank, listCount: listCount)
-    }
-
-    /// Price-trend readout for expanded detail (from pattern intelligence).
-    static func trendDisplayFromIntelligence(_ intel: PatternIntelligenceResponse) -> TrendDisplay {
-        let bias = intel.trendContext.trendBias.lowercased()
-        let strength = intel.scores.trendStrength
-
-        switch bias {
-        case "uptrend":
-            if strength >= 0.75 {
-                return TrendDisplay(label: "Strong uptrend", glyph: "↗", tone: .positive)
-            }
-            if strength >= 0.55 {
-                return TrendDisplay(label: "Uptrend", glyph: "↗", tone: .positive)
-            }
-            return TrendDisplay(label: "Mild uptrend", glyph: "↗", tone: .positive)
-        case "downtrend":
-            if strength <= 0.4 {
-                return TrendDisplay(label: "Downtrend", glyph: "↘", tone: .negative)
-            }
-            return TrendDisplay(label: "Weak trend", glyph: "↘", tone: .negative)
-        case "mixed":
-            return TrendDisplay(label: "Sideways", glyph: "→", tone: .neutral)
-        default:
-            return TrendDisplay(label: "Trend unclear", glyph: "→", tone: .neutral)
+    static func priceTrendLabel(_ intel: PatternIntelligenceResponse?) -> String? {
+        guard let intel else { return nil }
+        switch intel.trendContext.trendBias.lowercased() {
+        case "uptrend": return "Uptrend"
+        case "downtrend": return "Downtrend"
+        case "mixed": return "Sideways"
+        default: return "Unclear"
         }
     }
 
-    private static func trendFromRank(rank: Int, listCount: Int) -> TrendDisplay {
-        let ratio = Double(rank) / Double(max(listCount, 1))
-        if ratio <= 0.15 {
-            return TrendDisplay(label: "Leader", glyph: "↗", tone: .positive)
+    static func sparklineValues(from segments: [ScoreBreakdownSegment]) -> [Double] {
+        let order = ["relative_strength", "trend", "volume", "breakout", "pattern"]
+        return order.map { key in
+            segments.first(where: { $0.id == key })?.value ?? 0
         }
-        if ratio >= 0.6 {
-            return TrendDisplay(label: "Mixed", glyph: "→", tone: .neutral)
-        }
-        return TrendDisplay(label: "Rising", glyph: "↗", tone: .positive)
     }
 
-    static func keySignals(from intel: PatternIntelligenceResponse?) -> [KeySignalItem] {
-        guard let intel else { return [] }
-        var items: [KeySignalItem] = []
-        var seen = Set<String>()
+    private static let sparklineHeight: CGFloat = 22
 
-        func add(id: String, label: String, positive: Bool = true) {
-            guard !seen.contains(id) else { return }
-            seen.insert(id)
-            items.append(KeySignalItem(id: id, label: label, isPositive: positive))
+    static func sparklineBarHeight(_ value: Double) -> CGFloat {
+        let clamped = min(1, max(0, value))
+        let tier = contributionTier(for: clamped)
+        if !showsContributionFill(tier: tier, value: clamped) {
+            return 4
+        }
+        let fromValue = CGFloat(clamped) * sparklineHeight
+        switch tier {
+        case .strong:
+            return max(fromValue, 12)
+        case .moderate:
+            return max(fromValue, 10)
+        case .weak:
+            return max(fromValue, 9)
+        case .missing:
+            return 4
+        }
+    }
+
+    static func sparklineBarTier(_ value: Double) -> ContributionTier {
+        contributionTier(for: min(1, max(0, value)))
+    }
+
+    static func strengthsAndGaps(
+        intel: PatternIntelligenceResponse?,
+        segments: [ScoreBreakdownSegment]
+    ) -> StrengthsAndGaps {
+        var strengths: [InsightLine] = []
+        var gaps: [InsightLine] = []
+        var seenS = Set<String>()
+        var seenG = Set<String>()
+        var seenStrengthLabels = Set<String>()
+        var seenGapLabels = Set<String>()
+
+        func addStrength(_ id: String, _ label: String) {
+            guard !seenS.contains(id), !seenStrengthLabels.contains(label) else { return }
+            seenS.insert(id)
+            seenStrengthLabels.insert(label)
+            strengths.append(InsightLine(id: id, label: label))
+        }
+        func addGap(_ id: String, _ label: String) {
+            guard !seenG.contains(id), !seenGapLabels.contains(label) else { return }
+            seenG.insert(id)
+            seenGapLabels.insert(label)
+            gaps.append(InsightLine(id: id, label: label))
         }
 
-        let tc = intel.trendContext
-        if tc.aboveSma50 == true { add(id: "sma50", label: "Above SMA50") }
-        if tc.aboveSma200 == true { add(id: "sma200", label: "Above SMA200") }
+        let strengthLabels: [String: String] = [
+            "relative_strength": "Strong relative strength",
+            "trend": "Trend alignment",
+            "volume": "Volume confirmation",
+            "breakout": "Breakout strength",
+            "pattern": "Pattern confirmation",
+        ]
+        let gapLabels: [String: String] = [
+            "relative_strength": "Relative strength could be stronger",
+            "trend": "Trend alignment is only moderate",
+            "volume": "Volume not fully confirming",
+            "breakout": "Weak breakout component",
+            "pattern": "No pattern confirmation",
+        ]
 
-        if let vol = tc.volRatio20d, vol >= 1.2 {
-            add(id: "vol", label: String(format: "Relative volume %.1f×", vol))
-        }
-
-        if let rs = tc.rsVsSpy21d, rs > 0.02 {
-            add(id: "rs21", label: "Strong relative strength")
-        } else if intel.scores.relativeStrength >= 0.68 {
-            add(id: "rs_score", label: "Strong relative strength")
-        }
-
-        if intel.scores.trendStrength >= 0.68 {
-            add(id: "trend", label: "Strong trend alignment")
-        }
-        if intel.scores.volumeConfirmation >= 0.65 {
-            add(id: "vol_confirm", label: "Volume confirming move")
-        }
-
-        for event in intel.chartIntelligence?.breakoutEvents ?? [] {
-            let kind = (event.kind ?? event.label ?? "").lowercased()
-            if kind.contains("high") || kind.contains("breakout") {
-                add(id: "breakout", label: "Recent breakout / new high")
+        for seg in segments {
+            switch seg.tier {
+            case .strong:
+                addStrength(seg.id, strengthLabels[seg.id] ?? seg.label)
+            case .weak, .missing:
+                addGap(seg.id, gapLabels[seg.id] ?? "Weak \(seg.label.lowercased())")
+            case .moderate:
                 break
             }
         }
 
-        if let pattern = intel.primaryPattern {
-            let bearish = pattern.direction.lowercased().contains("bear")
-            add(id: "pattern", label: "\(pattern.label) pattern detected", positive: !bearish)
+        if let intel {
+            if intel.trendContext.aboveSma50 == true { addStrength("sma50", "Above SMA50") }
+            if intel.trendContext.aboveSma200 == true { addStrength("sma200", "Above SMA200") }
+
+            let hasBreakout = (intel.chartIntelligence?.breakoutEvents ?? []).contains { event in
+                let kind = (event.kind ?? event.label ?? "").lowercased()
+                return kind.contains("high") || kind.contains("breakout")
+            }
+            if !hasBreakout {
+                addGap("high", "Not near a recent high / breakout")
+            }
         }
 
-        return Array(items.prefix(6))
+        return StrengthsAndGaps(
+            strengths: Array(strengths.prefix(5)),
+            gaps: Array(gaps.prefix(4))
+        )
     }
 
     static func segments(from scores: PatternIntelligenceScores?) -> [ScoreBreakdownSegment] {
@@ -284,10 +407,14 @@ enum TopMoversFormatting {
             ("pattern", "Pattern", scores.patternStrength),
         ]
         return pairs.map { key, label, raw in
-            ScoreBreakdownSegment(
+            let value = min(1, max(0, raw))
+            let tier = contributionTier(for: value)
+            return ScoreBreakdownSegment(
                 id: key,
                 label: label,
-                value: min(1, max(0, raw))
+                value: value,
+                tier: tier,
+                tierLabel: contributionTierLabel(tier)
             )
         }
     }
