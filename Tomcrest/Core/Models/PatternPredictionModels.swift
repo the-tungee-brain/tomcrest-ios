@@ -211,6 +211,14 @@ struct PatternTrendForecastDisplay: Sendable {
         rankingScore ?? upProb
     }
 
+    var predictedClassLabel: String {
+        directionTitle
+    }
+
+    var predictedClassProbability: Double? {
+        probabilityRows.first(where: \.isSelected)?.value ?? upProb
+    }
+
     var directionTitle: String {
         if labelScheme.isOutperformSpy {
             return prediction == 1 ? "Outperform SPY" : "Underperform SPY"
@@ -500,10 +508,7 @@ struct ChartAnalystOutlook: Codable, Sendable {
     let benchmarkNotice: String?
 
     var headline: String {
-        if let probabilityDisplay, !probabilityDisplay.isEmpty {
-            return "\(label) (\(probabilityDisplay))"
-        }
-        return label
+        label
     }
 }
 

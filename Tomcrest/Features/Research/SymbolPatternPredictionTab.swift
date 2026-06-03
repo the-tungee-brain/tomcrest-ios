@@ -7,10 +7,10 @@ struct SymbolPatternPredictionContent: View {
     var body: some View {
         if account.hasProFeature(.patternTrend) {
             AppScreenSection(
-                title: "5D Alpha",
+                title: "Trend analysis",
                 footnote: viewModel.patternPrediction?.display.isBenchmark == true
-                    ? "Trend and regime indicators · Model C ranking not applicable"
-                    : "Relative strength + trend ranking · next 5 sessions"
+                    ? "Quantitative model inputs · ranking not applicable on benchmark"
+                    : "Quantitative model outputs · next 5 sessions"
             ) {
                 if let prediction = viewModel.patternPrediction {
                     PatternTrendForecastCard(forecast: prediction.display)
@@ -43,8 +43,8 @@ struct SymbolPatternPredictionContent: View {
                 AppScreenSection(
                     title: "Chart intelligence",
                     footnote: viewModel.patternIntelligence?.display.isBenchmark == true
-                        ? "5-day outlook from structure and regime · no Model C on benchmark"
-                        : "5-day outlook · conclusion first, key evidence only"
+                        ? "Qualitative 5-day read from structure and patterns"
+                        : "What to expect — see Trend analysis for model scores"
                 ) {
                     if let intelligence = viewModel.patternIntelligence {
                         PatternIntelligenceCard(intelligence: intelligence.display)

@@ -8,7 +8,7 @@ struct PatternTrendForecastCard: View {
             if forecast.isBenchmark {
                 PatternTrendBenchmarkNoticeCard(forecast: forecast)
             } else {
-                PatternTrendHeroCard(forecast: forecast)
+                PatternTrendMetricsCard(forecast: forecast)
             }
 
             if !forecast.inTrainingUniverse {
@@ -88,57 +88,15 @@ private struct PatternTrendBenchmarkNoticeCard: View {
     }
 }
 
-private struct PatternTrendHeroCard: View {
+private struct PatternTrendMetricsCard: View {
     let forecast: PatternTrendForecastDisplay
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack(alignment: .top, spacing: 14) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(forecast.accentColor.opacity(0.14))
-                        .frame(width: 56, height: 56)
-                    Image(systemName: forecast.systemImage)
-                        .font(.system(size: 24, weight: .semibold))
-                        .foregroundStyle(forecast.accentColor)
-                }
-
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(forecast.directionTitle)
-                        .font(AppTypography.sectionTitle)
-                        .foregroundStyle(AppColors.label)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    if let badgeLabel = forecast.rankingBadgeLabel {
-                        Text(badgeLabel)
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(forecast.rankingBadgeColor)
-                            .textCase(.uppercase)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(forecast.rankingBadgeColor.opacity(0.12))
-                            .clipShape(Capsule())
-                    }
-
-                    Text("Next 5 trading days")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(AppColors.accentHighlight)
-                        .textCase(.uppercase)
-
-                    Text(forecast.directionSubtitle)
-                        .font(AppTypography.bodySecondary)
-                        .foregroundStyle(AppColors.secondaryLabel)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    if let portfolioSummary = forecast.portfolioSummary {
-                        Text(portfolioSummary)
-                            .font(.caption)
-                            .foregroundStyle(AppColors.tertiaryLabel)
-                    }
-                }
-
-                Spacer(minLength: 0)
-            }
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Model outputs")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(AppColors.secondaryLabel)
+                .textCase(.uppercase)
 
             LazyVGrid(
                 columns: [
@@ -158,6 +116,14 @@ private struct PatternTrendHeroCard: View {
                     value: formattedPercent(forecast.upProb)
                 )
                 PatternTrendMetaChip(
+                    title: "Predicted class",
+                    value: forecast.predictedClassLabel
+                )
+                PatternTrendMetaChip(
+                    title: "Class probability",
+                    value: formattedPercent(forecast.predictedClassProbability)
+                )
+                PatternTrendMetaChip(
                     title: "As of",
                     value: formattedDate(forecast.asOfDate)
                 )
@@ -166,6 +132,12 @@ private struct PatternTrendHeroCard: View {
                     value: "\(forecast.horizonDays) sessions"
                 )
             }
+
+            if let portfolioSummary = forecast.portfolioSummary {
+                Text(portfolioSummary)
+                    .font(.caption)
+                    .foregroundStyle(AppColors.tertiaryLabel)
+            }
         }
         .padding(18)
         .background(
@@ -173,7 +145,7 @@ private struct PatternTrendHeroCard: View {
                 .fill(AppColors.secondaryBackground)
                 .overlay {
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .stroke(forecast.accentColor.opacity(0.22), lineWidth: 1)
+                        .stroke(AppColors.separator.opacity(0.35), lineWidth: 1)
                 }
         )
     }
@@ -207,7 +179,7 @@ struct PatternTrendMetaChip: View {
             Text(value)
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(AppColors.label)
-                .lineLimit(1)
+                .lineLimit(2)
                 .minimumScaleFactor(0.85)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -223,12 +195,12 @@ private struct PatternTrendProbabilityCard: View {
 
     private var footnote: String {
         if forecast.labelScheme.isOutperformSpy {
-            return "Outperform vs SPY estimate for the next 5 sessions"
+            return "Outperform vs SPY · 5 sessions"
         }
         if forecast.labelScheme.isBinary {
-            return "Binary up/down estimate for the next 5 sessions"
+            return "Binary class · 5 sessions"
         }
-        return "Model estimate for the 5-day direction bucket"
+        return "Multi-class direction · 5 sessions"
     }
 
     var body: some View {
@@ -243,7 +215,7 @@ private struct PatternTrendProbabilityCard: View {
                     PatternTrendProbabilityRow(
                         label: row.label,
                         value: row.value,
-                        accentColor: row.isSelected ? forecast.accentColor : AppColors.secondaryLabel,
+                        accentColor: row.isSelected ? AppColors.accentHighlight : AppColors.secondaryLabel,
                         isSelected: row.isSelected
                     )
                 }
@@ -384,8 +356,8 @@ private struct PatternTrendFootnote: View {
 
             Text(
                 forecast.isBenchmark
-                    ? "Not investment advice. Pattern and trend context only — Model C ranking does not apply to the benchmark."
-                    : "Not investment advice. This describes a modeled 5-day alpha estimate, not a trade recommendation."
+                    ? "Not investment advice. Quantitative regime inputs only — Model C ranking does not apply to the benchmark."
+                    : "Not investment advice. Quantitative model outputs only — see Chart Intelligence for the qualitative read."
             )
             .font(.caption)
             .foregroundStyle(AppColors.tertiaryLabel)
