@@ -87,6 +87,9 @@ struct PortfolioAssistantSheet: View {
                 )
             }
         }
+        .task {
+            await viewModel.hydrateChatHistoryIfNeeded()
+        }
         .onAppear {
             applyPendingActionIfNeeded()
         }

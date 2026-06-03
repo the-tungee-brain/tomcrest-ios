@@ -31,6 +31,8 @@ final class SymbolDepthViewModel {
     private(set) var earningsDetail: EarningsDetailResponse?
     private(set) var earningsDetailLoading = false
     private(set) var earningsDetailError: String?
+    private(set) var incomeEarningsError: String?
+    private(set) var incomeDividendsError: String?
 
     private(set) var loadingTab: ResearchTab?
     private(set) var tabErrors: [ResearchTab: String] = [:]
@@ -139,43 +141,11 @@ final class SymbolDepthViewModel {
             case .news:
                 try await loadNews(accessToken: accessToken)
             case .financials:
-                async let fundamentalsTask = ResearchService.fetchFundamentals(
-                    symbol: symbol,
-                    accessToken: accessToken
-                )
-                async let filingsTask = ResearchService.fetchSecFilings(
-                    symbol: symbol,
-                    accessToken: accessToken
-                )
-                async let ratiosTask = ResearchService.fetchSecRatios(
-                    symbol: symbol,
-                    accessToken: accessToken
-                )
-                async let financialsTask = ResearchService.fetchSecFinancials(
-                    symbol: symbol,
-                    accessToken: accessToken
-                )
-                let (fundamentalsResult, filingsResult, ratiosResult, financialsResult) = try await (
-                    fundamentalsTask, filingsTask, ratiosTask, financialsTask
-                )
-                fundamentals = fundamentalsResult
-                secFilings = filingsResult
-                secRatios = ratiosResult
-                secFinancials = financialsResult
+                try await loadFinancialsTab(accessToken: accessToken)
             case .more:
                 switch more {
                 case .income:
-                    earnings = try await ResearchService.fetchEarningsList(
-                        symbol: symbol,
-                        accessToken: accessToken
-                    )
-                    if selectedHistoryEvent == nil {
-                        selectedHistoryEvent = earnings?.history.first
-                    }
-                    dividends = try await ResearchService.fetchDividendHistory(
-                        symbol: symbol,
-                        accessToken: accessToken
-                    )
+                    try await loadIncomeTab(accessToken: accessToken)
                 case .tools:
                     dividends = try await ResearchService.fetchDividendHistory(
                         symbol: symbol,
@@ -198,6 +168,144 @@ final class SymbolDepthViewModel {
             loadedTabs.insert(loadKey)
         } catch {
             tabErrors[loadKey] = (error as? APIError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+
+    private func loadFinancialsTab(accessToken: String) async throws {
+        var errors: [String] = []
+
+        do {
+            fundamentals = try await ResearchService.fetchFundamentals(
+                symbol: symbol,
+                accessToken: accessToken
+            )
+        } catch {
+            errors.append(
+                "Fundamentals: \((error as? APIError)?.errorDescription ?? error.localizedDescription)"
+            )
+        }
+
+        await withTaskGroup(of: String?.self) { group in
+            group.addTask {
+                do {
+                    let filings = try await ResearchService.fetchSecFilings(
+                        symbol: self.symbol,
+                        accessToken: accessToken
+                    )
+                    await MainActor.run { self.secFilings = filings }
+                    return nil
+                } catch {
+                    return "SEC filings: \((error as? APIError)?.errorDescription ?? error.localizedDescription)"
+                }
+            }
+            group.addTask {
+                do {
+                    let ratios = try await ResearchService.fetchSecRatios(
+                        symbol: self.symbol,
+                        accessToken: accessToken
+                    )
+                    await MainActor.run { self.secRatios = ratios }
+                    return nil
+                } catch {
+                    return "SEC ratios: \((error as? APIError)?.errorDescription ?? error.localizedDescription)"
+                }
+            }
+            group.addTask {
+                do {
+                    let financials = try await ResearchService.fetchSecFinancials(
+                        symbol: self.symbol,
+                        accessToken: accessToken
+                    )
+                    await MainActor.run { self.secFinancials = financials }
+                    return nil
+                } catch {
+                    return "SEC financials: \((error as? APIError)?.errorDescription ?? error.localizedDescription)"
+                }
+            }
+            for await message in group {
+                if let message {
+                    errors.append(message)
+                }
+            }
+        }
+
+        if !errors.isEmpty {
+            tabErrors[.financials] = errors.joined(separator: "\n")
+        }
+
+        guard fundamentals != nil || secFilings != nil || secRatios != nil || secFinancials != nil else {
+            if let message = tabErrors[.financials] {
+                throw APIError.httpStatus(-1, message: message)
+            }
+            throw APIError.httpStatus(-1, message: "Financials could not be loaded.")
+        }
+    }
+
+    private func loadIncomeTab(accessToken: String) async throws {
+        incomeEarningsError = nil
+        incomeDividendsError = nil
+        tabErrors[.more] = nil
+
+        await withTaskGroup(of: IncomeLoadResult.self) { group in
+            group.addTask {
+                do {
+                    let list = try await ResearchService.fetchEarningsList(
+                        symbol: self.symbol,
+                        accessToken: accessToken
+                    )
+                    return .earnings(list)
+                } catch {
+                    return .earningsFailed(
+                        (error as? APIError)?.errorDescription ?? error.localizedDescription
+                    )
+                }
+            }
+            group.addTask {
+                do {
+                    let context = try await ResearchService.fetchDividendHistory(
+                        symbol: self.symbol,
+                        accessToken: accessToken
+                    )
+                    return .dividends(context)
+                } catch let error as APIError {
+                    if case .httpStatus(404, _) = error {
+                        return .dividendsMissing
+                    }
+                    return .dividendsFailed(error.errorDescription ?? error.localizedDescription)
+                } catch {
+                    return .dividendsFailed(error.localizedDescription)
+                }
+            }
+
+            for await result in group {
+                switch result {
+                case let .earnings(list):
+                    earnings = list
+                    if selectedHistoryEvent == nil {
+                        selectedHistoryEvent = EarningsSelection.preferredHistoryEvent(from: list)
+                    }
+                case let .earningsFailed(message):
+                    earnings = nil
+                    incomeEarningsError = message
+                case let .dividends(context):
+                    dividends = context
+                case .dividendsMissing:
+                    dividends = nil
+                    incomeDividendsError = nil
+                case let .dividendsFailed(message):
+                    dividends = nil
+                    incomeDividendsError = message
+                }
+            }
+        }
+
+        if earnings == nil && dividends == nil {
+            let parts = [incomeEarningsError, incomeDividendsError].compactMap { $0 }
+            let message = parts.isEmpty
+                ? "Income data is not available for \(symbol)."
+                : parts.joined(separator: "\n")
+            tabErrors[.more] = message
+            throw APIError.httpStatus(-1, message: message)
         }
     }
 
@@ -257,11 +365,13 @@ final class SymbolDepthViewModel {
         selectedHistoryEvent = event
         earningsDetail = nil
         earningsDetailError = nil
+        guard EarningsSelection.shouldLoadDetail(for: event) else { return }
         await loadEarningsDetail(includeAnalysis: includeAnalysis)
     }
 
     func loadEarningsDetail(includeAnalysis: Bool, force: Bool = false) async {
         guard let event = selectedHistoryEvent,
+              EarningsSelection.shouldLoadDetail(for: event),
               let accessToken = auth.accessToken else { return }
         if earningsDetailLoading { return }
         if !force, earningsDetail?.event.id == event.id { return }
@@ -277,8 +387,15 @@ final class SymbolDepthViewModel {
                 accessToken: accessToken,
                 includeAnalysis: includeAnalysis
             )
+        } catch let error as APIError {
+            if case .httpStatus(404, _) = error {
+                earningsDetailError =
+                    "Earnings detail isn't available for this period yet. Try another quarter after results are reported."
+            } else {
+                earningsDetailError = error.errorDescription
+            }
         } catch {
-            earningsDetailError = (error as? APIError)?.errorDescription ?? error.localizedDescription
+            earningsDetailError = error.localizedDescription
         }
     }
 
@@ -298,8 +415,8 @@ final class SymbolDepthViewModel {
             patternModelHealth = nil
         }
         await loadIfNeeded(tab, more: more, force: true)
-        if more == .income, let event = earnings?.history.first {
-            selectedHistoryEvent = event
+        if more == .income, let list = earnings {
+            selectedHistoryEvent = EarningsSelection.preferredHistoryEvent(from: list)
         }
     }
 
@@ -391,4 +508,12 @@ final class SymbolDepthViewModel {
             tabErrors[.more] = (error as? APIError)?.errorDescription ?? error.localizedDescription
         }
     }
+}
+
+private enum IncomeLoadResult: Sendable {
+    case earnings(EarningsListResponse)
+    case earningsFailed(String)
+    case dividends(DividendHistoryContext)
+    case dividendsMissing
+    case dividendsFailed(String)
 }

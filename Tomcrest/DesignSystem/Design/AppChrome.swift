@@ -40,12 +40,36 @@ enum AppChrome {
     }
 
     private static func clearHostingViews(in view: UIView) {
+        clearOpaqueViews(in: view)
+    }
+
+    static func clearOpaqueUIKitChrome(in root: UIViewController) {
+        var stack: [UIViewController] = [root]
+        while let controller = stack.popLast() {
+            if let navigation = controller as? UINavigationController {
+                navigation.view.backgroundColor = .clear
+                navigation.view.isOpaque = false
+            }
+            clearOpaqueViews(in: controller.view)
+            stack.append(contentsOf: controller.children)
+            if let presented = controller.presentedViewController {
+                stack.append(presented)
+            }
+        }
+    }
+
+    static func clearOpaqueViews(in view: UIView?) {
+        guard let view else { return }
         let typeName = String(describing: type(of: view))
-        if typeName.contains("Hosting") || view is UIScrollView {
+        if view is UIScrollView
+            || typeName.contains("Hosting")
+            || typeName.contains("Navigation")
+            || typeName.contains("_UINavigation")
+        {
             view.backgroundColor = .clear
             view.isOpaque = false
         }
-        view.subviews.forEach { clearHostingViews(in: $0) }
+        view.subviews.forEach { clearOpaqueViews(in: $0) }
     }
 }
 
@@ -77,9 +101,12 @@ struct AppNavigationCanvasStack<Content: View>: View {
 
             NavigationStack {
                 content()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color.clear)
                     .appInAppBrowser(browser)
                     .appKeyboardDoneToolbar()
             }
+            .background(Color.clear)
             .appClearUIKitBackground()
         }
     }
@@ -102,9 +129,12 @@ struct AppRoutedNavigationCanvasStack<Data, Content: View>: View where Data: Has
 
             NavigationStack(path: $path) {
                 content()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color.clear)
                     .appInAppBrowser(browser)
                     .appKeyboardDoneToolbar()
             }
+            .background(Color.clear)
             .appClearUIKitBackground()
         }
     }
@@ -132,35 +162,17 @@ private final class ClearerViewController: UIViewController {
         super.viewDidLayoutSubviews()
         if let tabBarController {
             AppChrome.clearTabBarController(tabBarController)
-        } else {
-            clearTabBarControllerFromWindow()
+        } else if let root = view.window?.rootViewController {
+            AppChrome.clearOpaqueUIKitChrome(in: root)
         }
         clearNavigationBackgrounds(in: view)
     }
 
-    private func clearTabBarControllerFromWindow() {
-        guard let root = view.window?.rootViewController else { return }
-        findTabBarController(in: root)
-    }
-
-    private func findTabBarController(in controller: UIViewController?) {
-        guard let controller else { return }
-        if let tabBarController = controller as? UITabBarController {
-            AppChrome.clearTabBarController(tabBarController)
-            return
-        }
-        controller.children.forEach { findTabBarController(in: $0) }
-        findTabBarController(in: controller.presentedViewController)
-    }
-
     private func clearNavigationBackgrounds(in view: UIView) {
-        var current: UIView? = view
+        AppChrome.clearOpaqueViews(in: view)
+        var current: UIView? = view.superview
         while let node = current {
-            let typeName = String(describing: type(of: node))
-            if node is UIScrollView || typeName.contains("Hosting") || typeName.contains("Navigation") {
-                node.backgroundColor = .clear
-                node.isOpaque = false
-            }
+            AppChrome.clearOpaqueViews(in: node)
             current = node.superview
         }
     }

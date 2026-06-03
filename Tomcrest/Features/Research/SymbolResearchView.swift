@@ -137,20 +137,14 @@ struct SymbolResearchView: View {
                 depthVM.wheelBacktestQuery = query
             }
             await overviewVM.loadIfNeeded()
-            await positionVM.loadIfNeeded()
-            await depthVM.prefetchOptionsIntelligenceIfNeeded(
-                hasOptionPositions: positionVM.hasOptionPositions
-            )
+        }
+        .task(id: overviewVM.bundle?.symbol) {
+            guard overviewVM.bundle != nil else { return }
             await loadStrategyContext()
         }
         .onAppear {
             bookmarks.recordRecent(overviewVM.symbol)
             applyInitialDestinationIfNeeded()
-        }
-        .onChange(of: positionVM.hasOptionPositions) { _, hasOptions in
-            Task {
-                await depthVM.prefetchOptionsIntelligenceIfNeeded(hasOptionPositions: hasOptions)
-            }
         }
         .appPushedScreenCanvas()
         .overlay(alignment: .bottomTrailing) {

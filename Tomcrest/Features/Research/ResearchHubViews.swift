@@ -327,7 +327,9 @@ struct SymbolResearchHubView: View {
                     hasOptionPositions: positionVM.hasOptionPositions
                 )
             }
-            await loadStrategyContextIfNeeded()
+            if destination == .tools {
+                await loadStrategyContextIfNeeded()
+            }
         }
         .appPushedScreenCanvas()
     }
@@ -391,10 +393,12 @@ struct SymbolResearchHubView: View {
 
         if let more = destination.moreDestination {
             await depthVM.loadIfNeeded(.more, more: more)
-            if more == .income {
+            if more == .income,
+               let event = depthVM.selectedHistoryEvent,
+               EarningsSelection.shouldLoadDetail(for: event) {
                 await depthVM.loadEarningsDetail(
                     includeAnalysis: account.hasProFeature(.earningsAi),
-                    force: depthVM.selectedHistoryEvent != nil
+                    force: true
                 )
             }
             return
@@ -410,10 +414,13 @@ struct SymbolResearchHubView: View {
             await depthVM.reload(.more, more: .portfolio)
         case .income:
             await depthVM.reload(.more, more: .income)
-            await depthVM.loadEarningsDetail(
-                includeAnalysis: account.hasProFeature(.earningsAi),
-                force: true
-            )
+            if let event = depthVM.selectedHistoryEvent,
+               EarningsSelection.shouldLoadDetail(for: event) {
+                await depthVM.loadEarningsDetail(
+                    includeAnalysis: account.hasProFeature(.earningsAi),
+                    force: true
+                )
+            }
         case .analysis:
             await overviewVM.reload()
             await depthVM.reload(.analysis)

@@ -1,5 +1,8 @@
 import Foundation
 
+/// SEC research routes return snake_case JSON. Decode with `APIKeyDecoding.camelCase` (no
+/// `convertFromSnakeCase`) so explicit `CodingKeys` raw values match the wire format.
+
 struct SecFilingsResponse: Decodable {
     let symbol: String
     let cik: String

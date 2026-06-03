@@ -302,6 +302,7 @@ struct FinancialStrength: Decodable {
     let headline: String
     let strengths: [String]
     let risks: [String]
+    let highlights: [String]?
 }
 
 struct FundamentalsOverview: Decodable {
@@ -348,6 +349,27 @@ struct FinancialStatementsSnapshot: Decodable {
     let incomeStatement: [FinancialLineItem]
     let balanceSheet: [FinancialLineItem]
     let cashFlow: [FinancialLineItem]
+
+    private enum CodingKeys: String, CodingKey {
+        case periods
+        case incomeStatement
+        case balanceSheet
+        case cashFlow
+        case incomeStatementSnake = "income_statement"
+        case balanceSheetSnake = "balance_sheet"
+        case cashFlowSnake = "cash_flow"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        periods = try container.decodeIfPresent([String].self, forKey: .periods) ?? []
+        incomeStatement = try container.decodeIfPresent([FinancialLineItem].self, forKey: .incomeStatement)
+            ?? container.decodeIfPresent([FinancialLineItem].self, forKey: .incomeStatementSnake) ?? []
+        balanceSheet = try container.decodeIfPresent([FinancialLineItem].self, forKey: .balanceSheet)
+            ?? container.decodeIfPresent([FinancialLineItem].self, forKey: .balanceSheetSnake) ?? []
+        cashFlow = try container.decodeIfPresent([FinancialLineItem].self, forKey: .cashFlow)
+            ?? container.decodeIfPresent([FinancialLineItem].self, forKey: .cashFlowSnake) ?? []
+    }
 }
 
 struct EtfFundsSnapshot: Decodable {
@@ -467,6 +489,23 @@ struct RecommendationBreakdown: Decodable {
 
     var total: Int {
         strongBuy + buy + hold + sell + strongSell
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case strongBuy, buy, hold, sell, strongSell
+        case strongBuySnake = "strong_buy"
+        case strongSellSnake = "strong_sell"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        strongBuy = try container.decodeIfPresent(Int.self, forKey: .strongBuy)
+            ?? container.decodeIfPresent(Int.self, forKey: .strongBuySnake) ?? 0
+        buy = try container.decodeIfPresent(Int.self, forKey: .buy) ?? 0
+        hold = try container.decodeIfPresent(Int.self, forKey: .hold) ?? 0
+        sell = try container.decodeIfPresent(Int.self, forKey: .sell) ?? 0
+        strongSell = try container.decodeIfPresent(Int.self, forKey: .strongSell)
+            ?? container.decodeIfPresent(Int.self, forKey: .strongSellSnake) ?? 0
     }
 }
 
@@ -591,6 +630,36 @@ enum StreetAnalysisFormatters {
             return "Source: Yahoo Finance · \(DateFormatters.abbreviatedDay(from: dataAsOf))"
         }
         return "Source: Yahoo Finance"
+    }
+}
+
+enum EarningsSelection {
+    /// Prefer a reported quarter; avoid auto-opening detail for future or estimate-only rows.
+    static func preferredHistoryEvent(from response: EarningsListResponse) -> EarningsEvent? {
+        if let upcoming = response.upcoming {
+            return upcoming
+        }
+
+        let today = Calendar.current.startOfDay(for: Date())
+        if let reported = response.history.first(where: { event in
+            guard let date = DateFormatters.parse(String(event.reportDate.prefix(10))) else {
+                return false
+            }
+            let hasActuals = event.epsActual != nil
+                || (event.beatLabel != nil && event.beatLabel != "pending")
+            return date <= today && hasActuals
+        }) {
+            return reported
+        }
+
+        return response.history.first
+    }
+
+    static func shouldLoadDetail(for event: EarningsEvent) -> Bool {
+        if event.isUpcoming { return false }
+        if event.beatLabel == "pending" { return false }
+        if event.epsActual == nil, event.beatLabel == nil { return false }
+        return true
     }
 }
 

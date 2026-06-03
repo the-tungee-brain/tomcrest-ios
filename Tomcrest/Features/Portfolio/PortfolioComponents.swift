@@ -223,7 +223,7 @@ struct MorningBriefCard: View {
                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Morning brief")
+                    Text("Today's briefing")
                         .font(AppTypography.bodySecondary.weight(.semibold))
                         .foregroundStyle(AppColors.label)
                     if let generatedAt, let label = freshnessLabel(from: generatedAt) {

@@ -1,11 +1,22 @@
 import Foundation
 
+/// How `JSONDecoder` maps JSON keys to Swift properties.
+enum APIKeyDecoding: Sendable {
+    /// `convertFromSnakeCase` — for APIs that emit `snake_case` keys matching camelCase properties
+    /// without custom `CodingKeys` (rankings, portfolio, etc.).
+    case snakeCase
+    /// No key conversion — use for camelCase JSON **or** models with explicit `CodingKeys` string
+    /// values (e.g. SEC `accession_number`). Do not pair explicit snake `CodingKeys` with `.snakeCase`.
+    case camelCase
+}
+
 actor APIClient {
     static let shared = APIClient()
 
     private let config: APIConfiguration
     private let session: URLSession
-    private let decoder: JSONDecoder
+    private let snakeCaseDecoder: JSONDecoder
+    private let camelCaseDecoder: JSONDecoder
     private let encoder: JSONEncoder
     private var tokenRefresher: (@Sendable () async -> String?)?
 
@@ -15,8 +26,9 @@ actor APIClient {
     ) {
         self.config = config
         self.session = session
-        self.decoder = JSONDecoder()
-        self.decoder.keyDecodingStrategy = .convertFromSnakeCase
+        self.snakeCaseDecoder = JSONDecoder()
+        self.snakeCaseDecoder.keyDecodingStrategy = .convertFromSnakeCase
+        self.camelCaseDecoder = JSONDecoder()
         self.encoder = JSONEncoder()
     }
 
@@ -27,13 +39,14 @@ actor APIClient {
     func get<T: Decodable>(
         _ path: String,
         query: [String: String?] = [:],
-        accessToken: String? = nil
+        accessToken: String? = nil,
+        keyDecoding: APIKeyDecoding = .snakeCase
     ) async throws -> T {
         let url = try config.url(path: path, query: query)
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         applyHeaders(&request, accessToken: accessToken)
-        return try await perform(request, isRetry: false)
+        return try await perform(request, isRetry: false, keyDecoding: keyDecoding)
     }
 
     func post<T: Decodable, Body: Encodable>(
@@ -106,14 +119,26 @@ actor APIClient {
         }
     }
 
-    private func perform<T: Decodable>(_ request: URLRequest, isRetry: Bool) async throws -> T {
+    private func decoder(for keyDecoding: APIKeyDecoding) -> JSONDecoder {
+        switch keyDecoding {
+        case .snakeCase: snakeCaseDecoder
+        case .camelCase: camelCaseDecoder
+        }
+    }
+
+    private func perform<T: Decodable>(
+        _ request: URLRequest,
+        isRetry: Bool,
+        keyDecoding: APIKeyDecoding = .snakeCase
+    ) async throws -> T {
+        let decoder = decoder(for: keyDecoding)
         let (data, response) = try await session.data(for: request)
         guard let http = response as? HTTPURLResponse else {
             throw APIError.httpStatus(-1, message: "Invalid response.")
         }
 
         if http.statusCode == 401 {
-            if let reauth = try? decoder.decode(APIEnvelope<SchwabReauthDetail>.self, from: data),
+            if let reauth = try? snakeCaseDecoder.decode(APIEnvelope<SchwabReauthDetail>.self, from: data),
                let detail = reauth.detail,
                detail.requiresReauth {
                 throw APIError.schwabReauth(detail)
@@ -121,14 +146,14 @@ actor APIClient {
             if !isRetry, let refresher = tokenRefresher, let newToken = await refresher() {
                 var retryRequest = request
                 retryRequest.setValue("Bearer \(newToken)", forHTTPHeaderField: "Authorization")
-                return try await perform(retryRequest, isRetry: true)
+                return try await perform(retryRequest, isRetry: true, keyDecoding: keyDecoding)
             }
             NotificationCenter.default.post(name: .tomcrestUnauthorized, object: nil)
             throw APIError.unauthorized
         }
 
         if http.statusCode == 403 {
-            if let envelope = try? decoder.decode(APIErrorEnvelope.self, from: data) {
+            if let envelope = try? snakeCaseDecoder.decode(APIErrorEnvelope.self, from: data) {
                 switch envelope.detail {
                 case let .object(detail) where detail.code == "waitlist":
                     throw APIError.waitlist(message: detail.message)
@@ -147,13 +172,17 @@ actor APIClient {
 
         do {
             return try decoder.decode(T.self, from: data)
-        } catch {
-            throw APIError.decoding(error)
+        } catch let primaryError {
+            let alternateDecoder = keyDecoding == .camelCase ? snakeCaseDecoder : camelCaseDecoder
+            if let decoded = try? alternateDecoder.decode(T.self, from: data) {
+                return decoded
+            }
+            throw APIError.decoding(primaryError)
         }
     }
 
     private func parseErrorMessage(from data: Data) -> String? {
-        if let envelope = try? decoder.decode(APIErrorEnvelope.self, from: data) {
+        if let envelope = try? snakeCaseDecoder.decode(APIErrorEnvelope.self, from: data) {
             switch envelope.detail {
             case let .string(message):
                 return message

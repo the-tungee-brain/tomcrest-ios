@@ -177,15 +177,6 @@ struct PortfolioView: View {
                 )
             }
 
-            NavigationLink(value: PortfolioDestination.today) {
-                PortfolioBriefPreview(
-                    lead: viewModel.briefLead,
-                    isUrgent: viewModel.briefIsUrgent,
-                    attentionCount: viewModel.attentionItemCount
-                )
-            }
-            .buttonStyle(.plain)
-
             exploreSection(viewModel)
 
             portfolioWatchlistSection()
@@ -228,7 +219,7 @@ struct PortfolioView: View {
                     PortfolioQuickLinkRow(
                         icon: "sun.max.fill",
                         title: "Today's briefing",
-                        subtitle: "Morning brief, alerts & playbook",
+                        subtitle: viewModel.todayBriefingSubtitle,
                         badge: viewModel.todayBadgeCount
                     )
                 }

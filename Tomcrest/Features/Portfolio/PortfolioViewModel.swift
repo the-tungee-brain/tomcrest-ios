@@ -64,6 +64,8 @@ final class PortfolioViewModel {
     private var chatPositionsPayload: JSONPassThrough?
     @ObservationIgnored private var cachedHoldingSummaries: [SymbolHoldingSummary]?
     @ObservationIgnored private var holdingSummariesCacheKey: Int?
+    @ObservationIgnored private var proactiveAlertsSeed: [ProactiveAlert] = []
+    @ObservationIgnored private var supplementalLoadTask: Task<Void, Never>?
     @ObservationIgnored private var chatStreamThrottler: ChatStreamThrottler
 
     private let auth: AuthSession
@@ -82,6 +84,13 @@ final class PortfolioViewModel {
 
     var briefLead: String? {
         PortfolioBriefText.lead(from: displayBrief, changes: morningBrief?.changes)
+    }
+
+    var todayBriefingSubtitle: String {
+        if let lead = briefLead, !lead.isEmpty {
+            return lead
+        }
+        return "Alerts, playbook & portfolio analysis"
     }
 
     var briefIsUrgent: Bool {
@@ -619,23 +628,15 @@ final class PortfolioViewModel {
         }
 
         do {
-            async let positionsTask = PortfolioService.fetchPositions(
+            let fetchResult = try await PortfolioService.fetchPositions(
                 accessToken: accessToken,
                 refresh: fromPull,
                 api: api
             )
-            async let briefTask = fetchMorningBriefOptional(
-                accessToken: accessToken,
-                refresh: fromPull
-            )
 
-            let fetchResult = try await positionsTask
-            let brief = await briefTask
-
-            apply(fetchResult: fetchResult, morningBrief: brief)
+            apply(fetchResult: fetchResult, morningBrief: nil)
             screenState = positions.isEmpty ? .empty : .content
-            await loadStrategyPlaybook(accessToken: accessToken)
-            await hydrateChatHistoryIfNeeded()
+            scheduleSupplementalLoad(accessToken: accessToken, fromPull: fromPull)
             if portfolioNewsLoaded || activeSection == .news {
                 await loadPortfolioNewsIfNeeded(force: fromPull)
             }
@@ -708,10 +709,36 @@ final class PortfolioViewModel {
         }
     }
 
+    private func scheduleSupplementalLoad(accessToken: String, fromPull: Bool) {
+        supplementalLoadTask?.cancel()
+        supplementalLoadTask = Task { @MainActor [weak self] in
+            guard let self, !Task.isCancelled else { return }
+            async let brief: Void = self.loadAndMergeMorningBrief(accessToken: accessToken, refresh: fromPull)
+            async let strategy: Void = self.loadStrategyPlaybook(accessToken: accessToken)
+            _ = await (brief, strategy)
+        }
+    }
+
+    private func loadAndMergeMorningBrief(accessToken: String, refresh: Bool) async {
+        guard !Task.isCancelled else { return }
+        guard let brief = await fetchMorningBriefOptional(accessToken: accessToken, refresh: refresh) else {
+            return
+        }
+        mergeMorningBrief(brief)
+    }
+
+    private func mergeMorningBrief(_ brief: MorningBrief) {
+        morningBrief = brief
+        displayBrief = brief.portfolioIntelligence
+        attentionQueue = brief.attentionQueue
+        alerts = PortfolioAlerts.merged(proactive: proactiveAlertsSeed, brief: displayBrief)
+    }
+
     private func apply(fetchResult: PortfolioFetchResult, morningBrief: MorningBrief?) {
         let positionsResponse = fetchResult.response
         chatAccountPayload = fetchResult.accountPayload
         chatPositionsPayload = fetchResult.positionsPayload
+        proactiveAlertsSeed = positionsResponse.proactiveAlerts ?? []
 
         positions = positionsResponse.flattenedPositions.sorted {
             ($0.portfolioWeightPct ?? 0) > ($1.portfolioWeightPct ?? 0)

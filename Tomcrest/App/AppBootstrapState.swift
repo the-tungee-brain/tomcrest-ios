@@ -65,9 +65,9 @@ final class AppBootstrapState {
         let portfolio = PortfolioViewModel(auth: auth)
         portfolioViewModel = portfolio
 
+        Task { await portfolio.loadIfNeeded() }
         async let planLoad: Void = account.loadPlan(accessToken: accessToken)
-        async let portfolioLoad: Void = portfolio.loadIfNeeded()
-        _ = await (planLoad, portfolioLoad, watchlistLoad)
+        _ = await (planLoad, watchlistLoad)
     }
 
     func clearPreloadedSession() {

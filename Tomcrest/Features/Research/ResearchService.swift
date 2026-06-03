@@ -31,7 +31,8 @@ enum ResearchService {
                 "holdings_limit": String(holdingsLimit),
                 "include_summary": includeSummary ? "true" : "false",
             ],
-            accessToken: accessToken
+            accessToken: accessToken,
+            keyDecoding: .camelCase
         )
     }
 
@@ -65,7 +66,8 @@ enum ResearchService {
                 "symbol": symbol.uppercased(),
                 "limit": String(limit),
             ],
-            accessToken: accessToken
+            accessToken: accessToken,
+            keyDecoding: .camelCase
         )
     }
 
@@ -83,7 +85,8 @@ enum ResearchService {
                 "period": period,
                 "limit": String(limit),
             ],
-            accessToken: accessToken
+            accessToken: accessToken,
+            keyDecoding: .camelCase
         )
     }
 
@@ -101,7 +104,8 @@ enum ResearchService {
                 "period": period,
                 "limit": String(limit),
             ],
-            accessToken: accessToken
+            accessToken: accessToken,
+            keyDecoding: .camelCase
         )
     }
 
@@ -141,7 +145,8 @@ enum ResearchService {
                 "symbol": symbol.uppercased(),
                 "limit": String(limit),
             ],
-            accessToken: accessToken
+            accessToken: accessToken,
+            keyDecoding: .camelCase
         )
     }
 
@@ -161,7 +166,8 @@ enum ResearchService {
                 "include_transcript": includeTranscript ? "true" : "false",
                 "include_analysis": includeAnalysis ? "true" : "false",
             ],
-            accessToken: accessToken
+            accessToken: accessToken,
+            keyDecoding: .camelCase
         )
     }
 
@@ -177,7 +183,8 @@ enum ResearchService {
                 "symbol": symbol.uppercased(),
                 "lookback_days": String(lookbackDays),
             ],
-            accessToken: accessToken
+            accessToken: accessToken,
+            keyDecoding: .camelCase
         )
     }
 
@@ -211,7 +218,12 @@ enum ResearchService {
         if let sharePrice, sharePrice > 0 {
             query["share_price"] = String(sharePrice)
         }
-        return try await api.get("/research/dividends", query: query, accessToken: accessToken)
+        return try await api.get(
+            "/research/dividends",
+            query: query,
+            accessToken: accessToken,
+            keyDecoding: .camelCase
+        )
     }
 
     static func fetchEtfHoldings(
@@ -226,7 +238,8 @@ enum ResearchService {
                 "symbol": symbol.uppercased(),
                 "limit": String(limit),
             ],
-            accessToken: accessToken
+            accessToken: accessToken,
+            keyDecoding: .camelCase
         )
     }
 
@@ -238,7 +251,8 @@ enum ResearchService {
         try await api.get(
             "/research/fundamentals",
             query: ["symbol": symbol.uppercased()],
-            accessToken: accessToken
+            accessToken: accessToken,
+            keyDecoding: .camelCase
         )
     }
 
@@ -282,7 +296,8 @@ enum ResearchService {
         try await api.get(
             "/research/business",
             query: ["symbol": symbol.uppercased()],
-            accessToken: accessToken
+            accessToken: accessToken,
+            keyDecoding: .camelCase
         )
     }
 
@@ -298,7 +313,8 @@ enum ResearchService {
                 "symbol": symbol.uppercased(),
                 "include_options": includeOptions ? "true" : "false",
             ],
-            accessToken: accessToken
+            accessToken: accessToken,
+            keyDecoding: .camelCase
         )
     }
 
@@ -310,7 +326,8 @@ enum ResearchService {
         try await api.get(
             "/strategy/wheel-backtest",
             query: query.queryItems,
-            accessToken: accessToken
+            accessToken: accessToken,
+            keyDecoding: .camelCase
         )
     }
 }

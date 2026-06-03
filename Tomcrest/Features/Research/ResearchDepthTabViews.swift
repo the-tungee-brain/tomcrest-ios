@@ -201,7 +201,9 @@ struct SymbolEarningsTab: View {
 
     var body: some View {
         ResearchDepthTabShell(tab: .more, viewModel: viewModel) {
-            if let earnings = viewModel.earnings {
+            if let message = viewModel.incomeEarningsError {
+                AppInlineBanner(message: message, tone: .error)
+            } else if let earnings = viewModel.earnings {
                 VStack(alignment: .leading, spacing: Layout.sectionSpacing) {
                     if let upcoming = earnings.upcoming {
                         AppScreenSection(
@@ -227,19 +229,32 @@ struct SymbolEarningsTab: View {
                             }
 
                             if let selected = viewModel.selectedHistoryEvent {
-                                EarningsDetailSection(
-                                    previewEvent: selected,
-                                    detail: viewModel.earningsDetail,
-                                    isLoading: viewModel.earningsDetailLoading,
-                                    error: viewModel.earningsDetailError,
-                                    earningsAiAllowed: account.hasProFeature(.earningsAi)
-                                )
+                                if EarningsSelection.shouldLoadDetail(for: selected) {
+                                    EarningsDetailSection(
+                                        previewEvent: selected,
+                                        detail: viewModel.earningsDetail,
+                                        isLoading: viewModel.earningsDetailLoading,
+                                        error: viewModel.earningsDetailError,
+                                        earningsAiAllowed: account.hasProFeature(.earningsAi)
+                                    )
+                                } else {
+                                    AppEmptyMessage(
+                                        message: "This period has estimates only. Detail will appear after earnings are reported.",
+                                        systemImage: "calendar"
+                                    )
+                                }
                             }
                         }
+                    } else if earnings.upcoming == nil {
+                        AppEmptyMessage(
+                            message: "No earnings history is available for this symbol yet.",
+                            systemImage: "chart.bar.doc.horizontal"
+                        )
                     }
                 }
                 .task(id: viewModel.selectedHistoryEvent?.id) {
-                    guard viewModel.selectedHistoryEvent != nil else { return }
+                    guard let event = viewModel.selectedHistoryEvent,
+                          EarningsSelection.shouldLoadDetail(for: event) else { return }
                     await viewModel.loadEarningsDetail(
                         includeAnalysis: account.hasProFeature(.earningsAi)
                     )
@@ -669,7 +684,9 @@ struct SymbolDividendsTab: View {
 
     var body: some View {
         ResearchDepthTabShell(tab: .more, viewModel: viewModel) {
-            if let context = viewModel.dividends {
+            if let message = viewModel.incomeDividendsError {
+                AppInlineBanner(message: message, tone: .error)
+            } else if let context = viewModel.dividends {
                 VStack(alignment: .leading, spacing: Layout.sectionSpacing) {
                     // Recent payments first — the tab’s primary read; summary stays compact below.
                     if !context.recentPayments.isEmpty {
@@ -736,6 +753,11 @@ struct SymbolDividendsTab: View {
 
                     DividendSnowballCard(context: context, viewModel: viewModel)
                 }
+            } else if viewModel.earnings != nil || viewModel.incomeEarningsError != nil {
+                AppEmptyMessage(
+                    message: "No dividend history for \(viewModel.symbol). This is common for growth companies that do not pay dividends.",
+                    systemImage: "dollarsign.circle"
+                )
             }
         }
     }

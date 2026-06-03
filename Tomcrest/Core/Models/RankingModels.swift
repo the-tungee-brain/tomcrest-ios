@@ -383,7 +383,7 @@ enum TopMoversFormatting {
             if intel.trendContext.aboveSma200 == true { addStrength("sma200", "Above SMA200") }
 
             let hasBreakout = (intel.chartIntelligence?.breakoutEvents ?? []).contains { event in
-                let kind = (event.kind ?? event.label ?? "").lowercased()
+                let kind = (event.kind.isEmpty ? (event.label ?? "") : event.kind).lowercased()
                 return kind.contains("high") || kind.contains("breakout")
             }
             if !hasBreakout {

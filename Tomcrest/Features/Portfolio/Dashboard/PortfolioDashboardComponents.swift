@@ -97,59 +97,6 @@ struct PortfolioHeroSummary: View {
     }
 }
 
-// MARK: - Brief preview
-
-struct PortfolioBriefPreview: View {
-    let lead: String?
-    let isUrgent: Bool
-    let attentionCount: Int
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
-                Image(systemName: isUrgent ? "exclamationmark.circle.fill" : "sun.max.fill")
-                    .foregroundStyle(isUrgent ? AppColors.warning : AppColors.accentHighlight)
-                Text("Morning brief")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(AppColors.label)
-                Spacer()
-                if attentionCount > 0 {
-                    Text("\(attentionCount)")
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(AppColors.onAccent)
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 3)
-                        .background(AppColors.warning)
-                        .clipShape(Capsule())
-                }
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(AppColors.tertiaryLabel)
-            }
-
-            Text(previewText)
-                .font(.subheadline)
-                .foregroundStyle(AppColors.secondaryLabel)
-                .lineLimit(2)
-                .lineSpacing(3)
-                .multilineTextAlignment(.leading)
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AppColors.secondaryBackground.opacity(0.7))
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(AppColors.panelBorder, lineWidth: 1)
-        }
-    }
-
-    private var previewText: String {
-        if let lead, !lead.isEmpty { return lead }
-        return "Tap for today's briefing, alerts, and playbook."
-    }
-}
-
 // MARK: - Quick links
 
 struct PortfolioQuickLinkRow: View {
@@ -176,6 +123,8 @@ struct PortfolioQuickLinkRow: View {
                     Text(subtitle)
                         .font(.caption)
                         .foregroundStyle(AppColors.secondaryLabel)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
                 }
             }
 
