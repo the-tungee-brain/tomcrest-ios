@@ -14,53 +14,42 @@ struct MainTabView: View {
     @State private var settingsFocus: SettingsFocus?
     @State private var tabReselect = TabBarReselectCoordinator()
 
-    private let tabOrder: [AppTab] = [.portfolio, .movers, .research, .settings]
-
     var body: some View {
         TabView(selection: $selectedTab) {
             PortfolioView(selectedTab: $selectedTab, settingsFocus: $settingsFocus)
-                .tabItem {
-                    Label("Portfolio", systemImage: selectedTab == .portfolio ? "chart.pie.fill" : "chart.pie")
-                }
+                .tabItem { Label("Portfolio", systemImage: "chart.pie") }
                 .tag(AppTab.portfolio)
 
             TopMoversView()
-                .tabItem {
-                    Label("Movers", systemImage: selectedTab == .movers ? "arrow.up.right.circle.fill" : "arrow.up.right.circle")
-                }
+                .tabItem { Label("Movers", systemImage: "arrow.up.right.circle") }
                 .tag(AppTab.movers)
 
             ResearchView()
-                .tabItem {
-                    Label("Research", systemImage: selectedTab == .research ? "magnifyingglass.circle.fill" : "magnifyingglass")
-                }
+                .tabItem { Label("Research", systemImage: "magnifyingglass") }
                 .tag(AppTab.research)
 
             SettingsView(settingsFocus: $settingsFocus)
-                .tabItem {
-                    Label("Settings", systemImage: selectedTab == .settings ? "gearshape.fill" : "gearshape")
-                }
+                .tabItem { Label("Settings", systemImage: "gearshape") }
                 .tag(AppTab.settings)
         }
         .tint(BrandPrimary.color)
-        .appMainTabBarChrome()
+        .toolbar(.hidden, for: .tabBar)
         .appClearUIKitBackground()
-        .background {
-            TabBarReselectObserver(
-                coordinator: tabReselect,
-                tabs: tabOrder,
-                selectedTab: selectedTab,
-                reinstallToken: tabReselect.reinstallToken
-            )
-        }
-        .onChange(of: selectedTab) { _, _ in
-            tabReselect.scheduleReinstall()
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            MainAppTabBar(selectedTab: $selectedTab, onSelect: selectTab)
         }
         .environment(tabReselect)
         .task(id: auth.accessToken) {
             guard let accessToken = auth.accessToken else { return }
             await account.loadPlanIfNeeded(accessToken: accessToken)
         }
+    }
+
+    private func selectTab(_ tab: AppTab) {
+        if selectedTab == tab {
+            tabReselect.noteReselect(tab)
+        }
+        selectedTab = tab
     }
 }
 
