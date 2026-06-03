@@ -1,37 +1,42 @@
 import Foundation
 
 struct BusinessBlock: Decodable {
-    let whatTheyDo: String
-    let segments: [String]
-    let revenueNotes: String
-    let customersAndMarkets: String
-    let competitiveLandscape: String
-    let moatAndDifferentiators: String
-    let growthDrivers: [String]
-    let keyRisks: [String]
-}
+    let industry: String
+    let primaryProduct: String
+    let revenueModel: String
+    let primaryCustomers: [String]
+    let howTheyMakeMoney: [String]
+    let revenueVisibility: [String]
+    let advantages: [String]
+    let challenges: [String]
+    let revenueDrivers: [String]
+    let constraints: [String]
+    let businessRisks: [String]
+    let dependencies: [String]
 
-enum BusinessArticleSupport {
-    static func atAGlance(from business: BusinessBlock) -> [String] {
-        var points: [String] = []
+    enum CodingKeys: String, CodingKey {
+        case industry, primaryProduct, revenueModel, primaryCustomers
+        case howTheyMakeMoney, revenueVisibility, advantages, challenges
+        case revenueDrivers, constraints, businessRisks, dependencies
+        case growthDrivers
+    }
 
-        let revenueLead = business.revenueNotes
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .components(separatedBy: ". ")
-            .first?
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        if let revenueLead, !revenueLead.isEmpty {
-            points.append(revenueLead.hasSuffix(".") ? revenueLead : "\(revenueLead).")
-        }
-
-        if let growth = business.growthDrivers.first?.trimmingCharacters(in: .whitespacesAndNewlines), !growth.isEmpty {
-            points.append(growth)
-        }
-
-        if let risk = business.keyRisks.first?.trimmingCharacters(in: .whitespacesAndNewlines), !risk.isEmpty {
-            points.append(risk)
-        }
-
-        return Array(points.prefix(3))
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        industry = try c.decodeIfPresent(String.self, forKey: .industry) ?? ""
+        primaryProduct = try c.decodeIfPresent(String.self, forKey: .primaryProduct) ?? ""
+        revenueModel = try c.decodeIfPresent(String.self, forKey: .revenueModel) ?? ""
+        primaryCustomers = try c.decodeIfPresent([String].self, forKey: .primaryCustomers) ?? []
+        howTheyMakeMoney = try c.decodeIfPresent([String].self, forKey: .howTheyMakeMoney) ?? []
+        revenueVisibility = try c.decodeIfPresent([String].self, forKey: .revenueVisibility) ?? []
+        advantages = try c.decodeIfPresent([String].self, forKey: .advantages) ?? []
+        challenges = try c.decodeIfPresent([String].self, forKey: .challenges) ?? []
+        revenueDrivers =
+            try c.decodeIfPresent([String].self, forKey: .revenueDrivers)
+            ?? c.decodeIfPresent([String].self, forKey: .growthDrivers)
+            ?? []
+        constraints = try c.decodeIfPresent([String].self, forKey: .constraints) ?? []
+        businessRisks = try c.decodeIfPresent([String].self, forKey: .businessRisks) ?? []
+        dependencies = try c.decodeIfPresent([String].self, forKey: .dependencies) ?? []
     }
 }

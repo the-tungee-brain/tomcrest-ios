@@ -940,8 +940,8 @@ struct SymbolBusinessContent: View {
         AppScreenSection(
             title: "Business",
             footnote: account.hasProFeature(.business)
-                ? "How the company works, competes, and grows"
-                : "Pro — AI overview of the business model, moat, and risks"
+                ? "Institutional business notes — mechanisms, limits, and asymmetry"
+                : "Pro — structured business intelligence"
         ) {
             if account.hasProFeature(.business) {
                 if let business = viewModel.business {
@@ -951,7 +951,7 @@ struct SymbolBusinessContent: View {
                 }
             } else {
                 AppInlineBanner(
-                    message: "Upgrade to Pro for AI business model analysis, moat, and risk breakdowns.",
+                    message: "Upgrade to Pro for structured business intelligence.",
                     tone: .neutral
                 )
             }
@@ -969,95 +969,68 @@ struct SymbolBusinessTab: View {
     }
 }
 
-private enum BusinessSegmentChipMetrics {
-    static let minHeight: CGFloat = 36
-    static let horizontalPadding: CGFloat = 12
-    static let verticalPadding: CGFloat = 10
-    static let cornerRadius: CGFloat = 12
-}
-
 private struct BusinessOverviewContent: View {
     let business: BusinessBlock
 
+    private var customersLine: String {
+        business.primaryCustomers.joined(separator: ", ")
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: Layout.sectionSpacing) {
-            let atAGlance = BusinessArticleSupport.atAGlance(from: business)
-            if !atAGlance.isEmpty {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("At a glance")
-                        .font(.caption2.weight(.medium))
-                        .foregroundStyle(AppColors.tertiaryLabel)
-                        .textCase(.uppercase)
-                    VStack(alignment: .leading, spacing: 6) {
-                        ForEach(atAGlance, id: \.self) { item in
-                            Text("• \(item)")
-                                .font(AppTypography.bodySecondary.weight(.medium))
-                                .foregroundStyle(AppColors.label)
-                                .lineSpacing(3)
-                        }
-                    }
-                    .padding(12)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(AppColors.accentMuted.opacity(0.35))
-                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            businessBlock(title: "Business snapshot") {
+                LazyVGrid(
+                    columns: [GridItem(.flexible()), GridItem(.flexible())],
+                    alignment: .leading,
+                    spacing: 8
+                ) {
+                    snapshotTile("Industry", business.industry)
+                    snapshotTile("Primary product", business.primaryProduct)
+                    snapshotTile("Customers", customersLine)
+                    snapshotTile("Revenue model", business.revenueModel)
                 }
             }
 
-            if !business.segments.isEmpty {
-                businessBlock(title: "Segments") {
-                    Grid(horizontalSpacing: 8, verticalSpacing: 8) {
-                        ForEach(Array(segmentRows.enumerated()), id: \.offset) { _, row in
-                            GridRow(alignment: .top) {
-                                if row.count == 1 {
-                                    segmentChip(row[0])
-                                        .gridCellColumns(2)
-                                } else {
-                                    segmentChip(row[0])
-                                    segmentChip(row[1])
-                                }
-                            }
-                        }
+            bulletSection(title: "How they make money", items: business.howTheyMakeMoney)
+            bulletSection(title: "Revenue visibility", items: business.revenueVisibility)
+
+            if !business.advantages.isEmpty || !business.challenges.isEmpty {
+                businessBlock(title: "Competitive position") {
+                    HStack(alignment: .top, spacing: 12) {
+                        bulletColumn(title: "Advantages", items: business.advantages, isRisk: false)
+                        bulletColumn(title: "Challenges", items: business.challenges, isRisk: true)
                     }
                 }
             }
 
-            proseBlock(title: "What they do", text: business.whatTheyDo)
-            proseBlock(title: "How they make money", text: business.revenueNotes)
-            proseBlock(title: "Customers & markets", text: business.customersAndMarkets)
-            proseBlock(title: "Competitive landscape", text: business.competitiveLandscape)
-            proseBlock(title: "Moat & differentiators", text: business.moatAndDifferentiators)
-
-            if !business.growthDrivers.isEmpty || !business.keyRisks.isEmpty {
-                HStack(alignment: .top, spacing: 12) {
-                    bulletColumn(title: "Growth drivers", items: business.growthDrivers, isRisk: false)
-                    bulletColumn(title: "Business risks", items: business.keyRisks, isRisk: true)
+            if !business.revenueDrivers.isEmpty || !business.constraints.isEmpty {
+                businessBlock(title: "Growth drivers vs constraints") {
+                    HStack(alignment: .top, spacing: 12) {
+                        bulletColumn(title: "Revenue drivers", items: business.revenueDrivers, isRisk: false)
+                        bulletColumn(title: "Constraints", items: business.constraints, isRisk: true)
+                    }
                 }
             }
+            bulletSection(title: "Business risks", items: business.businessRisks, isRisk: true)
+            bulletSection(title: "Key dependencies", items: business.dependencies)
         }
     }
 
-    private var segmentRows: [[String]] {
-        stride(from: 0, to: business.segments.count, by: 2).map { start in
-            Array(business.segments[start..<min(start + 2, business.segments.count)])
+    private func snapshotTile(_ label: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(label.uppercased())
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(AppColors.tertiaryLabel)
+                .tracking(0.3)
+            Text(value.isEmpty ? "—" : value)
+                .font(AppTypography.caption.weight(.medium))
+                .foregroundStyle(AppColors.label)
+                .lineSpacing(2)
         }
-    }
-
-    private func segmentChip(_ segment: String) -> some View {
-        Text(segment)
-            .font(.caption.weight(.medium))
-            .foregroundStyle(AppColors.label)
-            .multilineTextAlignment(.leading)
-            .lineSpacing(2)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .padding(.horizontal, BusinessSegmentChipMetrics.horizontalPadding)
-            .padding(.vertical, BusinessSegmentChipMetrics.verticalPadding)
-            .frame(minHeight: BusinessSegmentChipMetrics.minHeight)
-            .background(AppColors.surfaceElevated.opacity(0.65))
-            .clipShape(RoundedRectangle(cornerRadius: BusinessSegmentChipMetrics.cornerRadius, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: BusinessSegmentChipMetrics.cornerRadius, style: .continuous)
-                    .stroke(AppColors.separator, lineWidth: 1)
-            }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(10)
+        .background(AppColors.secondaryFill.opacity(0.5))
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 
     @ViewBuilder
@@ -1072,14 +1045,10 @@ private struct BusinessOverviewContent: View {
     }
 
     @ViewBuilder
-    private func proseBlock(title: String, text: String) -> some View {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !trimmed.isEmpty {
+    private func bulletSection(title: String, items: [String], isRisk: Bool = false) -> some View {
+        if !items.isEmpty {
             businessBlock(title: title) {
-                Text(trimmed)
-                    .font(AppTypography.bodySecondary)
-                    .foregroundStyle(AppColors.label)
-                    .lineSpacing(4)
+                bulletList(items: items, isRisk: isRisk)
             }
         }
     }
@@ -1090,16 +1059,20 @@ private struct BusinessOverviewContent: View {
                 .font(.caption2.weight(.medium))
                 .foregroundStyle(AppColors.tertiaryLabel)
                 .textCase(.uppercase)
-            VStack(alignment: .leading, spacing: 6) {
-                ForEach(items.filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }, id: \.self) { item in
-                    Text("• \(item)")
-                        .font(.caption)
-                        .foregroundStyle(isRisk ? AppColors.warning : AppColors.label)
-                        .lineSpacing(2)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            bulletList(items: items, isRisk: isRisk)
         }
+    }
+
+    private func bulletList(items: [String], isRisk: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            ForEach(items.filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }, id: \.self) { item in
+                Text("• \(item)")
+                    .font(.caption)
+                    .foregroundStyle(isRisk ? AppColors.warning : AppColors.label)
+                    .lineSpacing(2)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
