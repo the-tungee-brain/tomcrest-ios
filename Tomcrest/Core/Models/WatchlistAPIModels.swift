@@ -2,14 +2,22 @@ import Foundation
 
 struct WatchlistWorkspaceResponse: Decodable {
     let folders: [WatchlistFolderDTO]
+    let workspaceVersion: Int?
+
+    init(folders: [WatchlistFolderDTO] = [], workspaceVersion: Int? = nil) {
+        self.folders = folders
+        self.workspaceVersion = workspaceVersion
+    }
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         folders = try container.decodeIfPresent([WatchlistFolderDTO].self, forKey: .folders) ?? []
+        workspaceVersion = try container.decodeIfPresent(Int.self, forKey: .workspaceVersion)
     }
 
     private enum CodingKeys: String, CodingKey {
         case folders
+        case workspaceVersion
     }
 }
 
@@ -39,6 +47,7 @@ struct WatchlistSymbolDTO: Decodable {
 
 struct WatchlistWorkspaceSyncRequest: Encodable {
     let folders: [WatchlistFolderSyncPayload]
+    let baseVersion: Int?
 }
 
 struct WatchlistFolderSyncPayload: Encodable {
@@ -103,7 +112,7 @@ enum WatchlistAPIMapping {
         return quotes
     }
 
-    static func syncRequest(from folders: [WatchlistFolder]) -> WatchlistWorkspaceSyncRequest {
+    static func syncRequest(from folders: [WatchlistFolder], baseVersion: Int? = nil) -> WatchlistWorkspaceSyncRequest {
         let ordered = folders.sorted { lhs, rhs in
             if lhs.isPinned != rhs.isPinned { return lhs.isPinned && !rhs.isPinned }
             return lhs.sortOrder < rhs.sortOrder
@@ -128,7 +137,8 @@ enum WatchlistAPIMapping {
                         )
                     }
                 )
-            }
+            },
+            baseVersion: baseVersion
         )
     }
 }

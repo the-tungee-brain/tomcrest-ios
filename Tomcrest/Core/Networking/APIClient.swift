@@ -233,6 +233,17 @@ actor APIClient {
             }
         }
 
+        if http.statusCode == 409,
+           let envelope = try? camelCaseDecoder.decode(APIEnvelope<WatchlistConflictDetail>.self, from: data),
+           let detail = envelope.detail,
+           detail.code == "watchlist_version_conflict" {
+            throw APIError.watchlistConflict(
+                currentVersion: detail.currentVersion,
+                baseVersion: detail.baseVersion,
+                message: detail.message
+            )
+        }
+
         guard (200 ... 299).contains(http.statusCode) else {
             let message = parseErrorMessage(from: data)
             throw APIError.httpStatus(http.statusCode, message: message)

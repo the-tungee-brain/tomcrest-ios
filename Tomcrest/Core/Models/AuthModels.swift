@@ -67,6 +67,13 @@ struct WaitlistErrorDetail: Decodable {
     let message: String?
 }
 
+struct WatchlistConflictDetail: Decodable {
+    let code: String?
+    let message: String?
+    let currentVersion: Int?
+    let baseVersion: Int?
+}
+
 struct APIErrorEnvelope: Decodable {
     let detail: APIErrorDetailValue?
 

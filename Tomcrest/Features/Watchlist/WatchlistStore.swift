@@ -35,12 +35,27 @@ final class WatchlistStore {
     @ObservationIgnored private var lastQuoteRefresh: Date?
     @ObservationIgnored private var quoteRefreshTask: Task<Void, Never>?
     @ObservationIgnored private var isRefreshingQuotes = false
+    @ObservationIgnored private(set) var workspaceVersion: Int?
+    @ObservationIgnored private(set) var syncBlockedByConflict = false
+    @ObservationIgnored private(set) var latestServerFoldersAfterConflict: [WatchlistFolder]?
+    private let fetchWorkspace: (String, Bool) async throws -> WatchlistWorkspaceResponse
+    private let syncWorkspace: (WatchlistWorkspaceSyncRequest, String) async throws -> WatchlistWorkspaceResponse
     private static let folderSortModeKey = "watchlist.folderSortMode"
     private static let designVariantKey = "watchlist.designVariant"
     private static let legacySymbolSortModeKey = "watchlist.symbolSortMode"
     private static let quoteRefreshInterval: TimeInterval = 45
 
-    init() {
+    init(
+        fetchWorkspace: @escaping (String, Bool) async throws -> WatchlistWorkspaceResponse = { token, includeQuotes in
+            try await WatchlistService.fetchWorkspace(accessToken: token, includeQuotes: includeQuotes)
+        },
+        syncWorkspace: @escaping (WatchlistWorkspaceSyncRequest, String) async throws -> WatchlistWorkspaceResponse = { payload, token in
+            try await WatchlistService.syncWorkspace(payload, accessToken: token)
+        }
+    ) {
+        self.fetchWorkspace = fetchWorkspace
+        self.syncWorkspace = syncWorkspace
+
         let storedRaw = UserDefaults.standard.string(forKey: Self.folderSortModeKey)
             ?? UserDefaults.standard.string(forKey: Self.legacySymbolSortModeKey)
         if let raw = storedRaw, let mode = WatchlistFolderSortMode(rawValue: raw) {
@@ -69,6 +84,9 @@ final class WatchlistStore {
         isRefreshingQuotes = false
         isPersisting = false
         needsSyncAfterPersist = false
+        workspaceVersion = nil
+        syncBlockedByConflict = false
+        latestServerFoldersAfterConflict = nil
         folders = []
         editingFolderID = nil
         customizingFolderID = nil
@@ -224,6 +242,9 @@ final class WatchlistStore {
 
     func load(localSymbols: [String] = [], includeQuotes: Bool = false) async {
         guard let auth, let token = auth.accessToken else {
+            workspaceVersion = nil
+            syncBlockedByConflict = false
+            latestServerFoldersAfterConflict = nil
             if !localSymbols.isEmpty, folders.isEmpty {
                 seedFromLocalSymbols(localSymbols)
                 mirrorLocalCache()
@@ -240,10 +261,7 @@ final class WatchlistStore {
         }
 
         do {
-            let response = try await WatchlistService.fetchWorkspace(
-                accessToken: token,
-                includeQuotes: includeQuotes
-            )
+            let response = try await fetchWorkspace(token, includeQuotes)
             applyWorkspace(response, includeQuotes: includeQuotes)
 
             if includeQuotes {
@@ -295,10 +313,7 @@ final class WatchlistStore {
         defer { isRefreshingQuotes = false }
 
         do {
-            let response = try await WatchlistService.fetchWorkspace(
-                accessToken: token,
-                includeQuotes: true
-            )
+            let response = try await fetchWorkspace(token, true)
             applyQuotes(from: response)
             lastQuoteRefresh = Date()
         } catch {
@@ -335,6 +350,9 @@ final class WatchlistStore {
     }
 
     private func applyWorkspace(_ response: WatchlistWorkspaceResponse, includeQuotes: Bool) {
+        workspaceVersion = response.workspaceVersion
+        syncBlockedByConflict = false
+        latestServerFoldersAfterConflict = nil
         var mapped = WatchlistAPIMapping.folders(from: response)
         for index in mapped.indices where mapped[index].createdAt == nil {
             mapped[index].createdAt = folders.first(where: { $0.id == mapped[index].id })?.createdAt
@@ -358,11 +376,21 @@ final class WatchlistStore {
     }
 
     private func applyQuotes(from response: WatchlistWorkspaceResponse) {
+        if let responseVersion = response.workspaceVersion {
+            if let currentVersion = workspaceVersion {
+                if responseVersion >= currentVersion {
+                    workspaceVersion = responseVersion
+                }
+            } else {
+                workspaceVersion = responseVersion
+            }
+        }
         quoteStore.mergeQuotes(WatchlistAPIMapping.quotes(from: response))
     }
 
     private func scheduleSync() {
         guard hasLoaded, auth?.accessToken != nil else { return }
+        guard !syncBlockedByConflict else { return }
 
         if isPersisting {
             needsSyncAfterPersist = true
@@ -379,27 +407,57 @@ final class WatchlistStore {
 
     private func persistWorkspaceImmediately(applyResponse: Bool = false) async {
         guard let auth, let token = auth.accessToken else { return }
+        guard !syncBlockedByConflict else { return }
 
         isPersisting = true
         defer {
             isPersisting = false
-            if needsSyncAfterPersist {
+            if needsSyncAfterPersist, !syncBlockedByConflict {
                 needsSyncAfterPersist = false
                 scheduleSync()
             }
         }
 
         do {
-            let payload = WatchlistAPIMapping.syncRequest(from: folders)
-            let response = try await WatchlistService.syncWorkspace(payload, accessToken: token)
+            let payload = WatchlistAPIMapping.syncRequest(
+                from: folders,
+                baseVersion: workspaceVersion
+            )
+            let response = try await syncWorkspace(payload, token)
+            workspaceVersion = response.workspaceVersion
+            syncBlockedByConflict = false
+            latestServerFoldersAfterConflict = nil
             if applyResponse {
                 applyWorkspace(response, includeQuotes: false)
             }
             errorMessage = nil
+        } catch let APIError.watchlistConflict(currentVersion, _, message) {
+            if let currentVersion {
+                workspaceVersion = currentVersion
+            }
+            syncBlockedByConflict = true
+            needsSyncAfterPersist = false
+            debounceTask?.cancel()
+            debounceTask = nil
+            do {
+                let latest = try await fetchWorkspace(token, false)
+                workspaceVersion = latest.workspaceVersion ?? workspaceVersion
+                latestServerFoldersAfterConflict = WatchlistAPIMapping.folders(from: latest)
+            } catch {
+                latestServerFoldersAfterConflict = nil
+            }
+            errorMessage = message ?? "Watchlist changed on another device. Your local edits are preserved, but auto-sync is paused. Pull to refresh before making more changes."
         } catch {
             guard !shouldIgnoreSyncError(error) else { return }
             errorMessage = userFacingError(error)
         }
+    }
+
+    func retrySyncAfterConflict() async {
+        guard syncBlockedByConflict else { return }
+        syncBlockedByConflict = false
+        errorMessage = nil
+        await persistWorkspaceImmediately()
     }
 
     private func mirrorLocalCache() {
