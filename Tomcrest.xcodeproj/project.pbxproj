@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		FC0B91B8F9A84700912D29D9 /* EmergingLeadersValidationModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BF25362A76445C0931496AA /* EmergingLeadersValidationModels.swift */; };
+		6F4C4CC8165B4421A7207FAC /* EmergingLeadersValidationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED686D476EA54430A2BBA909 /* EmergingLeadersValidationService.swift */; };
+		7D54DECC5043449FBE9A8242 /* EmergingLeadersValidationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92E89F0811494228B859502B /* EmergingLeadersValidationViewModel.swift */; };
+		5A888ACBE4634F908AF9D7DE /* EmergingLeadersValidationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B0B4BB5D9B74D0EA6520D55 /* EmergingLeadersValidationView.swift */; };
 		0196A70762504C14A15DD981 /* RHLinePlot+Segmented.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D58552F4370A96DA7EE3A0A /* RHLinePlot+Segmented.swift */; };
 		04859AE9A67C42A738C1B63F /* ResearchAssistantSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85DD00223176FDA0618D1B79 /* ResearchAssistantSheet.swift */; };
 		0627FC36FC0530AE7640F0AF /* GlobalSymbolSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC2EEC0B0664D4B327939465 /* GlobalSymbolSearch.swift */; };
@@ -224,6 +228,10 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		7BF25362A76445C0931496AA /* EmergingLeadersValidationModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmergingLeadersValidationModels.swift; sourceTree = "<group>"; };
+		ED686D476EA54430A2BBA909 /* EmergingLeadersValidationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmergingLeadersValidationService.swift; sourceTree = "<group>"; };
+		92E89F0811494228B859502B /* EmergingLeadersValidationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmergingLeadersValidationViewModel.swift; sourceTree = "<group>"; };
+		3B0B4BB5D9B74D0EA6520D55 /* EmergingLeadersValidationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmergingLeadersValidationView.swift; sourceTree = "<group>"; };
 		00D56FBBFFC207C9953EFB01 /* AppComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppComponents.swift; sourceTree = "<group>"; };
 		0100E75ED2C70F0DE6042E2C /* AppSectionHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSectionHeader.swift; sourceTree = "<group>"; };
 		030EB9242007DF73A5F14510 /* ChatQuickActionChips.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatQuickActionChips.swift; sourceTree = "<group>"; };
@@ -622,6 +630,7 @@
 				18E39CD0191BE87D771C3652 /* BusinessModels.swift */,
 				9F5868C2F88E451C852725DF /* TradeDecisionModels.swift */,
 				826DAAF50AAA40A585FB45D6 /* EmergingLeadersModels.swift */,
+				7BF25362A76445C0931496AA /* EmergingLeadersValidationModels.swift */,
 				04892852768CEFAD4FBA4CD5 /* ChatHistoryModels.swift */,
 				17C5FF5E4B24A4259FAAB0E4 /* ChatModels.swift */,
 				8E895B081A99DB55BF37C35C /* IntelligenceModels.swift */,
@@ -819,6 +828,11 @@
 				6F7454439B5941529C11361F /* EmergingLeadersService.swift */,
 				0B4F0BDB99EF487AA8B49A27 /* EmergingLeadersViewModel.swift */,
 				B52DBD3467144A8684130697 /* EmergingLeadersView.swift */,
+				ED686D476EA54430A2BBA909 /* EmergingLeadersValidationService.swift */,
+
+				92E89F0811494228B859502B /* EmergingLeadersValidationViewModel.swift */,
+
+				3B0B4BB5D9B74D0EA6520D55 /* EmergingLeadersValidationView.swift */,
 			);
 			path = EmergingLeaders;
 			sourceTree = "<group>";
@@ -1168,6 +1182,13 @@
 				802E2B4563C043988905426C /* EmergingLeadersService.swift in Sources */,
 				14DAA0BD28154287B029EBDF /* EmergingLeadersViewModel.swift in Sources */,
 				2780ECC1456048509AA54449 /* EmergingLeadersView.swift in Sources */,
+				FC0B91B8F9A84700912D29D9 /* EmergingLeadersValidationModels.swift in Sources */,
+
+				6F4C4CC8165B4421A7207FAC /* EmergingLeadersValidationService.swift in Sources */,
+
+				7D54DECC5043449FBE9A8242 /* EmergingLeadersValidationViewModel.swift in Sources */,
+
+				5A888ACBE4634F908AF9D7DE /* EmergingLeadersValidationView.swift in Sources */,
 				AEA08B3E80EF3C89AD067241 /* ChatComponents.swift in Sources */,
 				59611E1342E669CB7A7E0026 /* ChatFollowUpSuggestions.swift in Sources */,
 				EB18FDD9E0CBA3686A8FF1A7 /* ChatHistoryModels.swift in Sources */,

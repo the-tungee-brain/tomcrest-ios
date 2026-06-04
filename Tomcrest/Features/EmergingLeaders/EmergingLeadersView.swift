@@ -2,6 +2,7 @@ import SwiftUI
 
 struct EmergingLeadersView: View {
     @Bindable var viewModel: EmergingLeadersViewModel
+    @Bindable var validationViewModel: EmergingLeadersValidationViewModel
     var onOpenSymbol: (String) -> Void
 
     var body: some View {
@@ -49,6 +50,8 @@ struct EmergingLeadersView: View {
                     }
                 }
             }
+
+            EmergingLeadersValidationView(viewModel: validationViewModel)
         }
     }
 }

@@ -10,6 +10,7 @@ struct TopMoversView: View {
     @Environment(TabBarReselectCoordinator.self) private var tabReselect
     @State private var viewModel: TopMoversViewModel?
     @State private var emergingViewModel: EmergingLeadersViewModel?
+    @State private var emergingValidationViewModel: EmergingLeadersValidationViewModel?
     @State private var segment: MoversSegment = .topMovers
     @State private var path: [ResearchRoute] = []
     @State private var scrollToTopToken = 0
@@ -69,6 +70,11 @@ struct TopMoversView: View {
                     emergingViewModel = evm
                     evm.start()
                 }
+                if emergingValidationViewModel == nil {
+                    let vvm = EmergingLeadersValidationViewModel(auth: auth)
+                    emergingValidationViewModel = vvm
+                    Task { await vvm.refresh() }
+                }
             }
             .onDisappear {
                 viewModel?.stop()
@@ -89,8 +95,18 @@ struct TopMoversView: View {
         }
         .pickerStyle(.segmented)
 
-        if segment == .emerging, let emergingViewModel {
-            EmergingLeadersView(viewModel: emergingViewModel, onOpenSymbol: openSymbol)
+        if segment == .emerging,
+           let emergingViewModel,
+           let emergingValidationViewModel {
+            EmergingLeadersView(
+                viewModel: emergingViewModel,
+                validationViewModel: emergingValidationViewModel,
+                onOpenSymbol: openSymbol
+            )
+            .task(id: segment) {
+                guard segment == .emerging else { return }
+                await emergingValidationViewModel.refresh()
+            }
         } else {
             TopMoversHeader(hasMlMetrics: viewModel.hasMlMetrics)
 
