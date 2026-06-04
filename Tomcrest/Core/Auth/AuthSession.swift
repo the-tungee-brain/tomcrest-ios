@@ -15,9 +15,18 @@ final class AuthSession {
     private(set) var lastError: String?
 
     private let api: APIClient
+    private let refreshAccessTokenRequest: ((String) async throws -> AuthRefreshResponse)?
+    private let saveAccessToken: (String) throws -> Void
+    @ObservationIgnored private var refreshTask: Task<String?, Never>?
 
-    init(api: APIClient = .shared) {
+    init(
+        api: APIClient = .shared,
+        refreshAccessTokenRequest: ((String) async throws -> AuthRefreshResponse)? = nil,
+        saveAccessToken: @escaping (String) throws -> Void = KeychainTokenStore.save
+    ) {
         self.api = api
+        self.refreshAccessTokenRequest = refreshAccessTokenRequest
+        self.saveAccessToken = saveAccessToken
     }
 
     func bootstrap() {
@@ -30,7 +39,7 @@ final class AuthSession {
     }
 
     func completeSignIn(accessToken: String) throws {
-        try KeychainTokenStore.save(accessToken)
+        try saveAccessToken(accessToken)
         self.accessToken = accessToken
         lastError = nil
         phase = .signedIn
@@ -57,17 +66,37 @@ final class AuthSession {
     }
 
     func refreshAccessToken() async -> String? {
-        guard let accessToken else { return nil }
-        do {
-            let response: AuthRefreshResponse = try await api.postNoBody(
-                "/auth/refresh",
-                accessToken: accessToken
-            )
-            try completeSignIn(accessToken: response.accessToken)
-            return response.accessToken
-        } catch {
-            return nil
+        if let refreshTask {
+            return await refreshTask.value
         }
+
+        guard let accessToken else { return nil }
+
+        let task = Task<String?, Never> { [weak self, accessToken] in
+            guard let self else { return nil }
+            do {
+                let response = try await self.requestRefreshedAccessToken(accessToken)
+                try self.completeSignIn(accessToken: response.accessToken)
+                return response.accessToken
+            } catch {
+                return nil
+            }
+        }
+        refreshTask = task
+
+        let refreshedToken = await task.value
+        refreshTask = nil
+        return refreshedToken
+    }
+
+    private func requestRefreshedAccessToken(_ accessToken: String) async throws -> AuthRefreshResponse {
+        if let refreshAccessTokenRequest {
+            return try await refreshAccessTokenRequest(accessToken)
+        }
+        return try await api.postNoBody(
+            "/auth/refresh",
+            accessToken: accessToken
+        )
     }
 
     func setError(_ message: String) {

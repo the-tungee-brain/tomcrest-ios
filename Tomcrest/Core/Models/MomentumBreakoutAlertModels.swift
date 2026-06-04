@@ -231,3 +231,117 @@ struct PaperTradePerformanceTradesResponse: Decodable {
     let meta: PaperTradePerformanceMetaDto
     let trades: [PaperTradeRecordDto]
 }
+
+// MARK: - Feature flags
+
+struct MomentumBreakoutFeatureFlagsDto: Decodable, Hashable {
+    let alertsEnabled: Bool
+    let alertCreationEnabled: Bool
+    let alertNotificationsEnabled: Bool
+    let paperAnalyticsEnabled: Bool
+}
+
+struct MomentumBreakoutFeatureStatusResponse: Decodable {
+    let disclaimer: String
+    let flags: MomentumBreakoutFeatureFlagsDto
+}
+
+// MARK: - Scanner
+
+struct MomentumBreakoutScanCandidateDto: Decodable, Hashable, Identifiable {
+    var id: String { symbol }
+    let symbol: String
+    let entryPrice: Double
+    let stopPrice: Double
+    let targetPrice: Double
+    let riskReward: Double
+    let historicalWinRate: Double?
+    let historicalProfitFactor: Double?
+    let historicalTotalTrades: Int?
+    let setupScore: Double
+    let stopDistancePct: Double
+    let volumeRatio: Double?
+    let rsPercentile: Double?
+    let marketRegime: String?
+    let riskGate: RiskGateDto
+}
+
+struct MomentumBreakoutScanResponse: Decodable {
+    let scanTime: String
+    let totalSymbolsScanned: Int
+    let validSetupsFound: Int
+    let tradableCandidatesFound: Int
+    let blockedCandidatesCount: Int
+    let candidatesFound: Int
+    let candidates: [MomentumBreakoutScanCandidateDto]
+}
+
+// MARK: - Single-stock check & custom plan
+
+enum MomentumBreakoutCheckStatus: String, Decodable, Hashable {
+    case tradableBreakout = "TRADABLE_BREAKOUT"
+    case rejectedBreakout = "REJECTED_BREAKOUT"
+    case noBreakoutSetup = "NO_BREAKOUT_SETUP"
+    case dataUnavailable = "DATA_UNAVAILABLE"
+    case unknown
+
+    init(from decoder: Decoder) throws {
+        let raw = try decoder.singleValueContainer().decode(String.self)
+        self = MomentumBreakoutCheckStatus(rawValue: raw) ?? .unknown
+    }
+}
+
+struct MomentumBreakoutCheckResponse: Decodable, Hashable {
+    let symbol: String
+    let status: MomentumBreakoutCheckStatus
+    let verdictTitle: String
+    let verdictMessage: String
+    let failedSetupRules: [String]
+    let rejectionReasons: [String]
+    let entryPrice: Double?
+    let stopPrice: Double?
+    let targetPrice: Double?
+    let stopDistancePct: Double?
+    let historicalWinRate: Double?
+    let historicalProfitFactor: Double?
+    let historicalTotalTrades: Int?
+    let riskGate: RiskGateDto?
+    let canTrackBreakoutPlan: Bool
+
+    var checkStatus: MomentumBreakoutCheckStatus {
+        status == .unknown ? .dataUnavailable : status
+    }
+}
+
+struct MomentumBreakoutTradePlanAlertRequest: Encodable {
+    let symbol: String
+    let persistAlert: Bool
+}
+
+struct MomentumBreakoutTradePlanAlertResponse: Decodable {
+    let disclaimer: String
+    let planAvailable: Bool
+}
+
+struct CustomTradePlanRequest: Encodable {
+    let symbol: String
+    let direction: String
+}
+
+struct CustomTradePlanResponse: Decodable, Hashable {
+    let symbol: String
+    let setupName: String
+    let direction: String
+    let entryPrice: Double
+    let entryMethod: String
+    let currentPrice: Double
+    let distanceToEntryPct: Double
+    let entryExplanation: String
+    let latestBarDate: String
+    let planActiveAtCurrentPrice: Bool
+    let stopPrice: Double
+    let targetPrice: Double
+    let riskReward: Double
+    let warnings: [String]
+    let educationalOnly: Bool
+}

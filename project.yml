@@ -69,3 +69,14 @@ targets:
             UTTypeConformsTo:
               - public.data
             UTTypeTagSpecification: {}
+  TomcrestTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: TomcrestTests
+    dependencies:
+      - target: Tomcrest
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.tomcrest.app.tests
+        GENERATE_INFOPLIST_FILE: YES

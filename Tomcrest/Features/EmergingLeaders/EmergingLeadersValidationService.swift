@@ -7,7 +7,8 @@ enum EmergingLeadersValidationService {
     ) async throws -> EmergingLeadersValidationResponse {
         try await api.get(
             "/research/emerging-leaders-validation",
-            accessToken: accessToken
+            accessToken: accessToken,
+            sessionKind: .longRunning
         )
     }
 }

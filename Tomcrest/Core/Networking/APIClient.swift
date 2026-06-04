@@ -1,6 +1,12 @@
 import Foundation
 
 /// How `JSONDecoder` maps JSON keys to Swift properties.
+/// URL session profile — heavy research scans can exceed the default 60s limit.
+enum APISessionKind: Sendable {
+    case standard
+    case longRunning
+}
+
 enum APIKeyDecoding: Sendable {
     /// `convertFromSnakeCase` — for APIs that emit `snake_case` keys matching camelCase properties
     /// without custom `CodingKeys` (rankings, portfolio, etc.).
@@ -13,8 +19,20 @@ enum APIKeyDecoding: Sendable {
 actor APIClient {
     static let shared = APIClient()
 
+    private static func makeSession(requestTimeout: TimeInterval, resourceTimeout: TimeInterval) -> URLSession {
+        let configuration = URLSessionConfiguration.default
+        configuration.timeoutIntervalForRequest = requestTimeout
+        configuration.timeoutIntervalForResource = resourceTimeout
+        configuration.waitsForConnectivity = true
+        return URLSession(configuration: configuration)
+    }
+
+    private static let standardSession = makeSession(requestTimeout: 60, resourceTimeout: 90)
+    private static let longRunningSession = makeSession(requestTimeout: 180, resourceTimeout: 300)
+
     private let config: APIConfiguration
-    private let session: URLSession
+    private let standardSession: URLSession
+    private let longRunningSession: URLSession
     private let snakeCaseDecoder: JSONDecoder
     private let camelCaseDecoder: JSONDecoder
     private let encoder: JSONEncoder
@@ -22,10 +40,12 @@ actor APIClient {
 
     init(
         config: APIConfiguration = APIConfiguration(),
-        session: URLSession = .shared
+        standardSession: URLSession = APIClient.standardSession,
+        longRunningSession: URLSession = APIClient.longRunningSession
     ) {
         self.config = config
-        self.session = session
+        self.standardSession = standardSession
+        self.longRunningSession = longRunningSession
         self.snakeCaseDecoder = JSONDecoder()
         self.snakeCaseDecoder.keyDecodingStrategy = .convertFromSnakeCase
         self.camelCaseDecoder = JSONDecoder()
@@ -40,26 +60,40 @@ actor APIClient {
         _ path: String,
         query: [String: String?] = [:],
         accessToken: String? = nil,
-        keyDecoding: APIKeyDecoding = .snakeCase
+        keyDecoding: APIKeyDecoding = .snakeCase,
+        sessionKind: APISessionKind = .standard
     ) async throws -> T {
         let url = try config.url(path: path, query: query)
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         applyHeaders(&request, accessToken: accessToken)
-        return try await perform(request, isRetry: false, keyDecoding: keyDecoding)
+        return try await perform(
+            request,
+            isRetry: false,
+            keyDecoding: keyDecoding,
+            sessionKind: sessionKind,
+            allowTimeoutRetry: sessionKind == .longRunning
+        )
     }
 
     func post<T: Decodable, Body: Encodable>(
         _ path: String,
         body: Body,
-        accessToken: String? = nil
+        accessToken: String? = nil,
+        keyDecoding: APIKeyDecoding = .snakeCase
     ) async throws -> T {
         let url = try config.url(path: path)
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.httpBody = try encoder.encode(body)
         applyHeaders(&request, accessToken: accessToken)
-        return try await perform(request, isRetry: false)
+        return try await perform(
+            request,
+            isRetry: false,
+            keyDecoding: keyDecoding,
+            sessionKind: .standard,
+            allowTimeoutRetry: false
+        )
     }
 
     func postNoBody<T: Decodable>(
@@ -72,7 +106,7 @@ actor APIClient {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         applyHeaders(&request, accessToken: accessToken)
-        return try await perform(request, isRetry: false, keyDecoding: keyDecoding)
+        return try await perform(request, isRetry: false, keyDecoding: keyDecoding, sessionKind: .standard, allowTimeoutRetry: false)
     }
 
     func put<T: Decodable, Body: Encodable>(
@@ -85,7 +119,7 @@ actor APIClient {
         request.httpMethod = "PUT"
         request.httpBody = try encoder.encode(body)
         applyHeaders(&request, accessToken: accessToken)
-        return try await perform(request, isRetry: false)
+        return try await perform(request, isRetry: false, sessionKind: .standard, allowTimeoutRetry: false)
     }
 
     func patch<T: Decodable, Body: Encodable>(
@@ -98,7 +132,7 @@ actor APIClient {
         request.httpMethod = "PATCH"
         request.httpBody = try encoder.encode(body)
         applyHeaders(&request, accessToken: accessToken)
-        return try await perform(request, isRetry: false)
+        return try await perform(request, isRetry: false, sessionKind: .standard, allowTimeoutRetry: false)
     }
 
     func delete<T: Decodable>(
@@ -109,7 +143,14 @@ actor APIClient {
         var request = URLRequest(url: url)
         request.httpMethod = "DELETE"
         applyHeaders(&request, accessToken: accessToken)
-        return try await perform(request, isRetry: false)
+        return try await perform(request, isRetry: false, sessionKind: .standard, allowTimeoutRetry: false)
+    }
+
+    private func session(for kind: APISessionKind) -> URLSession {
+        switch kind {
+        case .standard: standardSession
+        case .longRunning: longRunningSession
+        }
     }
 
     private func applyHeaders(_ request: inout URLRequest, accessToken: String?) {
@@ -130,10 +171,30 @@ actor APIClient {
     private func perform<T: Decodable>(
         _ request: URLRequest,
         isRetry: Bool,
-        keyDecoding: APIKeyDecoding = .snakeCase
+        keyDecoding: APIKeyDecoding = .snakeCase,
+        sessionKind: APISessionKind = .standard,
+        allowTimeoutRetry: Bool = false
     ) async throws -> T {
         let decoder = decoder(for: keyDecoding)
-        let (data, response) = try await session.data(for: request)
+        let urlSession = session(for: sessionKind)
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await urlSession.data(for: request)
+        } catch let error as URLError where error.code == .timedOut {
+            if allowTimeoutRetry, !isRetry {
+                return try await perform(
+                    request,
+                    isRetry: true,
+                    keyDecoding: keyDecoding,
+                    sessionKind: sessionKind,
+                    allowTimeoutRetry: false
+                )
+            }
+            throw APIError.requestTimeout
+        } catch let error as URLError where error.code == .networkConnectionLost || error.code == .notConnectedToInternet {
+            throw APIError.httpStatus(-1, message: "Network unavailable. Check your connection and try again.")
+        }
         guard let http = response as? HTTPURLResponse else {
             throw APIError.httpStatus(-1, message: "Invalid response.")
         }
@@ -147,7 +208,13 @@ actor APIClient {
             if !isRetry, let refresher = tokenRefresher, let newToken = await refresher() {
                 var retryRequest = request
                 retryRequest.setValue("Bearer \(newToken)", forHTTPHeaderField: "Authorization")
-                return try await perform(retryRequest, isRetry: true, keyDecoding: keyDecoding)
+                return try await perform(
+                    retryRequest,
+                    isRetry: true,
+                    keyDecoding: keyDecoding,
+                    sessionKind: sessionKind,
+                    allowTimeoutRetry: false
+                )
             }
             NotificationCenter.default.post(name: .tomcrestUnauthorized, object: nil)
             throw APIError.unauthorized

@@ -13,6 +13,11 @@ struct AuthTokenResponse: Decodable {
     let accessToken: String
     let tokenType: String
 
+    init(accessToken: String, tokenType: String = "bearer") {
+        self.accessToken = accessToken
+        self.tokenType = tokenType
+    }
+
     init(from decoder: Decoder) throws {
         if let snake = try? decoder.container(keyedBy: SnakeKeys.self),
            let token = try? snake.decode(String.self, forKey: .accessToken),

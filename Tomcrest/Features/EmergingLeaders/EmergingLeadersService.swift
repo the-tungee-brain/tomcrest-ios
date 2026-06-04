@@ -9,7 +9,8 @@ enum EmergingLeadersService {
         try await api.get(
             "/research/emerging-leaders",
             query: ["limit": String(limit)],
-            accessToken: accessToken
+            accessToken: accessToken,
+            sessionKind: .longRunning
         )
     }
 }

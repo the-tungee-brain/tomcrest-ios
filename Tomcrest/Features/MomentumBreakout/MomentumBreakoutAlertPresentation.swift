@@ -16,6 +16,15 @@ enum MomentumBreakoutRiskGateTone {
 }
 
 enum MomentumBreakoutAlertPresentation {
+    static func isCancellable(_ status: MomentumBreakoutLifecycleStatus) -> Bool {
+        switch status {
+        case .pendingEntry, .entryTriggered, .open:
+            return true
+        default:
+            return false
+        }
+    }
+
     static func statusBadgeTone(for status: MomentumBreakoutLifecycleStatus) -> MomentumBreakoutStatusBadgeTone {
         switch status {
         case .pendingEntry:
@@ -33,9 +42,9 @@ enum MomentumBreakoutAlertPresentation {
 
     static func statusLabel(for status: MomentumBreakoutLifecycleStatus) -> String {
         switch status {
-        case .pendingEntry: "Pending entry"
-        case .entryTriggered: "Entry triggered"
-        case .open: "Open"
+        case .pendingEntry: "Waiting for buy price"
+        case .entryTriggered: "Buy price reached"
+        case .open: "Plan in progress"
         case .targetHit: "Target reached"
         case .stopHit: "Stop reached"
         case .expired: "Expired"
@@ -70,11 +79,37 @@ enum MomentumBreakoutAlertPresentation {
 
     static func riskGateTitle(tone: MomentumBreakoutRiskGateTone) -> String {
         switch tone {
-        case .warning: "Risk warning"
-        case .caution: "Size-down caution"
-        case .blocked: "Blocked by risk controls"
-        case .normal: "Risk controls"
+        case .warning: "Heads up"
+        case .caution: "Consider a smaller position"
+        case .blocked: "Not recommended right now"
+        case .normal: "Passed safety checks"
         }
+    }
+
+    static func humanizeRiskReason(_ reason: String) -> String {
+        let lower = reason.lowercased()
+        if lower.contains("neutral") {
+            return "The broad market looks uncertain right now."
+        }
+        if lower.contains("max open positions") {
+            return "You already have several similar plans being tracked."
+        }
+        if lower.contains("consecutive"), lower.contains("loss") {
+            return "Recent similar plans finished with losses."
+        }
+        if lower.contains("drawdown") {
+            return "Recent results for this strategy have been weak."
+        }
+        if lower.contains("volume") || lower.contains("climax") {
+            return "Today's volume looks unusually high, which can be risky."
+        }
+        if lower.contains("mega") || lower.contains("correlation") {
+            return "You may already have enough exposure to big tech names."
+        }
+        if lower.contains("circuit breaker") {
+            return "Safety rules paused new alerts after a string of losses."
+        }
+        return reason
     }
 
     static func riskGatePanelStyle(tone: MomentumBreakoutRiskGateTone) -> (background: Color, border: Color, foreground: Color) {

@@ -14,6 +14,7 @@ struct TopMoversView: View {
     @State private var segment: MoversSegment = .topMovers
     @State private var path: [ResearchRoute] = []
     @State private var scrollToTopToken = 0
+    @State private var mbAlertsEnabled = true
 
     var body: some View {
         AppRoutedNavigationCanvasStack(path: $path) {
@@ -36,9 +37,11 @@ struct TopMoversView: View {
             }
             .appRootNavigation("Top Movers")
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    MomentumBreakoutNotificationBell {
-                        path.append(.momentumBreakoutAlerts)
+                if mbAlertsEnabled {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        MomentumBreakoutNotificationBell {
+                            path.append(.momentumBreakoutAlerts)
+                        }
                     }
                 }
             }
@@ -69,6 +72,13 @@ struct TopMoversView: View {
                 }
             }
             .task {
+                if let token = auth.accessToken, !token.isEmpty {
+                    if let status = try? await MomentumBreakoutAlertService.fetchFeatureStatus(
+                        accessToken: token
+                    ) {
+                        mbAlertsEnabled = status.flags.alertsEnabled
+                    }
+                }
                 if viewModel == nil {
                     let vm = TopMoversViewModel(auth: auth)
                     viewModel = vm

@@ -9,6 +9,7 @@ enum APIError: LocalizedError {
     case decoding(Error)
     case missingToken
     case notConfigured(String)
+    case requestTimeout
 
     var errorDescription: String? {
         switch self {
@@ -28,6 +29,8 @@ enum APIError: LocalizedError {
             "Not signed in."
         case let .notConfigured(message):
             message
+        case .requestTimeout:
+            "The server took too long to respond. Pull to refresh and try again."
         }
     }
 }

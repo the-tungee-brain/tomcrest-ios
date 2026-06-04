@@ -92,6 +92,16 @@ Deploy the backend changes in `stock-analysis` before testing Schwab connect on 
 xcodegen generate
 ```
 
+`project.yml` is the source of truth for test targets. Regenerate the project
+after changes to `project.yml` before running unit tests from Xcode.
+
+## Run Tests
+
+```bash
+xcodegen generate
+xcodebuild test -project Tomcrest.xcodeproj -scheme Tomcrest -destination 'platform=iOS Simulator,name=iPhone 15'
+```
+
 ## Apple Developer
 
 Not required for Simulator development. Enroll ($99/yr) when you need a physical device, TestFlight, or App Store release.

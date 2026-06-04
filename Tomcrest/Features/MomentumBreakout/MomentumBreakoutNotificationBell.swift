@@ -6,10 +6,14 @@ struct MomentumBreakoutNotificationBell: View {
 
     @State private var viewModel: MomentumBreakoutNotificationsViewModel?
     @State private var showsSheet = false
+    @State private var alertsEnabled = true
+    @State private var notificationsEnabled = true
 
     var body: some View {
         Group {
-            if auth.accessToken != nil {
+            if auth.accessToken != nil,
+               alertsEnabled,
+               notificationsEnabled {
                 Button {
                     showsSheet = true
                     Task { await viewModel?.load() }
@@ -37,6 +41,14 @@ struct MomentumBreakoutNotificationBell: View {
                     notificationSheet
                 }
                 .task {
+                    if let token = auth.accessToken, !token.isEmpty {
+                        if let status = try? await MomentumBreakoutAlertService.fetchFeatureStatus(
+                            accessToken: token
+                        ) {
+                            alertsEnabled = status.flags.alertsEnabled
+                            notificationsEnabled = status.flags.alertNotificationsEnabled
+                        }
+                    }
                     if viewModel == nil {
                         let model = MomentumBreakoutNotificationsViewModel(auth: auth)
                         viewModel = model

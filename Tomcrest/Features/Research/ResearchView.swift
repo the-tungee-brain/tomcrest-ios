@@ -11,6 +11,7 @@ struct ResearchView: View {
     @State private var path: [ResearchRoute] = []
     @State private var scrollToTopToken = 0
     @State private var showsResearchOnboarding = !OnboardingStorage.isResearchOnboardingDismissed()
+    @State private var mbAlertsEnabled = true
 
     private let exampleSymbols = ["NVDA", "SPY", "AAPL", "SCHD"]
 
@@ -87,9 +88,11 @@ struct ResearchView: View {
             .animation(nil, value: showsBrowseSections)
             .appRootNavigation("Research")
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    MomentumBreakoutNotificationBell {
-                        path.append(.momentumBreakoutAlerts)
+                if mbAlertsEnabled {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        MomentumBreakoutNotificationBell {
+                            path.append(.momentumBreakoutAlerts)
+                        }
                     }
                 }
             }
@@ -122,6 +125,13 @@ struct ResearchView: View {
                 if viewModel == nil {
                     viewModel = ResearchViewModel(auth: auth)
                 }
+                if let token = auth.accessToken, !token.isEmpty {
+                    if let status = try? await MomentumBreakoutAlertService.fetchFeatureStatus(
+                        accessToken: token
+                    ) {
+                        mbAlertsEnabled = status.flags.alertsEnabled
+                    }
+                }
             }
         }
     }
@@ -129,19 +139,21 @@ struct ResearchView: View {
     @ViewBuilder
     private var quickAccessSection: some View {
         VStack(alignment: .leading, spacing: Layout.sectionSpacing) {
-            NavigationLink(value: ResearchRoute.momentumBreakoutAlerts) {
-                PortfolioQuickLinkRow(
-                    icon: "bell.badge",
-                    title: "Momentum Breakout trade plans",
-                    subtitle: "Active alerts, history, and notifications"
-                )
-            }
-            .buttonStyle(.plain)
-            .background(AppColors.secondaryBackground)
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(AppColors.panelBorder, lineWidth: 1)
+            if mbAlertsEnabled {
+                NavigationLink(value: ResearchRoute.momentumBreakoutAlerts) {
+                    PortfolioQuickLinkRow(
+                        icon: "bell.badge",
+                        title: "Momentum Breakout trade plans",
+                        subtitle: "Active alerts, history, and notifications"
+                    )
+                }
+                .buttonStyle(.plain)
+                .background(AppColors.secondaryBackground)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(AppColors.panelBorder, lineWidth: 1)
+                }
             }
 
             if !watchlistStore.allTickers.isEmpty {

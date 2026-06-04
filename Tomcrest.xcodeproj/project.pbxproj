@@ -234,10 +234,14 @@
 		B1989EEFA7F8451A811B11BF /* MomentumBreakoutAlertsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 858DA221018247AEACABE42B /* MomentumBreakoutAlertsViewModel.swift */; };
 		BA96B1897EC243069F093318 /* MomentumBreakoutAlertCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF1AF066260D4942A05F86A6 /* MomentumBreakoutAlertCard.swift */; };
 		3E8B6D3BB97E431A90E95BD3 /* MomentumBreakoutAlertsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A40BB842ED94B48A82E1360 /* MomentumBreakoutAlertsView.swift */; };
+		C1A2B3C4D5E6478990ABCDEF0 /* MomentumBreakoutInvestorBrief.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6478990ABCDEF1 /* MomentumBreakoutInvestorBrief.swift */; };
+		D2B3C4E5F6478990ABCDEF0123 /* MomentumBreakoutInvestorCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F6478990ABCDEF01234 /* MomentumBreakoutInvestorCopy.swift */; };
+		E3C4D5E6F6478990ABCDEF01235 /* MomentumBreakoutStructuredEmpty.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D4E5F6478990ABCDEF01236 /* MomentumBreakoutStructuredEmpty.swift */; };
 		7D6E9EE95ED64377891C0352 /* MomentumBreakoutNotificationList.swift in Sources */ = {isa = PBXBuildFile; fileRef = EABDD74F57ED45F0AB6F6155 /* MomentumBreakoutNotificationList.swift */; };
 		D1A2403AD5614348A03BB738 /* MomentumBreakoutNotificationBell.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9E58D1C36BA469C8317AF0B /* MomentumBreakoutNotificationBell.swift */; };
 		E2565AB7A6DF4D0AA52DDBA2 /* MomentumBreakoutAlertMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D14C42B45CB4339BFD03869 /* MomentumBreakoutAlertMocks.swift */; };
 		8DFFD927915643E4B437937C /* MomentumBreakoutAlertsPreviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29DD7BB6FDDB41EDA981C63A /* MomentumBreakoutAlertsPreviews.swift */; };
+		F1A2B3C4D5E6478990ABCDEF14 /* MomentumBreakoutStockCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1A2B3C4D5E6478990ABCDEF15 /* MomentumBreakoutStockCheck.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -470,10 +474,14 @@
 		858DA221018247AEACABE42B /* MomentumBreakoutAlertsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MomentumBreakoutAlertsViewModel.swift; sourceTree = "<group>"; };
 		BF1AF066260D4942A05F86A6 /* MomentumBreakoutAlertCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MomentumBreakoutAlertCard.swift; sourceTree = "<group>"; };
 		6A40BB842ED94B48A82E1360 /* MomentumBreakoutAlertsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MomentumBreakoutAlertsView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F6478990ABCDEF1 /* MomentumBreakoutInvestorBrief.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MomentumBreakoutInvestorBrief.swift; sourceTree = "<group>"; };
+		B2C3D4E5F6478990ABCDEF01234 /* MomentumBreakoutInvestorCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MomentumBreakoutInvestorCopy.swift; sourceTree = "<group>"; };
+		C3D4E5F6478990ABCDEF01236 /* MomentumBreakoutStructuredEmpty.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MomentumBreakoutStructuredEmpty.swift; sourceTree = "<group>"; };
 		EABDD74F57ED45F0AB6F6155 /* MomentumBreakoutNotificationList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MomentumBreakoutNotificationList.swift; sourceTree = "<group>"; };
 		E9E58D1C36BA469C8317AF0B /* MomentumBreakoutNotificationBell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MomentumBreakoutNotificationBell.swift; sourceTree = "<group>"; };
 		1D14C42B45CB4339BFD03869 /* MomentumBreakoutAlertMocks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MomentumBreakoutAlertMocks.swift; sourceTree = "<group>"; };
 		29DD7BB6FDDB41EDA981C63A /* MomentumBreakoutAlertsPreviews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MomentumBreakoutAlertsPreviews.swift; sourceTree = "<group>"; };
+		A1A2B3C4D5E6478990ABCDEF15 /* MomentumBreakoutStockCheck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MomentumBreakoutStockCheck.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -876,10 +884,14 @@
 				858DA221018247AEACABE42B /* MomentumBreakoutAlertsViewModel.swift */,
 				BF1AF066260D4942A05F86A6 /* MomentumBreakoutAlertCard.swift */,
 				6A40BB842ED94B48A82E1360 /* MomentumBreakoutAlertsView.swift */,
+				A1B2C3D4E5F6478990ABCDEF1 /* MomentumBreakoutInvestorBrief.swift */,
+				B2C3D4E5F6478990ABCDEF01234 /* MomentumBreakoutInvestorCopy.swift */,
+				C3D4E5F6478990ABCDEF01236 /* MomentumBreakoutStructuredEmpty.swift */,
 				EABDD74F57ED45F0AB6F6155 /* MomentumBreakoutNotificationList.swift */,
 				E9E58D1C36BA469C8317AF0B /* MomentumBreakoutNotificationBell.swift */,
 				1D14C42B45CB4339BFD03869 /* MomentumBreakoutAlertMocks.swift */,
 				29DD7BB6FDDB41EDA981C63A /* MomentumBreakoutAlertsPreviews.swift */,
+				A1A2B3C4D5E6478990ABCDEF15 /* MomentumBreakoutStockCheck.swift */,
 			);
 			path = MomentumBreakout;
 			sourceTree = "<group>";
@@ -1237,11 +1249,15 @@
 				D1A2403AD5614348A03BB738 /* MomentumBreakoutNotificationBell.swift in Sources */,
 				7D6E9EE95ED64377891C0352 /* MomentumBreakoutNotificationList.swift in Sources */,
 				3E8B6D3BB97E431A90E95BD3 /* MomentumBreakoutAlertsView.swift in Sources */,
+				C1A2B3C4D5E6478990ABCDEF0 /* MomentumBreakoutInvestorBrief.swift in Sources */,
+				D2B3C4E5F6478990ABCDEF0123 /* MomentumBreakoutInvestorCopy.swift in Sources */,
+				E3C4D5E6F6478990ABCDEF01235 /* MomentumBreakoutStructuredEmpty.swift in Sources */,
 				BA96B1897EC243069F093318 /* MomentumBreakoutAlertCard.swift in Sources */,
 				B1989EEFA7F8451A811B11BF /* MomentumBreakoutAlertsViewModel.swift in Sources */,
 				5B57044AD38446E4B7F79B39 /* MomentumBreakoutAlertPresentation.swift in Sources */,
 				A8529B0F3C884E98A454750C /* MomentumBreakoutAlertService.swift in Sources */,
 				4F3BCEBDC89C44EF85A14DF0 /* MomentumBreakoutAlertModels.swift in Sources */,
+				F1A2B3C4D5E6478990ABCDEF14 /* MomentumBreakoutStockCheck.swift in Sources */,
 				FC0B91B8F9A84700912D29D9 /* EmergingLeadersValidationModels.swift in Sources */,
 
 				6F4C4CC8165B4421A7207FAC /* EmergingLeadersValidationService.swift in Sources */,

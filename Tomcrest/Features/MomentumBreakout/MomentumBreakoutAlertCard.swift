@@ -3,87 +3,114 @@ import SwiftUI
 struct MomentumBreakoutAlertCard: View {
     let alert: MomentumBreakoutAlertDto
 
-    private var statusTone: MomentumBreakoutStatusBadgeTone {
-        MomentumBreakoutAlertPresentation.statusBadgeTone(for: alert.lifecycleStatus)
-    }
+    @State private var statsOpen = false
 
-    private var riskTone: MomentumBreakoutRiskGateTone {
-        MomentumBreakoutAlertPresentation.riskGateTone(action: alert.riskGateAction)
+    private var verdict: MomentumBreakoutInvestorCopy.AlertVerdict {
+        MomentumBreakoutInvestorCopy.deriveAlertVerdict(alert)
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            header
-            priceLevels
-            statsGrid
+        VStack(alignment: .leading, spacing: 10) {
+            verdictHeader
+            Text("Status: \(MomentumBreakoutAlertPresentation.statusLabel(for: alert.lifecycleStatus))")
+                .font(.system(size: 13))
+                .foregroundStyle(AppColors.secondaryLabel)
+            priceStrip
+            if let message = alert.nextActionMessage, !message.isEmpty {
+                Text("Next: \(message)")
+                    .font(.system(size: 13))
+                    .foregroundStyle(AppColors.secondaryLabel)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             if alert.outcomeReturnPct != nil {
                 outcomeRow
             }
-            riskGateSection
-            nextActionSection
+            optionalDetailSection
         }
-        .padding(14)
+        .padding(12)
         .appPanel(subtle: true)
+        .id(MomentumBreakoutInvestorCopy.alertElementId(symbol: alert.symbol))
     }
 
-    private var header: some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(alert.symbol.uppercased())
-                    .font(AppTypography.monoCaptionSemibold)
-                    .foregroundStyle(AppColors.label)
-                Text(
-                    "\(MomentumBreakoutAlertPresentation.formatSetupName(alert.setupName)) · \(alert.direction ?? "LONG") trade plan"
-                )
-                .font(.caption)
-                .foregroundStyle(AppColors.secondaryLabel)
-            }
-            Spacer(minLength: 8)
-            MomentumBreakoutStatusBadge(status: alert.lifecycleStatus)
-        }
-    }
-
-    private var priceLevels: some View {
-        HStack(spacing: 10) {
-            priceCell(title: "Entry level", value: alert.entryPrice)
-            priceCell(title: "Stop level", value: alert.stopPrice)
-            priceCell(title: "Target level", value: alert.targetPrice)
-        }
-    }
-
-    private func priceCell(title: String, value: Double) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(title.uppercased())
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(AppColors.tertiaryLabel)
-                .tracking(0.4)
-            Text(MomentumBreakoutAlertPresentation.formatUsd(value))
-                .font(AppTypography.monoCaptionSemibold)
+    private var verdictHeader: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(alert.symbol.uppercased())
+                .font(.system(size: 17, weight: .bold))
                 .foregroundStyle(AppColors.label)
+            Text(verdict.kind.rawValue)
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(verdictColor)
+            Text(verdict.explanation)
+                .font(.system(size: 15))
+                .foregroundStyle(AppColors.label)
+                .fixedSize(horizontal: false, vertical: true)
         }
+        .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
+        .background(verdictBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
-    private var statsGrid: some View {
-        LazyVGrid(
-            columns: [GridItem(.flexible()), GridItem(.flexible())],
-            alignment: .leading,
-            spacing: 8
-        ) {
-            statItem(title: "Risk / reward", value: MomentumBreakoutAlertPresentation.formatRiskReward(alert.riskReward))
-            statItem(title: "Historical win rate", value: MomentumBreakoutAlertPresentation.formatWinRate(alert.historicalWinRate))
-            statItem(title: "Profit factor", value: MomentumBreakoutAlertPresentation.formatProfitFactor(alert.historicalProfitFactor))
-            statItem(title: "Historical trades", value: alert.historicalTotalTrades.map(String.init) ?? "—")
+    private var verdictColor: Color {
+        switch verdict.kind {
+        case .approved: AppColors.success
+        case .caution: .orange
+        case .rejected: AppColors.error
+        case .completed: AppColors.secondaryLabel
         }
     }
 
-    private func statItem(title: String, value: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(title)
-                .font(.caption2)
-                .foregroundStyle(AppColors.tertiaryLabel)
+    private var verdictBackground: Color {
+        switch verdict.kind {
+        case .approved: AppColors.success.opacity(0.08)
+        case .caution: Color.orange.opacity(0.1)
+        case .rejected: AppColors.error.opacity(0.08)
+        case .completed: AppColors.insetSurface
+        }
+    }
+
+    private var priceStrip: some View {
+        Text(priceStripText)
+            .font(.system(size: 15))
+            .foregroundStyle(AppColors.label)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var priceStripText: String {
+        let entry = MomentumBreakoutAlertPresentation.formatUsd(alert.entryPrice)
+        let stop = MomentumBreakoutAlertPresentation.formatUsd(alert.stopPrice)
+        let target = MomentumBreakoutAlertPresentation.formatUsd(alert.targetPrice)
+        return "Entry \(entry) · Stop \(stop) · Target \(target)"
+    }
+
+    @ViewBuilder
+    private var optionalDetailSection: some View {
+        DisclosureGroup(isExpanded: $statsOpen) {
+            LazyVGrid(
+                columns: [GridItem(.flexible()), GridItem(.flexible())],
+                alignment: .leading,
+                spacing: 8
+            ) {
+                detailStat("Reward vs risk", MomentumBreakoutAlertPresentation.formatRiskReward(alert.riskReward))
+                detailStat("Past win rate", MomentumBreakoutAlertPresentation.formatWinRate(alert.historicalWinRate))
+                detailStat("Past profit factor", MomentumBreakoutAlertPresentation.formatProfitFactor(alert.historicalProfitFactor))
+                detailStat("Past examples", alert.historicalTotalTrades.map(String.init) ?? "—")
+            }
+            .padding(.top, 4)
+        } label: {
+            Text("More detail (optional)")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(AppColors.secondaryLabel)
+        }
+    }
+
+    private func detailStat(_ label: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(label)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(AppColors.secondaryLabel)
             Text(value)
-                .font(AppTypography.monoCaption)
+                .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(AppColors.label)
         }
     }
@@ -91,58 +118,9 @@ struct MomentumBreakoutAlertCard: View {
     @ViewBuilder
     private var outcomeRow: some View {
         if let outcome = alert.outcomeReturnPct {
-            Text("Outcome: \(String(format: "%.1f%%", outcome * 100))")
-                .font(.caption)
+            Text("Result when closed: \(String(format: "%.1f%%", outcome * 100))")
+                .font(.system(size: 13))
                 .foregroundStyle(AppColors.secondaryLabel)
-        }
-    }
-
-    @ViewBuilder
-    private var riskGateSection: some View {
-        let reasons = MomentumBreakoutAlertPresentation.filteredRiskReasons(alert.riskGateReasons ?? [])
-        if riskTone != .normal || !reasons.isEmpty {
-            let style = MomentumBreakoutAlertPresentation.riskGatePanelStyle(tone: riskTone)
-            VStack(alignment: .leading, spacing: 6) {
-                Text(MomentumBreakoutAlertPresentation.riskGateTitle(tone: riskTone))
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(style.foreground)
-                if !reasons.isEmpty {
-                    ForEach(reasons, id: \.self) { reason in
-                        Text("• \(reason)")
-                            .font(.caption)
-                            .foregroundStyle(AppColors.secondaryLabel)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-            }
-            .padding(10)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(style.background)
-            .overlay {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .stroke(style.border, lineWidth: 1)
-            }
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-        }
-    }
-
-    @ViewBuilder
-    private var nextActionSection: some View {
-        if let message = alert.nextActionMessage, !message.isEmpty {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("NEXT STEP")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(AppColors.tertiaryLabel)
-                    .tracking(0.5)
-                Text(message)
-                    .font(.caption)
-                    .foregroundStyle(AppColors.label)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .padding(10)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(AppColors.insetSurface)
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
     }
 }
