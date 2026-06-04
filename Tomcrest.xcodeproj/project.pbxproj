@@ -23,6 +23,7 @@
 		A1B2C3D401234567890ABC04 /* RankingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D401234567890ABC03 /* RankingService.swift */; };
 		A1B2C3D401234567890ABC06 /* TopMoversViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D401234567890ABC05 /* TopMoversViewModel.swift */; };
 		A1B2C3D401234567890ABC08 /* TopMoversComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D401234567890ABC07 /* TopMoversComponents.swift */; };
+		F2F7B015FA7A4AAD9506D44E /* MoversRowUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90C25E0D0296441C9F4CDB31 /* MoversRowUI.swift */; };
 		A1B2C3D401234567890ABC0A /* TopMoversView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D401234567890ABC09 /* TopMoversView.swift */; };
 		A1B2C3D401234567890ABC0D /* TopMoversInsight.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D401234567890ABC0C /* TopMoversInsight.swift */; };
 		1AC66644463AC2C0CC810E93 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 536DB0E375E94676910F3EC9 /* MainTabView.swift */; };
@@ -61,8 +62,12 @@
 		B8C9D0E1F2A3456789012B03 /* FinancialStrengthCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8C9D0E1F2A3456789012B04 /* FinancialStrengthCard.swift */; };
 		4A4FFBCA4C4798A9A6217616 /* NotificationNames.swift in Sources */ = {isa = PBXBuildFile; fileRef = 188C7077D6C3FD981D69FF99 /* NotificationNames.swift */; };
 		4BC6F0880288987BC7C0D971 /* BusinessModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18E39CD0191BE87D771C3652 /* BusinessModels.swift */; };
-		TDE001A1B2C3D4E5F6071829 /* TradeDecisionModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = TDE002A1B2C3D4E5F6071829 /* TradeDecisionModels.swift */; };
-		TDE003A1B2C3D4E5F6071829 /* TradeDecisionPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TDE004A1B2C3D4E5F6071829 /* TradeDecisionPanelView.swift */; };
+		FE9AAE4302624526BD179132 /* TradeDecisionModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F5868C2F88E451C852725DF /* TradeDecisionModels.swift */; };
+		1D758FB3B0DA40DAA7E4DF8B /* TradeDecisionPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0FBA00800F464D80862D0E /* TradeDecisionPanelView.swift */; };
+		974680B7E2F8484B86479D0F /* EmergingLeadersModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 826DAAF50AAA40A585FB45D6 /* EmergingLeadersModels.swift */; };
+		802E2B4563C043988905426C /* EmergingLeadersService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F7454439B5941529C11361F /* EmergingLeadersService.swift */; };
+		14DAA0BD28154287B029EBDF /* EmergingLeadersViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B4F0BDB99EF487AA8B49A27 /* EmergingLeadersViewModel.swift */; };
+		2780ECC1456048509AA54449 /* EmergingLeadersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B52DBD3467144A8684130697 /* EmergingLeadersView.swift */; };
 		4C4DFE6AB9F5F8C593857A4F /* AppChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3CC047ED52D48648DEB73FA /* AppChrome.swift */; };
 		4C5265F15A4B8AB6C003FF4F /* PressAndHorizontalDragGesture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85EC97728F1993387989923A /* PressAndHorizontalDragGesture.swift */; };
 		50C901F53AA8EE4A1B4FDFCC /* PortfolioAnalysisComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2DEF1D4B58C9CBB697935F7 /* PortfolioAnalysisComponents.swift */; };
@@ -78,7 +83,7 @@
 		5F5498BC2CC2FE602F561F63 /* StructuredAnalysisSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72CA4A5F1E51BCD66EC23681 /* StructuredAnalysisSupport.swift */; };
 		6054138BE8C5CE1FB56EEE74 /* AppFont.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71B80CBFA33095DAAADE2327 /* AppFont.swift */; };
 		605DD9D95546BDF948AD9BF5 /* ResearchExtendedTabs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55232C90C6EC1B73C4F317D0 /* ResearchExtendedTabs.swift */; };
-		60HUBV1EW5S0URC3S1N5RC3 /* ResearchHubViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60HUBV1EW5S0URC3F1L3R3F /* ResearchHubViews.swift */; };
+		A92095803D6444439A68A72B /* ResearchHubViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADF17854C99449FEA9FFCC6C /* ResearchHubViews.swift */; };
 		6073D4E7B5AAF22CB36E93E3 /* Misc.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDAC06A77DE8D12B57E598D2 /* Misc.swift */; };
 		6256CFC036C2F30A9547F3E0 /* JSONPassThrough.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95D58779A1C15248AF2B5AD4 /* JSONPassThrough.swift */; };
 		62A24C120A8F8BA291B7E2B5 /* PatternPredictionModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A933418A410115284A597D0A /* PatternPredictionModels.swift */; };
@@ -105,8 +110,8 @@
 		8A0596DBD784D5F9F553918A /* SymbolDepthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EDECBD7FA0089B449BCCE6A /* SymbolDepthViewModel.swift */; };
 		8A5438DDB46DEECCFD345694 /* ChatModelPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 601A77F30073C67B8520BC1C /* ChatModelPicker.swift */; };
 		8CCF6D79897477F2600BE362 /* AppRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D56F0B035F413C3747E68D2 /* AppRouter.swift */; };
-		TABRESELECT02A1B2C3D4E5F601 /* TabBarReselectCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = TABRESELECT01A1B2C3D4E5F601 /* TabBarReselectCoordinator.swift */; };
-		MAINAPPTABBAR02A1B2C3D4E5F6 /* MainAppTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = MAINAPPTABBAR01A1B2C3D4E5F6 /* MainAppTabBar.swift */; };
+		014DACA238214A939C4D54F3 /* TabBarReselectCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DD409330C3D472094C53699 /* TabBarReselectCoordinator.swift */; };
+		E810F4D8778C4EA4B43C1EA6 /* MainAppTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = C50DFEA813154F7BBF20FD10 /* MainAppTabBar.swift */; };
 		8CDC49279DDE539571F12E8B /* WatchlistLedgerVariantScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3CFA8921EB80FC3EF085E56 /* WatchlistLedgerVariantScreen.swift */; };
 		8E9B361BCDC8B8D49C13BA48 /* WatchlistSaveSymbolSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 782978320AAC4B0E2BD0E347 /* WatchlistSaveSymbolSheet.swift */; };
 		8F0D0A88D68993A27DBDA07F /* SettingsComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = F084935B5A66C1A122711FD9 /* SettingsComponents.swift */; };
@@ -237,12 +242,16 @@
 		17C5FF5E4B24A4259FAAB0E4 /* ChatModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatModels.swift; sourceTree = "<group>"; };
 		188C7077D6C3FD981D69FF99 /* NotificationNames.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationNames.swift; sourceTree = "<group>"; };
 		18E39CD0191BE87D771C3652 /* BusinessModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BusinessModels.swift; sourceTree = "<group>"; };
-		TDE002A1B2C3D4E5F6071829 /* TradeDecisionModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TradeDecisionModels.swift; sourceTree = "<group>"; };
-		TDE004A1B2C3D4E5F6071829 /* TradeDecisionPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TradeDecisionPanelView.swift; sourceTree = "<group>"; };
+		9F5868C2F88E451C852725DF /* TradeDecisionModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TradeDecisionModels.swift; sourceTree = "<group>"; };
+		4A0FBA00800F464D80862D0E /* TradeDecisionPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TradeDecisionPanelView.swift; sourceTree = "<group>"; };
+		826DAAF50AAA40A585FB45D6 /* EmergingLeadersModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmergingLeadersModels.swift; sourceTree = "<group>"; };
+		6F7454439B5941529C11361F /* EmergingLeadersService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmergingLeadersService.swift; sourceTree = "<group>"; };
+		0B4F0BDB99EF487AA8B49A27 /* EmergingLeadersViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmergingLeadersViewModel.swift; sourceTree = "<group>"; };
+		B52DBD3467144A8684130697 /* EmergingLeadersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmergingLeadersView.swift; sourceTree = "<group>"; };
 		1C4819359B5D321404416971 /* BrandMarketLine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrandMarketLine.swift; sourceTree = "<group>"; };
 		1D56F0B035F413C3747E68D2 /* AppRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRouter.swift; sourceTree = "<group>"; };
-		TABRESELECT01A1B2C3D4E5F601 /* TabBarReselectCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarReselectCoordinator.swift; sourceTree = "<group>"; };
-		MAINAPPTABBAR01A1B2C3D4E5F6 /* MainAppTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainAppTabBar.swift; sourceTree = "<group>"; };
+		5DD409330C3D472094C53699 /* TabBarReselectCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarReselectCoordinator.swift; sourceTree = "<group>"; };
+		C50DFEA813154F7BBF20FD10 /* MainAppTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainAppTabBar.swift; sourceTree = "<group>"; };
 		1DD45D3F0C2E8473DBA8D2B8 /* AuthModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthModels.swift; sourceTree = "<group>"; };
 		2228D920D44B3FC560E96252 /* AppToast.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppToast.swift; sourceTree = "<group>"; };
 		226B59633E582014D4A3553B /* Inter-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Medium.ttf"; sourceTree = "<group>"; };
@@ -286,7 +295,7 @@
 		536DB0E375E94676910F3EC9 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
 		53BB8D1046E4B55799793F05 /* SymbolResearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymbolResearchView.swift; sourceTree = "<group>"; };
 		55232C90C6EC1B73C4F317D0 /* ResearchExtendedTabs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResearchExtendedTabs.swift; sourceTree = "<group>"; };
-		60HUBV1EW5S0URC3F1L3R3F /* ResearchHubViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResearchHubViews.swift; sourceTree = "<group>"; };
+		ADF17854C99449FEA9FFCC6C /* ResearchHubViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResearchHubViews.swift; sourceTree = "<group>"; };
 		57108AB7ED9E2F701CE12D10 /* AssistantChatScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantChatScreen.swift; sourceTree = "<group>"; };
 		5820C4BCB31919DE292FDCCE /* PortfolioView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortfolioView.swift; sourceTree = "<group>"; };
 		5846B37CAF738D6B5CE3F79B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -428,6 +437,7 @@
 		A1B2C3D401234567890ABC03 /* RankingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RankingService.swift; sourceTree = "<group>"; };
 		A1B2C3D401234567890ABC05 /* TopMoversViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopMoversViewModel.swift; sourceTree = "<group>"; };
 		A1B2C3D401234567890ABC07 /* TopMoversComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopMoversComponents.swift; sourceTree = "<group>"; };
+		90C25E0D0296441C9F4CDB31 /* MoversRowUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoversRowUI.swift; sourceTree = "<group>"; };
 		A1B2C3D401234567890ABC09 /* TopMoversView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopMoversView.swift; sourceTree = "<group>"; };
 		A1B2C3D401234567890ABC0C /* TopMoversInsight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopMoversInsight.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -463,9 +473,9 @@
 				71AC1879AABF6DAB8563AF02 /* ResearchDepthTabViews.swift */,
 				FEC8893DEB1636724FB25C83 /* ResearchExtendedSections.swift */,
 				55232C90C6EC1B73C4F317D0 /* ResearchExtendedTabs.swift */,
-				60HUBV1EW5S0URC3F1L3R3F /* ResearchHubViews.swift */,
+				ADF17854C99449FEA9FFCC6C /* ResearchHubViews.swift */,
 				7981764E4F2F6278ADE708C5 /* ResearchFundamentalsComponents.swift */,
-				TDE004A1B2C3D4E5F6071829 /* TradeDecisionPanelView.swift */,
+				4A0FBA00800F464D80862D0E /* TradeDecisionPanelView.swift */,
 				485604ACBF7E957661B6CC8E /* ResearchNewsComponents.swift */,
 				2F7D42BB285D3287FD44230C /* ResearchOverviewComponents.swift */,
 				E538CE475AB22DE15657A7AA /* ResearchOverviewExtended.swift */,
@@ -610,7 +620,8 @@
 				E602487F089A48405CF108D6 /* APIModels.swift */,
 				1DD45D3F0C2E8473DBA8D2B8 /* AuthModels.swift */,
 				18E39CD0191BE87D771C3652 /* BusinessModels.swift */,
-				TDE002A1B2C3D4E5F6071829 /* TradeDecisionModels.swift */,
+				9F5868C2F88E451C852725DF /* TradeDecisionModels.swift */,
+				826DAAF50AAA40A585FB45D6 /* EmergingLeadersModels.swift */,
 				04892852768CEFAD4FBA4CD5 /* ChatHistoryModels.swift */,
 				17C5FF5E4B24A4259FAAB0E4 /* ChatModels.swift */,
 				8E895B081A99DB55BF37C35C /* IntelligenceModels.swift */,
@@ -674,7 +685,7 @@
 			children = (
 				4D9A6015A2027503E22C6258 /* AppBootstrapState.swift */,
 				536DB0E375E94676910F3EC9 /* MainTabView.swift */,
-				MAINAPPTABBAR01A1B2C3D4E5F6 /* MainAppTabBar.swift */,
+				C50DFEA813154F7BBF20FD10 /* MainAppTabBar.swift */,
 				4702E9C83A8FBEDD10E249CB /* RootView.swift */,
 				8DCF22399EA739788C7300FC /* TomcrestApp.swift */,
 			);
@@ -754,7 +765,7 @@
 			children = (
 				62BB8D2B4B2E83AE96C7A914 /* AppDeepLinks.swift */,
 				1D56F0B035F413C3747E68D2 /* AppRouter.swift */,
-				TABRESELECT01A1B2C3D4E5F601 /* TabBarReselectCoordinator.swift */,
+				5DD409330C3D472094C53699 /* TabBarReselectCoordinator.swift */,
 			);
 			path = Navigation;
 			sourceTree = "<group>";
@@ -782,6 +793,7 @@
 				1A1E23AF38688FCFC49F35CA /* Portfolio */,
 				05D69D212935E07A57BB3253 /* Research */,
 				A1B2C3D401234567890ABC0B /* TopMovers */,
+				B9CE0AC253D74DE0A3911D06 /* EmergingLeaders */,
 				E09C27F0400DCE512209C9E6 /* Settings */,
 				39F88EB659D697C846F2B595 /* Watchlist */,
 			);
@@ -793,11 +805,22 @@
 			children = (
 				A1B2C3D401234567890ABC03 /* RankingService.swift */,
 				A1B2C3D401234567890ABC07 /* TopMoversComponents.swift */,
+				90C25E0D0296441C9F4CDB31 /* MoversRowUI.swift */,
 				A1B2C3D401234567890ABC0C /* TopMoversInsight.swift */,
 				A1B2C3D401234567890ABC09 /* TopMoversView.swift */,
 				A1B2C3D401234567890ABC05 /* TopMoversViewModel.swift */,
 			);
 			path = TopMovers;
+			sourceTree = "<group>";
+		};
+		B9CE0AC253D74DE0A3911D06 /* EmergingLeaders */ = {
+			isa = PBXGroup;
+			children = (
+				6F7454439B5941529C11361F /* EmergingLeadersService.swift */,
+				0B4F0BDB99EF487AA8B49A27 /* EmergingLeadersViewModel.swift */,
+				B52DBD3467144A8684130697 /* EmergingLeadersView.swift */,
+			);
+			path = EmergingLeaders;
 			sourceTree = "<group>";
 		};
 		9FA6DB1A12AA5E03DBEDEB92 /* Auth */ = {
@@ -1117,8 +1140,8 @@
 				F926705DBBECA39BAD6CB132 /* AppPanels.swift in Sources */,
 				D02B5BC82DB98556B7B1E277 /* AppPreview.swift in Sources */,
 				8CCF6D79897477F2600BE362 /* AppRouter.swift in Sources */,
-				TABRESELECT02A1B2C3D4E5F601 /* TabBarReselectCoordinator.swift in Sources */,
-				MAINAPPTABBAR02A1B2C3D4E5F6 /* MainAppTabBar.swift in Sources */,
+				014DACA238214A939C4D54F3 /* TabBarReselectCoordinator.swift in Sources */,
+				E810F4D8778C4EA4B43C1EA6 /* MainAppTabBar.swift in Sources */,
 				1AC66644463AC2C0CC810E93 /* MainTabView.swift in Sources */,
 				ED0E62E7DFAD4F7F7C59C569 /* AppScreenShell.swift in Sources */,
 				F0D40091BB3F7AD1FF76D9C4 /* AppSectionHeader.swift in Sources */,
@@ -1139,8 +1162,12 @@
 				D5056BDF998EA2D7EE7711C8 /* BrandTips.swift in Sources */,
 				F89C7461454B080E19B0D1E3 /* BrokerageSettingsScreen.swift in Sources */,
 				4BC6F0880288987BC7C0D971 /* BusinessModels.swift in Sources */,
-				TDE001A1B2C3D4E5F6071829 /* TradeDecisionModels.swift in Sources */,
-				TDE003A1B2C3D4E5F6071829 /* TradeDecisionPanelView.swift in Sources */,
+				FE9AAE4302624526BD179132 /* TradeDecisionModels.swift in Sources */,
+				1D758FB3B0DA40DAA7E4DF8B /* TradeDecisionPanelView.swift in Sources */,
+				974680B7E2F8484B86479D0F /* EmergingLeadersModels.swift in Sources */,
+				802E2B4563C043988905426C /* EmergingLeadersService.swift in Sources */,
+				14DAA0BD28154287B029EBDF /* EmergingLeadersViewModel.swift in Sources */,
+				2780ECC1456048509AA54449 /* EmergingLeadersView.swift in Sources */,
 				AEA08B3E80EF3C89AD067241 /* ChatComponents.swift in Sources */,
 				59611E1342E669CB7A7E0026 /* ChatFollowUpSuggestions.swift in Sources */,
 				EB18FDD9E0CBA3686A8FF1A7 /* ChatHistoryModels.swift in Sources */,
@@ -1214,11 +1241,12 @@
 				8F60FC9E3C7F8FB503D6AA75 /* ResearchDestination.swift in Sources */,
 				6FE87C706C8D4D98F20DFB5E /* ResearchExtendedSections.swift in Sources */,
 				605DD9D95546BDF948AD9BF5 /* ResearchExtendedTabs.swift in Sources */,
-				60HUBV1EW5S0URC3S1N5RC3 /* ResearchHubViews.swift in Sources */,
+				A92095803D6444439A68A72B /* ResearchHubViews.swift in Sources */,
 				88B3BF90EAEF5E1FA47C79D7 /* ResearchFundamentalsComponents.swift in Sources */,
 				A1B2C3D401234567890ABC02 /* RankingModels.swift in Sources */,
 				A1B2C3D401234567890ABC04 /* RankingService.swift in Sources */,
 				A1B2C3D401234567890ABC08 /* TopMoversComponents.swift in Sources */,
+				F2F7B015FA7A4AAD9506D44E /* MoversRowUI.swift in Sources */,
 				A1B2C3D401234567890ABC0D /* TopMoversInsight.swift in Sources */,
 				A1B2C3D401234567890ABC0A /* TopMoversView.swift in Sources */,
 				A1B2C3D401234567890ABC06 /* TopMoversViewModel.swift in Sources */,

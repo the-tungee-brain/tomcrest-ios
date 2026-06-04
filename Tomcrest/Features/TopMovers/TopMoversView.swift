@@ -1,9 +1,16 @@
 import SwiftUI
 
+private enum MoversSegment: String, CaseIterable {
+    case topMovers = "Top Movers"
+    case emerging = "Emerging"
+}
+
 struct TopMoversView: View {
     @Environment(AuthSession.self) private var auth
     @Environment(TabBarReselectCoordinator.self) private var tabReselect
     @State private var viewModel: TopMoversViewModel?
+    @State private var emergingViewModel: EmergingLeadersViewModel?
+    @State private var segment: MoversSegment = .topMovers
     @State private var path: [ResearchRoute] = []
     @State private var scrollToTopToken = 0
 
@@ -30,6 +37,7 @@ struct TopMoversView: View {
             .onChange(of: tabReselect.moversReselectCount) { _, _ in
                 path = []
                 viewModel?.collapseExpanded()
+                emergingViewModel?.collapseExpanded()
                 scrollToTopToken += 1
             }
             .navigationDestination(for: ResearchRoute.self) { route in
@@ -56,9 +64,15 @@ struct TopMoversView: View {
                     viewModel = vm
                     vm.start()
                 }
+                if emergingViewModel == nil {
+                    let evm = EmergingLeadersViewModel(auth: auth)
+                    emergingViewModel = evm
+                    evm.start()
+                }
             }
             .onDisappear {
                 viewModel?.stop()
+                emergingViewModel?.stop()
             }
         }
     }
@@ -68,34 +82,45 @@ struct TopMoversView: View {
         Color.clear
             .appTopScrollAnchor()
 
-        TopMoversHeader(hasMlMetrics: viewModel.hasMlMetrics)
-
-        MarketRegimeCard(
-            regimeId: viewModel.regimeId,
-            asOfDate: viewModel.asOfDate,
-            updatedAt: viewModel.updatedAt,
-            systemStatus: viewModel.systemStatus
-        )
-
-        if !viewModel.hasMlMetrics {
-            CompositeModelBanner()
+        Picker("Movers", selection: $segment) {
+            ForEach(MoversSegment.allCases, id: \.self) { tab in
+                Text(tab.rawValue).tag(tab)
+            }
         }
+        .pickerStyle(.segmented)
 
-        if let error = viewModel.errorMessage, viewModel.items.isEmpty {
-            AppInlineBanner(message: error, tone: .error)
-        }
-
-        if viewModel.isLoading, viewModel.items.isEmpty {
-            ProgressView("Loading rankings…")
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 24)
-        } else if viewModel.items.isEmpty {
-            AppInlineBanner(
-                message: "Rankings are not ready yet. The pipeline may still be running.",
-                tone: .neutral
-            )
+        if segment == .emerging, let emergingViewModel {
+            EmergingLeadersView(viewModel: emergingViewModel, onOpenSymbol: openSymbol)
         } else {
-            moversList(viewModel)
+            TopMoversHeader(hasMlMetrics: viewModel.hasMlMetrics)
+
+            MarketRegimeCard(
+                regimeId: viewModel.regimeId,
+                asOfDate: viewModel.asOfDate,
+                updatedAt: viewModel.updatedAt,
+                systemStatus: viewModel.systemStatus
+            )
+
+            if !viewModel.hasMlMetrics {
+                CompositeModelBanner()
+            }
+
+            if let error = viewModel.errorMessage, viewModel.items.isEmpty {
+                AppInlineBanner(message: error, tone: .error)
+            }
+
+            if viewModel.isLoading, viewModel.items.isEmpty {
+                ProgressView("Loading rankings…")
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 24)
+            } else if viewModel.items.isEmpty {
+                AppInlineBanner(
+                    message: "Rankings are not ready yet. The pipeline may still be running.",
+                    tone: .neutral
+                )
+            } else {
+                moversList(viewModel)
+            }
         }
     }
 

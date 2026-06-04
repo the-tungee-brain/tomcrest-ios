@@ -4,6 +4,7 @@ import Foundation
 enum ResearchTab: String, CaseIterable, Identifiable, Hashable {
     case overview
     case analysis
+    case business
     case metrics
     case news
     case financials
@@ -15,6 +16,7 @@ enum ResearchTab: String, CaseIterable, Identifiable, Hashable {
         switch self {
         case .overview: "Overview"
         case .analysis: "Analysis"
+        case .business: "Business"
         case .metrics: "Metrics"
         case .news: "News"
         case .financials: "Financials"
@@ -26,6 +28,7 @@ enum ResearchTab: String, CaseIterable, Identifiable, Hashable {
         switch self {
         case .overview: "chart.line.uptrend.xyaxis"
         case .analysis: "sparkles"
+        case .business: "building.2"
         case .metrics: "gauge.with.dots.needle.67percent"
         case .news: "newspaper"
         case .financials: "doc.text"
@@ -63,7 +66,9 @@ enum ResearchTab: String, CaseIterable, Identifiable, Hashable {
             return (.more, .tools)
         case "composition":
             return (.more, .composition)
-        case "business", "trend", "5d-trend":
+        case "business":
+            return (.business, nil)
+        case "trend", "5d-trend":
             return (.analysis, nil)
         case "fundamentals":
             return (.metrics, nil)

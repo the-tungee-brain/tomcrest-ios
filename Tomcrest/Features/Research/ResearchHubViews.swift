@@ -65,11 +65,9 @@ struct ResearchExploreLinks: View {
     private func rowSubtitle(for destination: SymbolResearchDestination) -> String {
         switch destination {
         case .analysis:
-            let normalized = assetType?.uppercased() ?? "STOCK"
-            if normalized == "ETF" || normalized == "MUTUAL_FUND" || normalized == "INDEX" {
-                return "5D alpha model and signals"
-            }
-            return "AI insights, 5D trend, and business context"
+            return "Signals, 5D trend, and chart intelligence"
+        case .business:
+            return "How they make money, risks, and competitive position"
         case .metrics:
             return "Valuation, growth, and analyst views"
         case .news:
@@ -135,16 +133,10 @@ struct ResearchHubLinkRow: View {
 // MARK: - Analysis hub
 
 struct SymbolAnalysisHubTab: View {
-    @Environment(AccountContext.self) private var account
     @Environment(AssistantPresenter.self) private var assistant
     @Bindable var overviewVM: SymbolOverviewViewModel
     @Bindable var depthVM: SymbolDepthViewModel
     let bundle: ResearchOverviewBundle?
-
-    private var isEtfLike: Bool {
-        let normalized = bundle?.assetType?.uppercased() ?? ""
-        return normalized == "ETF" || normalized == "MUTUAL_FUND" || normalized == "INDEX"
-    }
 
     var body: some View {
         ResearchDepthTabShell(tab: .analysis, viewModel: depthVM) {
@@ -155,10 +147,20 @@ struct SymbolAnalysisHubTab: View {
                     }
                 }
 
-                if !isEtfLike {
-                    SymbolBusinessContent(viewModel: depthVM)
-                }
+                SymbolPatternPredictionContent(viewModel: depthVM)
             }
+        }
+    }
+}
+
+// MARK: - Business hub
+
+struct SymbolBusinessHubTab: View {
+    @Bindable var depthVM: SymbolDepthViewModel
+
+    var body: some View {
+        ResearchDepthTabShell(tab: .business, viewModel: depthVM) {
+            SymbolBusinessContent(viewModel: depthVM)
         }
     }
 }
@@ -331,6 +333,8 @@ struct SymbolResearchHubView: View {
                 depthVM: depthVM,
                 bundle: overviewVM.bundle
             )
+        case .business:
+            SymbolBusinessHubTab(depthVM: depthVM)
         case .metrics:
             SymbolMetricsHubTab(
                 assetType: overviewVM.bundle?.assetType,
@@ -377,6 +381,8 @@ struct SymbolResearchHubView: View {
             async let overview: Void = overviewVM.loadIfNeeded()
             async let depth: Void = depthVM.loadIfNeeded(.analysis)
             _ = await (overview, depth)
+        case .business:
+            await depthVM.loadIfNeeded(.business)
         case .portfolio:
             async let position: Void = positionVM.loadIfNeeded()
             async let depth: Void = depthVM.loadIfNeeded(.more, more: .portfolio)
@@ -407,6 +413,8 @@ struct SymbolResearchHubView: View {
         case .analysis:
             await overviewVM.reload()
             await depthVM.reload(.analysis)
+        case .business:
+            await depthVM.reload(.business)
         default:
             if let more = destination.moreDestination {
                 await depthVM.reload(.more, more: more)

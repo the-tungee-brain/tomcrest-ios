@@ -218,10 +218,7 @@ struct ScoreBreakdownView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("WHY IT RANKS")
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(Token.textSecondary)
-                .tracking(0.6)
+            MoversSectionTitle(title: "WHY IT RANKS")
 
             if isLoading {
                 ProgressView()
@@ -314,10 +311,7 @@ struct RegimeCompactCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("CURRENT REGIME")
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(Token.textTertiary)
-                .tracking(0.5)
+            MoversSectionTitle(title: "CURRENT REGIME")
             Text(regime.title)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Token.textPrimary)
@@ -338,28 +332,23 @@ struct MoverResearchInsightSection: View {
     let isLoading: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: MoversRowMetrics.expandedSpacing) {
             thesisBlock
-            bulletSection(
+            MoversBulletListSection(
                 title: "WHAT SUPPORTS THE SIGNAL",
-                lines: insight.supports,
-                icon: "checkmark.circle.fill",
-                color: AppColors.success
+                lines: insight.supports.map(\.label),
+                style: .checkmark
             )
-            bulletSection(
+            MoversBulletListSection(
                 title: "WHAT IS STILL MISSING",
-                lines: insight.missing,
-                icon: "exclamationmark.circle.fill",
-                color: AppColors.warning,
-                bullet: true
+                lines: insight.missing.map(\.label),
+                style: .warning
             )
             if !insight.confirmations.isEmpty {
-                bulletSection(
+                MoversBulletListSection(
                     title: "NEXT CONFIRMATION TO WATCH",
-                    lines: insight.confirmations,
-                    icon: "circle",
-                    color: Token.textTertiary,
-                    bullet: true
+                    lines: insight.confirmations.map(\.label),
+                    style: .bullet
                 )
             }
         }
@@ -367,76 +356,29 @@ struct MoverResearchInsightSection: View {
     }
 
     private var thesisBlock: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("INVESTMENT THESIS")
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(Token.textSecondary)
-                .tracking(0.6)
-            Text(insight.thesis)
-                .font(.subheadline)
-                .foregroundStyle(Token.textPrimary)
-                .fixedSize(horizontal: false, vertical: true)
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text("DECISION SUMMARY")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(Token.textTertiary)
-                    .tracking(0.5)
-                Text(insight.decisionSummary.headline)
-                    .font(.subheadline.weight(.semibold))
+        MoversCalloutBlock {
+            VStack(alignment: .leading, spacing: 10) {
+                MoversSectionTitle(title: "INVESTMENT THESIS")
+                Text(insight.thesis)
+                    .font(.subheadline)
                     .foregroundStyle(Token.textPrimary)
-                Text("Reason")
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(Token.textSecondary)
-                ForEach(Array(insight.decisionSummary.reasons.enumerated()), id: \.offset) { _, reason in
-                    Text(reason)
-                        .font(.subheadline)
-                        .foregroundStyle(Token.textPrimary)
-                }
-            }
-            .padding(.top, 4)
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Token.surfaceFillSecondary.opacity(0.5))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-    }
+                    .fixedSize(horizontal: false, vertical: true)
 
-    @ViewBuilder
-    private func bulletSection(
-        title: String,
-        lines: [InsightLine],
-        icon: String,
-        color: Color,
-        bullet: Bool = false
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title)
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(Token.textSecondary)
-                .tracking(0.6)
-            if lines.isEmpty {
-                Text("—")
-                    .font(.footnote)
-                    .foregroundStyle(Token.textSecondary)
-            } else {
-                ForEach(lines) { line in
-                    HStack(alignment: .top, spacing: 8) {
-                        if bullet {
-                            Text("•")
-                                .font(.subheadline.weight(.bold))
-                                .foregroundStyle(color)
-                        } else {
-                            Image(systemName: icon)
-                                .font(.subheadline)
-                                .foregroundStyle(color)
-                        }
-                        Text(line.label)
+                VStack(alignment: .leading, spacing: 6) {
+                    MoversSectionTitle(title: "DECISION SUMMARY")
+                    Text(insight.decisionSummary.headline)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Token.textPrimary)
+                    Text("Reason")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(Token.textSecondary)
+                    ForEach(Array(insight.decisionSummary.reasons.enumerated()), id: \.offset) { _, reason in
+                        Text(reason)
                             .font(.subheadline)
                             .foregroundStyle(Token.textPrimary)
-                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
+                .padding(.top, 4)
             }
         }
     }
@@ -532,8 +474,8 @@ struct TopMoverRow: View {
     }
 
     private var expandedContent: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Divider().overlay(Token.gridLine)
+        VStack(alignment: .leading, spacing: MoversRowMetrics.expandedSpacing) {
+            MoversExpandedDivider()
 
             detailHeader
 
@@ -546,10 +488,13 @@ struct TopMoverRow: View {
 
             RegimeCompactCard(regime: researchInsight.regimeCompact)
 
-            investigateActions
+            SymbolInvestigateActionBar(
+                symbol: item.symbol,
+                onResearch: onResearch
+            )
         }
-        .padding(.horizontal, 16)
-        .padding(.bottom, 16)
+        .padding(.horizontal, MoversRowMetrics.expandedHorizontalPadding)
+        .padding(.bottom, MoversRowMetrics.expandedBottomPadding)
     }
 
     private var detailHeader: some View {
@@ -587,40 +532,6 @@ struct TopMoverRow: View {
         }
     }
 
-    private var investigateActions: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("INVESTIGATE NEXT")
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(Token.textTertiary)
-                .tracking(0.5)
-            HStack(spacing: 10) {
-                Button(action: onResearch) {
-                    Label("Research", systemImage: "doc.text.magnifyingglass")
-                }
-                .buttonStyle(TopMoverActionStyle(primary: true))
-
-                WatchlistToggleButton(symbol: item.symbol, iconOnly: false)
-            }
-        }
-    }
-}
-
-private struct TopMoverActionStyle: ButtonStyle {
-    let primary: Bool
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.subheadline.weight(.semibold))
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .frame(minHeight: Layout.minTouchTarget)
-            .background(
-                (primary ? AppLightButtonColors.fill : Token.surfaceFillSecondary)
-                    .opacity(configuration.isPressed ? 0.88 : 1)
-            )
-            .foregroundStyle(primary ? AppLightButtonColors.label : Token.textPrimary)
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-    }
 }
 
 private enum RegimePillTone {

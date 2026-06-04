@@ -1,7 +1,7 @@
 import SwiftUI
 import Charts
 
-// MARK: - Overview tab (quote, performance, signals, chat)
+// MARK: - Overview tab (quote, chart, performance, go deeper)
 
 struct SymbolOverviewTab: View {
     @Environment(AuthSession.self) private var auth
@@ -31,7 +31,6 @@ struct SymbolOverviewTab: View {
         }
     }
 
-    @ViewBuilder
     private var isEtfLike: Bool {
         let normalized = bundle?.assetType?.uppercased() ?? ""
         return normalized == "ETF" || normalized == "MUTUAL_FUND" || normalized == "INDEX"
@@ -977,7 +976,7 @@ struct SymbolBusinessTab: View {
     let viewModel: SymbolDepthViewModel
 
     var body: some View {
-        ResearchDepthTabShell(tab: .analysis, viewModel: viewModel) {
+        ResearchDepthTabShell(tab: .business, viewModel: viewModel) {
             SymbolBusinessContent(viewModel: viewModel)
         }
     }
@@ -1203,7 +1202,11 @@ struct ResearchDepthTabShell<Content: View>: View {
         case .overview:
             true
         case .analysis:
-            viewModel.business == nil && viewModel.patternPrediction == nil
+            viewModel.patternPrediction == nil
+                && viewModel.patternIntelligence == nil
+                && viewModel.patternModelHealth == nil
+        case .business:
+            viewModel.business == nil
         case .metrics:
             viewModel.fundamentals == nil
         case .news:

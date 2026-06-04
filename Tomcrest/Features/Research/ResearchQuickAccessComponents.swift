@@ -34,26 +34,16 @@ struct WatchlistToggleButton: View {
                 .foregroundStyle(watching ? AppColors.accentHighlight : AppColors.secondaryLabel)
                 .frame(width: Layout.minTouchTarget, height: Layout.minTouchTarget)
             } else {
-                HStack(spacing: 6) {
+                HStack(spacing: 5) {
                     if isPreparing {
                         ProgressView()
                             .controlSize(.small)
                     } else {
                         Image(systemName: watching ? "star.fill" : "star")
-                            .font(.caption.weight(.semibold))
                     }
-                    Text(watching ? "Watching" : "Add to watchlist")
-                        .font(.caption.weight(.semibold))
+                    Text(watching ? "Watching" : "Watchlist")
                 }
-                .foregroundStyle(watching ? AppColors.accentHighlight : AppColors.label)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(watching ? AppColors.accentMuted : AppColors.insetSurface)
-                .clipShape(Capsule())
-                .overlay {
-                    Capsule()
-                        .stroke(AppColors.separator, lineWidth: 1)
-                }
+                .smallOutlinedButtonLabel(accent: watching)
             }
         }
         .buttonStyle(.plain)
@@ -66,6 +56,62 @@ struct WatchlistToggleButton: View {
         .sheet(isPresented: $showSaveSheet) {
             WatchlistSaveSymbolSheet(symbol: symbol, companyName: companyName)
         }
+    }
+}
+
+/// Research + watchlist actions shared by Top Movers and Emerging Leaders detail rows.
+struct SymbolInvestigateActionBar: View {
+    let symbol: String
+    var onResearch: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("INVESTIGATE NEXT")
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(Token.textTertiary)
+                .tracking(0.5)
+            HStack(alignment: .center, spacing: 8) {
+                Button(action: onResearch) {
+                    Label("Research", systemImage: "doc.text.magnifyingglass")
+                        .labelStyle(.titleAndIcon)
+                        .imageScale(.small)
+                }
+                .buttonStyle(SymbolOutlinedButtonStyle())
+
+                WatchlistToggleButton(symbol: symbol, iconOnly: false)
+            }
+        }
+    }
+}
+
+struct SymbolOutlinedButtonStyle: ButtonStyle {
+    var accent = false
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .smallOutlinedButtonLabel(accent: accent)
+            .opacity(configuration.isPressed ? 0.82 : 1)
+    }
+}
+
+private extension View {
+    func smallOutlinedButtonLabel(accent: Bool = false) -> some View {
+        font(.caption.weight(.semibold))
+            .foregroundStyle(accent ? AppColors.accentHighlight : AppColors.label)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .frame(minHeight: 32)
+            .background(Color.clear)
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(
+                        accent
+                            ? AppColors.accentHighlight.opacity(0.55)
+                            : AppColors.separator,
+                        lineWidth: 1
+                    )
+            }
     }
 }
 

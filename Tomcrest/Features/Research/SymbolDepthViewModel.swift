@@ -106,16 +106,6 @@ final class SymbolDepthViewModel {
                 await withTaskGroup(of: Void.self) { group in
                     group.addTask { @MainActor in
                         do {
-                            self.business = try await ResearchService.fetchBusinessDetails(
-                                symbol: self.symbol,
-                                accessToken: accessToken
-                            )
-                        } catch {
-                            // Pro gate or unavailable — Analysis hub shows upsell inline.
-                        }
-                    }
-                    group.addTask { @MainActor in
-                        do {
                             self.patternPrediction = try await PatternPredictionService.fetchPrediction(
                                 symbol: self.symbol,
                                 accessToken: accessToken
@@ -143,6 +133,15 @@ final class SymbolDepthViewModel {
                             self.patternModelHealth = nil
                         }
                     }
+                }
+            case .business:
+                do {
+                    business = try await ResearchService.fetchBusinessDetails(
+                        symbol: symbol,
+                        accessToken: accessToken
+                    )
+                } catch {
+                    // Pro gate or unavailable — Business hub shows upsell inline.
                 }
             case .metrics:
                 fundamentals = try await ResearchService.fetchFundamentals(

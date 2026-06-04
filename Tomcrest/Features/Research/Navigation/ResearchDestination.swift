@@ -10,6 +10,7 @@ enum ResearchRoute: Hashable {
 /// Push destinations from symbol overview — one screen per hub, lazy-loaded on navigation.
 enum SymbolResearchDestination: Hashable {
     case analysis
+    case business
     case metrics
     case news
     case financials
@@ -21,6 +22,7 @@ enum SymbolResearchDestination: Hashable {
     var navigationTitle: String {
         switch self {
         case .analysis: "Analysis"
+        case .business: "Business"
         case .metrics: "Metrics"
         case .news: "News"
         case .financials: "Financials"
@@ -34,6 +36,7 @@ enum SymbolResearchDestination: Hashable {
     var researchTab: ResearchTab {
         switch self {
         case .analysis: .analysis
+        case .business: .business
         case .metrics: .metrics
         case .news: .news
         case .financials: .financials
@@ -57,6 +60,8 @@ enum SymbolResearchDestination: Hashable {
             return nil
         case (.analysis, _):
             return .analysis
+        case (.business, _):
+            return .business
         case (.metrics, _):
             return .metrics
         case (.news, _):
@@ -82,6 +87,13 @@ enum SymbolResearchDestination: Hashable {
         var items: [SymbolResearchDestination] = []
 
         if availableTabs.contains(.analysis) { items.append(.analysis) }
+        let normalized = assetType?.uppercased() ?? "STOCK"
+        if availableTabs.contains(.analysis),
+           normalized != "ETF",
+           normalized != "MUTUAL_FUND",
+           normalized != "INDEX" {
+            items.append(.business)
+        }
         if availableTabs.contains(.metrics) { items.append(.metrics) }
         if availableTabs.contains(.news) { items.append(.news) }
         if availableTabs.contains(.financials) { items.append(.financials) }
