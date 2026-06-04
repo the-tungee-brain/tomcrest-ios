@@ -3,6 +3,7 @@ import Foundation
 /// Research tab navigation path — single stack, no nested NavigationStack.
 enum ResearchRoute: Hashable {
     case watchlist
+    case momentumBreakoutAlerts
     case symbol(TickerSymbolItem)
     case symbolHub(TickerSymbolItem, SymbolResearchDestination)
 }
@@ -26,7 +27,7 @@ enum SymbolResearchDestination: Hashable {
         case .metrics: "Metrics"
         case .news: "News"
         case .financials: "Financials"
-        case .portfolio: "Portfolio"
+        case .portfolio: "Positions"
         case .income: "Income"
         case .tools: "Tools"
         case .composition: "Composition"

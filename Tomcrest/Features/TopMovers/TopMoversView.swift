@@ -35,6 +35,13 @@ struct TopMoversView: View {
                 }
             }
             .appRootNavigation("Top Movers")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    MomentumBreakoutNotificationBell {
+                        path.append(.momentumBreakoutAlerts)
+                    }
+                }
+            }
             .onChange(of: tabReselect.moversReselectCount) { _, _ in
                 path = []
                 viewModel?.collapseExpanded()
@@ -47,6 +54,8 @@ struct TopMoversView: View {
                     WatchlistHubScreen { symbol in
                         openSymbol(symbol)
                     }
+                case .momentumBreakoutAlerts:
+                    MomentumBreakoutAlertsScreen()
                 case .symbol(let item):
                     SymbolResearchView(symbolItem: item, auth: auth) { hub in
                         path.append(.symbolHub(item, hub))

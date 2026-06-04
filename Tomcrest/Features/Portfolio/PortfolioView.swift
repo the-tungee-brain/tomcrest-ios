@@ -198,6 +198,16 @@ struct PortfolioView: View {
         )
     }
 
+    private func openResearchPosition(_ symbol: String) {
+        let item = TickerSymbolItem(
+            symbol: symbol.uppercased(),
+            title: nil,
+            assetType: nil,
+            logoURL: nil
+        )
+        path.append(.symbolHub(item, .portfolio))
+    }
+
     @ViewBuilder
     private func portfolioWatchlistSection() -> some View {
         PortfolioWatchlistPanel { symbol in
@@ -323,7 +333,8 @@ struct PortfolioView: View {
                         path.append(.portfolioAnalysis)
                         viewModel.runDiversificationAnalysis()
                     },
-                    onSymbolTap: { openResearchSymbol($0) }
+                    onSymbolTap: { openResearchSymbol($0) },
+                    onOpenPosition: { openResearchPosition($0) }
                 )
             case .portfolioAnalysis:
                 PortfolioAnalysisScreen(viewModel: viewModel)

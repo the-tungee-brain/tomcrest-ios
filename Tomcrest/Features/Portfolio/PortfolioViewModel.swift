@@ -19,6 +19,7 @@ final class PortfolioViewModel {
     private(set) var displayBrief: PortfolioIntelligence?
     private(set) var alerts: [ProactiveAlert] = []
     private(set) var attentionQueue: [AttentionItem] = []
+    private(set) var exitAttentionItems: [PortfolioExitAttentionItem] = []
     private(set) var suggestedActions: [SuggestedAnalysisAction] = []
     private(set) var syncedAtLabel: String?
     private(set) var investmentProfile: UserInvestmentProfile?
@@ -715,7 +716,21 @@ final class PortfolioViewModel {
             guard let self, !Task.isCancelled else { return }
             async let brief: Void = self.loadAndMergeMorningBrief(accessToken: accessToken, refresh: fromPull)
             async let strategy: Void = self.loadStrategyPlaybook(accessToken: accessToken)
-            _ = await (brief, strategy)
+            async let exitAttention: Void = self.loadPortfolioExitAttention(accessToken: accessToken)
+            _ = await (brief, strategy, exitAttention)
+        }
+    }
+
+    private func loadPortfolioExitAttention(accessToken: String) async {
+        guard !Task.isCancelled else { return }
+        do {
+            let response = try await ResearchService.fetchPortfolioExitAttention(
+                accessToken: accessToken,
+                limit: 10
+            )
+            exitAttentionItems = response.items
+        } catch {
+            exitAttentionItems = []
         }
     }
 

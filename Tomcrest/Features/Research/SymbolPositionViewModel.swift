@@ -21,7 +21,11 @@ final class SymbolPositionViewModel {
     private(set) var symbolAnalysisError: String?
     private(set) var structuredAnalysis: StructuredAnalysis?
     private(set) var symbolPrecomputed: SymbolAnalysisPrecomputed?
+    private(set) var positionGuidance: SymbolPositionGuidance?
+    private(set) var positionGuidanceLoading = false
+    private(set) var positionGuidanceError: String?
     private var loaded = false
+    private var guidanceLoaded = false
 
     private var chatAccountPayload: JSONPassThrough?
     private var chatPositionsPayload: JSONPassThrough?
@@ -99,6 +103,37 @@ final class SymbolPositionViewModel {
             loadError = error.errorDescription ?? "Could not load your Schwab positions."
         } catch {
             loadError = error.localizedDescription
+        }
+    }
+
+    func loadPositionGuidanceIfNeeded(force: Bool = false) async {
+        guard let accessToken = auth.accessToken else {
+            positionGuidance = nil
+            positionGuidanceError = "Sign in to load position guidance."
+            return
+        }
+        if positionGuidanceLoading { return }
+        if guidanceLoaded, !force { return }
+
+        positionGuidanceLoading = true
+        positionGuidanceError = nil
+        defer { positionGuidanceLoading = false }
+
+        do {
+            positionGuidance = try await ResearchService.fetchPositionGuidance(
+                symbol: symbol,
+                accessToken: accessToken,
+                api: api
+            )
+            guidanceLoaded = true
+            auth.clearError()
+        } catch let error as APIError {
+            positionGuidance = nil
+            positionGuidanceError =
+                error.errorDescription ?? "Position guidance unavailable."
+        } catch {
+            positionGuidance = nil
+            positionGuidanceError = error.localizedDescription
         }
     }
 

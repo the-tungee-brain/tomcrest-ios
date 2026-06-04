@@ -6,6 +6,7 @@ struct ResearchExploreLinks: View {
     let symbolItem: TickerSymbolItem
     let assetType: String?
     let availableTabs: [ResearchTab]
+    var hasPosition: Bool = false
     var onOpenHub: (SymbolResearchDestination) -> Void
 
     private struct Row: Identifiable {
@@ -17,7 +18,17 @@ struct ResearchExploreLinks: View {
     }
 
     private var rows: [Row] {
-        SymbolResearchDestination.rows(assetType: assetType, availableTabs: availableTabs).map { destination in
+        let destinations = SymbolResearchDestination.rows(
+            assetType: assetType,
+            availableTabs: availableTabs
+        )
+        let ordered: [SymbolResearchDestination]
+        if hasPosition, destinations.contains(.portfolio) {
+            ordered = [.portfolio] + destinations.filter { $0 != .portfolio }
+        } else {
+            ordered = destinations
+        }
+        return ordered.map { destination in
             Row(
                 id: destination,
                 destination: destination,
@@ -75,7 +86,7 @@ struct ResearchExploreLinks: View {
         case .financials:
             return "Statements, ratios, and SEC filings"
         case .portfolio:
-            return ResearchMoreDestination.portfolio.subtitle
+            return "Your holdings, position guidance, and trade activity"
         case .income:
             return ResearchMoreDestination.income.subtitle
         case .tools:
@@ -368,6 +379,7 @@ struct SymbolResearchHubView: View {
         switch destination {
         case .portfolio:
             return positionVM.isLoading
+                || positionVM.positionGuidanceLoading
                 || positionVM.recentOrdersLoading
                 || depthVM.loadingTab == .more
         default:
@@ -385,8 +397,9 @@ struct SymbolResearchHubView: View {
             await depthVM.loadIfNeeded(.business)
         case .portfolio:
             async let position: Void = positionVM.loadIfNeeded()
+            async let guidance: Void = positionVM.loadPositionGuidanceIfNeeded()
             async let depth: Void = depthVM.loadIfNeeded(.more, more: .portfolio)
-            _ = await (position, depth)
+            _ = await (position, guidance, depth)
         case .income, .tools, .composition:
             await depthVM.loadIfNeeded(.more, more: destination.moreDestination)
             if destination == .income,
@@ -402,8 +415,10 @@ struct SymbolResearchHubView: View {
     private func refreshHub() async {
         switch destination {
         case .portfolio:
-            await positionVM.loadIfNeeded(force: true)
-            await depthVM.reload(.more, more: .portfolio)
+            async let position: Void = positionVM.loadIfNeeded(force: true)
+            async let guidance: Void = positionVM.loadPositionGuidanceIfNeeded(force: true)
+            async let depth: Void = depthVM.reload(.more, more: .portfolio)
+            _ = await (position, guidance, depth)
         case .income:
             await depthVM.reload(.more, more: .income)
             if let event = depthVM.selectedHistoryEvent,

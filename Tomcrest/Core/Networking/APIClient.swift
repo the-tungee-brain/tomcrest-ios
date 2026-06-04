@@ -65,13 +65,14 @@ actor APIClient {
     func postNoBody<T: Decodable>(
         _ path: String,
         query: [String: String?] = [:],
-        accessToken: String? = nil
+        accessToken: String? = nil,
+        keyDecoding: APIKeyDecoding = .snakeCase
     ) async throws -> T {
         let url = try config.url(path: path, query: query)
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         applyHeaders(&request, accessToken: accessToken)
-        return try await perform(request, isRetry: false)
+        return try await perform(request, isRetry: false, keyDecoding: keyDecoding)
     }
 
     func put<T: Decodable, Body: Encodable>(

@@ -71,6 +71,7 @@ struct SymbolOverviewTab: View {
             symbolItem: symbolItem,
             assetType: bundle.assetType,
             availableTabs: availableTabs,
+            hasPosition: positionViewModel.hasPosition,
             onOpenHub: onOpenHub
         )
     }
@@ -79,6 +80,7 @@ struct SymbolOverviewTab: View {
 // MARK: - Position tab (web SymbolPositionContent)
 
 struct SymbolPositionTab: View {
+    @Environment(AuthSession.self) private var auth
     @Bindable var viewModel: SymbolPositionViewModel
     var showsOptionsPrompt = true
     var onQuickAction: (String) -> Void = { _ in }
@@ -170,17 +172,15 @@ struct SymbolPositionTab: View {
                         }
                     }
 
-                    SymbolAnalysisSection(
+                    PositionGuidancePanelView(
                         symbol: viewModel.symbol,
-                        isLoading: viewModel.symbolAnalysisLoading,
-                        statusText: viewModel.symbolAnalysisStatus,
-                        errorMessage: viewModel.symbolAnalysisError,
-                        analysis: viewModel.structuredAnalysis,
-                        precomputed: viewModel.symbolPrecomputed,
-                        onAnalyze: {
-                            Task { await viewModel.runSymbolAnalysis() }
-                        },
-                        onAskFollowUp: onQuickAction
+                        accessToken: auth.accessToken,
+                        guidance: viewModel.positionGuidance,
+                        isLoading: viewModel.positionGuidanceLoading,
+                        errorMessage: viewModel.positionGuidanceError,
+                        onRetry: {
+                            Task { await viewModel.loadPositionGuidanceIfNeeded(force: true) }
+                        }
                     )
 
                     SymbolRecentActivitySection(
@@ -203,6 +203,10 @@ struct SymbolPositionTab: View {
                     )
                 }
             }
+        }
+        .task(id: viewModel.positions.count) {
+            guard viewModel.hasPosition else { return }
+            await viewModel.loadPositionGuidanceIfNeeded()
         }
     }
 }

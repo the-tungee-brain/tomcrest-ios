@@ -320,6 +320,32 @@ enum ResearchService {
         )
     }
 
+    static func fetchPositionGuidance(
+        symbol: String,
+        accessToken: String,
+        api: APIClient = .shared
+    ) async throws -> SymbolPositionGuidance {
+        try await api.get(
+            "/research/position-guidance",
+            query: ["symbol": symbol.uppercased()],
+            accessToken: accessToken,
+            keyDecoding: .snakeCase
+        )
+    }
+
+    static func fetchPortfolioExitAttention(
+        accessToken: String,
+        limit: Int = 10,
+        api: APIClient = .shared
+    ) async throws -> PortfolioExitAttentionResponse {
+        try await api.get(
+            "/portfolio/exit-attention",
+            query: ["limit": String(limit)],
+            accessToken: accessToken,
+            keyDecoding: .snakeCase
+        )
+    }
+
     static func fetchSymbolIntelligence(
         symbol: String,
         accessToken: String,

@@ -92,7 +92,7 @@ enum ResearchMoreDestination: String, CaseIterable, Identifiable, Hashable {
 
     var label: String {
         switch self {
-        case .portfolio: "Portfolio"
+        case .portfolio: "Positions"
         case .income: "Income"
         case .tools: "Tools"
         case .composition: "Composition"
@@ -101,7 +101,7 @@ enum ResearchMoreDestination: String, CaseIterable, Identifiable, Hashable {
 
     var subtitle: String {
         switch self {
-        case .portfolio: "Holdings, options, and activity"
+        case .portfolio: "Holdings, position guidance, and activity"
         case .income: "Dividends and earnings history"
         case .tools: "Backtests and simulations"
         case .composition: "Holdings and sector breakdown"
@@ -122,7 +122,7 @@ enum ResearchMoreDestination: String, CaseIterable, Identifiable, Hashable {
 
         switch normalized {
         case "ETF", "MUTUAL_FUND", "INDEX":
-            return [.composition, .income, .tools]
+            return [.portfolio, .composition, .income, .tools]
         default:
             let items: [ResearchMoreDestination] = [.portfolio, .income, .tools]
             if includesOptions {

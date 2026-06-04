@@ -9,6 +9,7 @@ struct PortfolioTodayScreen: View {
     @Binding var settingsFocus: SettingsFocus?
     var onGoToPortfolioAnalysis: () -> Void
     var onSymbolTap: (String) -> Void
+    var onOpenPosition: (String) -> Void
 
     var body: some View {
         AppScrollScreen {
@@ -61,6 +62,11 @@ struct PortfolioTodayScreen: View {
                             sendImmediately: true
                         )
                     }
+                )
+
+                PortfolioExitAttentionSection(
+                    items: viewModel.exitAttentionItems,
+                    onSymbolTap: onOpenPosition
                 )
 
                 if viewModel.showStrategyPlaybook, let strategyId = viewModel.primaryStrategyId {

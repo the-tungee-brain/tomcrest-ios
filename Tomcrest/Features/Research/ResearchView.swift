@@ -86,6 +86,13 @@ struct ResearchView: View {
             }
             .animation(nil, value: showsBrowseSections)
             .appRootNavigation("Research")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    MomentumBreakoutNotificationBell {
+                        path.append(.momentumBreakoutAlerts)
+                    }
+                }
+            }
             .onChange(of: tabReselect.researchReselectCount) { _, _ in
                 path = []
                 isSearchFocused = false
@@ -97,6 +104,8 @@ struct ResearchView: View {
                     WatchlistHubScreen { symbol in
                         openSymbol(symbol)
                     }
+                case .momentumBreakoutAlerts:
+                    MomentumBreakoutAlertsScreen()
                 case .symbol(let item):
                     SymbolResearchView(symbolItem: item, auth: auth) { hub in
                         path.append(.symbolHub(item, hub))
@@ -120,6 +129,21 @@ struct ResearchView: View {
     @ViewBuilder
     private var quickAccessSection: some View {
         VStack(alignment: .leading, spacing: Layout.sectionSpacing) {
+            NavigationLink(value: ResearchRoute.momentumBreakoutAlerts) {
+                PortfolioQuickLinkRow(
+                    icon: "bell.badge",
+                    title: "Momentum Breakout trade plans",
+                    subtitle: "Active alerts, history, and notifications"
+                )
+            }
+            .buttonStyle(.plain)
+            .background(AppColors.secondaryBackground)
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(AppColors.panelBorder, lineWidth: 1)
+            }
+
             if !watchlistStore.allTickers.isEmpty {
                 ResearchWatchlistSection(symbols: watchlistStore.allTickers) { symbol in
                     openSymbol(symbol)
