@@ -43,8 +43,15 @@ struct MomentumBreakoutAlertsView: View {
             if viewModel.featureFlags.alertsEnabled,
                viewModel.featureFlags.paperAnalyticsEnabled {
                 paperPerformanceSection
+                    .task {
+                        await viewModel.loadPaperPerformanceIfNeeded()
+                    }
             }
             footerNote
+        }
+        .onChange(of: viewModel.selectedTab, initial: true) { _, tab in
+            guard tab == .history else { return }
+            Task { await viewModel.loadHistoryIfNeeded() }
         }
     }
 

@@ -8,7 +8,20 @@ enum MomentumBreakoutAlertsTab: String, CaseIterable {
 @MainActor
 @Observable
 final class MomentumBreakoutAlertsViewModel {
+    typealias FetchFeatureStatus = (String) async throws -> MomentumBreakoutFeatureStatusResponse
+    typealias FetchActiveAlerts = (String) async throws -> MomentumBreakoutAlertListResponse
+    typealias FetchAlertHistory = (String) async throws -> MomentumBreakoutAlertListResponse
+    typealias FetchScan = (String, Bool, Int) async throws -> MomentumBreakoutScanResponse
+    typealias FetchPaperSummary = (String) async throws -> PaperTradePerformanceSummaryResponse
+    typealias FetchPaperTrades = (String) async throws -> PaperTradePerformanceTradesResponse
+
     private let auth: AuthSession
+    private let fetchFeatureStatus: FetchFeatureStatus
+    private let fetchActiveAlerts: FetchActiveAlerts
+    private let fetchAlertHistory: FetchAlertHistory
+    private let fetchScan: FetchScan
+    private let fetchPaperSummary: FetchPaperSummary
+    private let fetchPaperTrades: FetchPaperTrades
 
     var selectedTab: MomentumBreakoutAlertsTab = .active
     var activeAlerts: [MomentumBreakoutAlertDto] = []
@@ -49,9 +62,41 @@ final class MomentumBreakoutAlertsViewModel {
 
     private var pollTask: Task<Void, Never>?
     private var stockCheckSearchTask: Task<Void, Never>?
+    private var historyLoaded = false
+    private var paperPerformanceLoaded = false
 
-    init(auth: AuthSession) {
+    init(
+        auth: AuthSession,
+        fetchFeatureStatus: @escaping FetchFeatureStatus = { token in
+            try await MomentumBreakoutAlertService.fetchFeatureStatus(accessToken: token)
+        },
+        fetchActiveAlerts: @escaping FetchActiveAlerts = { token in
+            try await MomentumBreakoutAlertService.fetchActiveAlerts(accessToken: token)
+        },
+        fetchAlertHistory: @escaping FetchAlertHistory = { token in
+            try await MomentumBreakoutAlertService.fetchAlertHistory(accessToken: token)
+        },
+        fetchScan: @escaping FetchScan = { token, tradableOnly, limit in
+            try await MomentumBreakoutAlertService.fetchScan(
+                accessToken: token,
+                tradableOnly: tradableOnly,
+                limit: limit
+            )
+        },
+        fetchPaperSummary: @escaping FetchPaperSummary = { token in
+            try await MomentumBreakoutAlertService.fetchPaperPerformanceSummary(accessToken: token)
+        },
+        fetchPaperTrades: @escaping FetchPaperTrades = { token in
+            try await MomentumBreakoutAlertService.fetchPaperPerformanceTrades(accessToken: token)
+        }
+    ) {
         self.auth = auth
+        self.fetchFeatureStatus = fetchFeatureStatus
+        self.fetchActiveAlerts = fetchActiveAlerts
+        self.fetchAlertHistory = fetchAlertHistory
+        self.fetchScan = fetchScan
+        self.fetchPaperSummary = fetchPaperSummary
+        self.fetchPaperTrades = fetchPaperTrades
     }
 
     var displayedAlerts: [MomentumBreakoutAlertDto] {
@@ -91,10 +136,9 @@ final class MomentumBreakoutAlertsViewModel {
                 return
             }
             await refreshActive(silent: true)
-            let historyResponse = try await MomentumBreakoutAlertService.fetchAlertHistory(
-                accessToken: token
-            )
+            let historyResponse = try await fetchAlertHistory(token)
             historyAlerts = historyResponse.alerts
+            historyLoaded = true
             scrollToTrackedPlan(symbol: upper)
         } catch {
             let message = (error as? APIError)?.errorDescription ?? error.localizedDescription
@@ -253,9 +297,7 @@ final class MomentumBreakoutAlertsViewModel {
         errorMessage = nil
         defer { isLoading = false }
         do {
-            let statusResponse = try await MomentumBreakoutAlertService.fetchFeatureStatus(
-                accessToken: token
-            )
+            let statusResponse = try await fetchFeatureStatus(token)
             featureFlags = statusResponse.flags
             guard statusResponse.flags.alertsEnabled else {
                 activeAlerts = []
@@ -263,18 +305,13 @@ final class MomentumBreakoutAlertsViewModel {
                 errorMessage = nil
                 return
             }
-            async let active = MomentumBreakoutAlertService.fetchActiveAlerts(accessToken: token)
-            async let history = MomentumBreakoutAlertService.fetchAlertHistory(accessToken: token)
+            async let active = fetchActiveAlerts(token)
+            async let scan: Void = loadScanSummary(accessToken: token)
             let activeResponse = try await active
-            let historyResponse = try await history
             activeAlerts = activeResponse.alerts
-            historyAlerts = historyResponse.alerts
             disclaimer = activeResponse.disclaimer
             lastUpdated = Date()
-            if statusResponse.flags.paperAnalyticsEnabled {
-                await loadPaperPerformance(accessToken: token)
-            }
-            await loadScanSummary(accessToken: token)
+            await scan
         } catch {
             errorMessage = (error as? APIError)?.errorDescription ?? error.localizedDescription
         }
@@ -285,11 +322,7 @@ final class MomentumBreakoutAlertsViewModel {
         scanErrorMessage = nil
         defer { scanLoading = false }
         do {
-            scanSummary = try await MomentumBreakoutAlertService.fetchScan(
-                accessToken: accessToken,
-                tradableOnly: false,
-                limit: 30
-            )
+            scanSummary = try await fetchScan(accessToken, false, 30)
         } catch {
             scanSummary = nil
             scanErrorMessage = (error as? APIError)?.errorDescription ?? error.localizedDescription
@@ -302,8 +335,8 @@ final class MomentumBreakoutAlertsViewModel {
             return
         }
         do {
-            async let summaryRequest = MomentumBreakoutAlertService.fetchPaperPerformanceSummary(accessToken: accessToken)
-            async let tradesRequest = MomentumBreakoutAlertService.fetchPaperPerformanceTrades(accessToken: accessToken)
+            async let summaryRequest = fetchPaperSummary(accessToken)
+            async let tradesRequest = fetchPaperTrades(accessToken)
             let summaryResponse = try await summaryRequest
             let tradesResponse = try await tradesRequest
             paperMeta = summaryResponse.meta
@@ -317,11 +350,33 @@ final class MomentumBreakoutAlertsViewModel {
         }
     }
 
+    func loadHistoryIfNeeded(force: Bool = false) async {
+        guard force || !historyLoaded else { return }
+        guard let token = accessToken else { return }
+        do {
+            let response = try await fetchAlertHistory(token)
+            historyAlerts = response.alerts
+            if !response.disclaimer.isEmpty, disclaimer.isEmpty {
+                disclaimer = response.disclaimer
+            }
+            historyLoaded = true
+        } catch {
+            errorMessage = (error as? APIError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+
+    func loadPaperPerformanceIfNeeded(force: Bool = false) async {
+        guard force || !paperPerformanceLoaded else { return }
+        guard let token = accessToken else { return }
+        await loadPaperPerformance(accessToken: token)
+        paperPerformanceLoaded = paperPerformanceError == nil
+    }
+
     func refreshActive(silent: Bool = false) async {
         guard let token = accessToken else { return }
         if !silent { isLoading = activeAlerts.isEmpty }
         do {
-            let response = try await MomentumBreakoutAlertService.fetchActiveAlerts(accessToken: token)
+            let response = try await fetchActiveAlerts(token)
             activeAlerts = response.alerts
             if !response.disclaimer.isEmpty {
                 disclaimer = response.disclaimer
@@ -348,12 +403,13 @@ final class MomentumBreakoutAlertsViewModel {
                 accessToken: token,
                 alertId: alertId
             )
-            async let active = MomentumBreakoutAlertService.fetchActiveAlerts(accessToken: token)
-            async let history = MomentumBreakoutAlertService.fetchAlertHistory(accessToken: token)
+            async let active = fetchActiveAlerts(token)
+            async let history = fetchAlertHistory(token)
             let activeResponse = try await active
             let historyResponse = try await history
             activeAlerts = activeResponse.alerts
             historyAlerts = historyResponse.alerts
+            historyLoaded = true
             lastUpdated = Date()
         } catch {
             errorMessage = (error as? APIError)?.errorDescription ?? error.localizedDescription
@@ -375,8 +431,9 @@ final class MomentumBreakoutAlertsViewModel {
             disclaimer = response.disclaimer
             refreshWarnings = response.warnings
             lastUpdated = Date()
-            let historyResponse = try await MomentumBreakoutAlertService.fetchAlertHistory(accessToken: token)
-            historyAlerts = historyResponse.alerts
+            if selectedTab == .history {
+                await loadHistoryIfNeeded(force: true)
+            }
             await loadScanSummary(accessToken: token)
         } catch {
             errorMessage = (error as? APIError)?.errorDescription ?? error.localizedDescription

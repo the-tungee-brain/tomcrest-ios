@@ -4,6 +4,11 @@ import Observation
 @MainActor
 @Observable
 final class TopMoversViewModel {
+    typealias FetchRankings = (String) async throws -> RankingsTopResponse
+    typealias FetchHealth = (String) async throws -> SystemHealthResponse
+    typealias FetchPortfolioSymbols = (String) async throws -> Set<String>
+    typealias FetchPatternIntelligence = (String, String) async throws -> PatternIntelligenceResponse
+
     private(set) var items: [RankingItem] = []
     private(set) var regimeId: String?
     private(set) var asOfDate: String?
@@ -20,10 +25,16 @@ final class TopMoversViewModel {
     private var breakdownTask: Task<Void, Never>?
 
     private let auth: AuthSession
+    private let fetchRankings: FetchRankings
+    private let fetchHealth: FetchHealth
+    private let fetchPortfolioSymbols: FetchPortfolioSymbols
+    private let fetchPatternIntelligence: FetchPatternIntelligence
     private var pollTask: Task<Void, Never>?
     private var prefetchTask: Task<Void, Never>?
+    private var metadataTask: Task<Void, Never>?
     private static let cacheKey = "rankings_top_v1"
     private static let breakdownPrefetchConcurrency = 4
+    private static let initialBreakdownPrefetchLimit = 4
 
     private static let apiDecoder: JSONDecoder = {
         let decoder = JSONDecoder()
@@ -37,8 +48,29 @@ final class TopMoversViewModel {
         return encoder
     }()
 
-    init(auth: AuthSession) {
+    init(
+        auth: AuthSession,
+        fetchRankings: @escaping FetchRankings = { token in
+            try await RankingService.fetchRankingsTop(accessToken: token)
+        },
+        fetchHealth: @escaping FetchHealth = { token in
+            try await RankingService.fetchSystemHealth(accessToken: token)
+        },
+        fetchPortfolioSymbols: @escaping FetchPortfolioSymbols = { token in
+            try await RankingService.fetchPortfolioSymbols(accessToken: token)
+        },
+        fetchPatternIntelligence: @escaping FetchPatternIntelligence = { symbol, token in
+            try await PatternPredictionService.fetchIntelligence(
+                symbol: symbol,
+                accessToken: token
+            )
+        }
+    ) {
         self.auth = auth
+        self.fetchRankings = fetchRankings
+        self.fetchHealth = fetchHealth
+        self.fetchPortfolioSymbols = fetchPortfolioSymbols
+        self.fetchPatternIntelligence = fetchPatternIntelligence
     }
 
     func start() {
@@ -60,6 +92,8 @@ final class TopMoversViewModel {
         breakdownTask = nil
         prefetchTask?.cancel()
         prefetchTask = nil
+        metadataTask?.cancel()
+        metadataTask = nil
     }
 
     var hasMlMetrics: Bool {
@@ -70,52 +104,37 @@ final class TopMoversViewModel {
         guard let token = auth.accessToken else { return }
         if items.isEmpty { isLoading = true }
         errorMessage = nil
-        defer { isLoading = false }
 
         var rankingsResult: RankingsTopResponse?
-        var healthResult: SystemHealthResponse?
         var fetchErrors: [String] = []
 
         do {
-            rankingsResult = try await RankingService.fetchRankingsTop(accessToken: token)
+            rankingsResult = try await fetchRankings(token)
         } catch let error as APIError {
             fetchErrors.append(error.errorDescription ?? "Rankings failed.")
         } catch {
             fetchErrors.append(error.localizedDescription)
         }
 
-        do {
-            healthResult = try await RankingService.fetchSystemHealth(accessToken: token)
-        } catch {
-            // Health is optional for the list; regime may come from rankings.
-        }
-
         if let rankingsResult {
-            items = rankingsResult.items
-            regimeId = healthResult?.regimeId ?? rankingsResult.regimeId
-            asOfDate = rankingsResult.asOfDate
-            updatedAt = healthResult?.lastRankingRunAt ?? rankingsResult.timestamp
-            systemStatus = healthResult?.systemStatus ?? "ok"
-            universeSize = healthResult?.universeSize
-            persist(rankingsResult)
+            apply(rankings: rankingsResult)
             errorMessage = nil
+            isLoading = false
+            scheduleMetadataLoad(accessToken: token, rankings: rankingsResult)
+            prefetchInitialBreakdowns(accessToken: token)
         } else if items.isEmpty, let cached = loadCached() {
-            items = cached.items
-            regimeId = cached.regimeId
-            asOfDate = cached.asOfDate
-            updatedAt = cached.timestamp
+            apply(rankings: cached)
             errorMessage = fetchErrors.first
+            isLoading = false
+            scheduleMetadataLoad(accessToken: token, rankings: cached)
+            prefetchInitialBreakdowns(accessToken: token)
         } else if !items.isEmpty {
             errorMessage = fetchErrors.first
+            isLoading = false
         } else {
             errorMessage = fetchErrors.first ?? "Could not load rankings."
+            isLoading = false
         }
-
-        if let portfolio = try? await RankingService.fetchPortfolioSymbols(accessToken: token) {
-            portfolioSymbols = portfolio
-        }
-
-        prefetchAllBreakdowns(accessToken: token)
     }
 
     func rankContext(for item: RankingItem) -> RankContext {
@@ -224,10 +243,12 @@ final class TopMoversViewModel {
         return TopMoversFormatting.segments(from: scores)
     }
 
-    /// Loads pattern intelligence for every ranked symbol (list sparklines + detail).
-    private func prefetchAllBreakdowns(accessToken: String) {
+    /// Warms pattern intelligence for the rows most likely to be visible first.
+    private func prefetchInitialBreakdowns(accessToken: String) {
         prefetchTask?.cancel()
-        let symbols = items.map { $0.symbol.uppercased() }
+        let symbols = items
+            .prefix(Self.initialBreakdownPrefetchLimit)
+            .map { $0.symbol.uppercased() }
         guard !symbols.isEmpty else { return }
 
         prefetchTask = Task { [weak self] in
@@ -281,14 +302,51 @@ final class TopMoversViewModel {
         defer { breakdownLoadingSymbols.remove(key) }
 
         do {
-            let payload = try await PatternPredictionService.fetchIntelligence(
-                symbol: key,
-                accessToken: token
-            )
+            let payload = try await fetchPatternIntelligence(key, token)
             patternIntelligenceBySymbol[key] = payload
         } catch {
             // Breakdown is optional; list remains usable.
         }
+    }
+
+    private func apply(rankings response: RankingsTopResponse) {
+        items = response.items
+        regimeId = response.regimeId
+        asOfDate = response.asOfDate
+        updatedAt = response.timestamp
+        systemStatus = "ok"
+        universeSize = nil
+        persist(response)
+    }
+
+    private func scheduleMetadataLoad(accessToken: String, rankings: RankingsTopResponse) {
+        metadataTask?.cancel()
+        metadataTask = Task { [weak self] in
+            guard let self else { return }
+
+            async let health = self.fetchOptionalHealth(accessToken)
+            async let portfolio = self.fetchOptionalPortfolioSymbols(accessToken)
+            let metadata = await (health, portfolio)
+            guard !Task.isCancelled else { return }
+
+            if let health = metadata.0 {
+                regimeId = health.regimeId ?? rankings.regimeId
+                updatedAt = health.lastRankingRunAt ?? rankings.timestamp
+                systemStatus = health.systemStatus
+                universeSize = health.universeSize
+            }
+            if let portfolio = metadata.1 {
+                portfolioSymbols = portfolio
+            }
+        }
+    }
+
+    private func fetchOptionalHealth(_ accessToken: String) async -> SystemHealthResponse? {
+        try? await fetchHealth(accessToken)
+    }
+
+    private func fetchOptionalPortfolioSymbols(_ accessToken: String) async -> Set<String>? {
+        try? await fetchPortfolioSymbols(accessToken)
     }
 
     func isInPortfolio(_ symbol: String) -> Bool {

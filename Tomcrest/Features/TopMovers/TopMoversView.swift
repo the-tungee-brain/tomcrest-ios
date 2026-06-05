@@ -84,15 +84,12 @@ struct TopMoversView: View {
                     viewModel = vm
                     vm.start()
                 }
-                if emergingViewModel == nil {
-                    let evm = EmergingLeadersViewModel(auth: auth)
-                    emergingViewModel = evm
-                    evm.start()
-                }
-                if emergingValidationViewModel == nil {
-                    let vvm = EmergingLeadersValidationViewModel(auth: auth)
-                    emergingValidationViewModel = vvm
-                    Task { await vvm.refresh() }
+            }
+            .onChange(of: segment, initial: false) { _, newValue in
+                if newValue == .emerging {
+                    Task { await ensureEmergingLoaded() }
+                } else {
+                    emergingViewModel?.stop()
                 }
             }
             .onDisappear {
@@ -114,17 +111,21 @@ struct TopMoversView: View {
         }
         .pickerStyle(.segmented)
 
-        if segment == .emerging,
-           let emergingViewModel,
-           let emergingValidationViewModel {
-            EmergingLeadersView(
-                viewModel: emergingViewModel,
-                validationViewModel: emergingValidationViewModel,
-                onOpenSymbol: openSymbol
-            )
-            .task(id: segment) {
-                guard segment == .emerging else { return }
-                await emergingValidationViewModel.refresh()
+        if segment == .emerging {
+            if let emergingViewModel,
+               let emergingValidationViewModel {
+                EmergingLeadersView(
+                    viewModel: emergingViewModel,
+                    validationViewModel: emergingValidationViewModel,
+                    onOpenSymbol: openSymbol
+                )
+            } else {
+                ProgressView("Loading emerging leaders…")
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 24)
+                    .task {
+                        await ensureEmergingLoaded()
+                    }
             }
         } else {
             TopMoversHeader(hasMlMetrics: viewModel.hasMlMetrics)
@@ -209,5 +210,21 @@ struct TopMoversView: View {
             logoURL: nil
         )
         path.append(.symbol(item))
+    }
+
+    @MainActor
+    private func ensureEmergingLoaded() async {
+        if emergingViewModel == nil {
+            emergingViewModel = EmergingLeadersViewModel(auth: auth)
+        }
+        emergingViewModel?.start()
+
+        if emergingValidationViewModel == nil {
+            emergingValidationViewModel = EmergingLeadersValidationViewModel(auth: auth)
+        }
+        if emergingValidationViewModel?.payload == nil,
+           emergingValidationViewModel?.isLoading == false {
+            await emergingValidationViewModel?.refresh()
+        }
     }
 }
