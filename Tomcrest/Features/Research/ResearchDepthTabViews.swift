@@ -11,6 +11,7 @@ struct SymbolOverviewTab: View {
     let availableTabs: [ResearchTab]
     let assetType: String?
     let symbolItem: TickerSymbolItem
+    var showsExploreLinks = true
     var onOpenHub: (SymbolResearchDestination) -> Void
     var onQuickAction: (String) -> Void = { _ in }
 
@@ -50,7 +51,7 @@ struct SymbolOverviewTab: View {
     }
 
     private var hasOverviewContent: Bool {
-        snapshot != nil || performance != nil || !events.isEmpty || bundle != nil
+        snapshot != nil || performance != nil || !events.isEmpty || viewModel.tradingBias != nil || bundle != nil
     }
 
     @ViewBuilder
@@ -72,6 +73,25 @@ struct SymbolOverviewTab: View {
         }
 
         if !isEtfLike {
+            if let tradingBias = viewModel.tradingBias {
+                TradingBiasCard(tradingBias: tradingBias)
+            } else if viewModel.tradingBiasLoading {
+                AppScreenSection(
+                    title: "Trading Bias",
+                    footnote: "Short-term daily bias"
+                ) {
+                    ProgressView()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            } else if let error = viewModel.tradingBiasError {
+                AppScreenSection(
+                    title: "Trading Bias",
+                    footnote: "Short-term daily bias"
+                ) {
+                    AppInlineBanner(message: error, tone: .neutral)
+                }
+            }
+
             TradeDecisionPanelView(
                 symbol: viewModel.symbol,
                 accessToken: auth.accessToken
@@ -94,7 +114,7 @@ struct SymbolOverviewTab: View {
 
         ResearchStockChartSection(symbol: viewModel.symbol, viewModel: viewModel)
 
-        AppScreenSection(title: "Performance") {
+        AppScreenSection(title: "Performance Evidence") {
             if let performance {
                 SymbolPerformanceCard(performance: performance)
             } else if viewModel.performanceLoading {
@@ -121,13 +141,15 @@ struct SymbolOverviewTab: View {
             ResearchEventsTeaserCard(events: events)
         }
 
-        ResearchExploreLinks(
-            symbolItem: symbolItem,
-            assetType: assetType,
-            availableTabs: availableTabs,
-            hasPosition: positionViewModel.hasPosition,
-            onOpenHub: onOpenHub
-        )
+        if showsExploreLinks {
+            ResearchExploreLinks(
+                symbolItem: symbolItem,
+                assetType: assetType,
+                availableTabs: availableTabs,
+                hasPosition: positionViewModel.hasPosition,
+                onOpenHub: onOpenHub
+            )
+        }
     }
 }
 

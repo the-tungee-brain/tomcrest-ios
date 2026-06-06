@@ -166,7 +166,7 @@ final class SymbolDepthViewModel {
                         symbol: symbol,
                         accessToken: accessToken
                     )
-                case .portfolio:
+                case .portfolio, .options:
                     symbolIntelligence = try await ResearchService.fetchSymbolIntelligence(
                         symbol: symbol,
                         accessToken: accessToken

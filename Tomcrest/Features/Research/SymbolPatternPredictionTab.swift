@@ -7,10 +7,10 @@ struct SymbolPatternPredictionContent: View {
     var body: some View {
         if account.hasProFeature(.patternTrend) {
             AppScreenSection(
-                title: "Trend analysis",
+                title: "Relative Strength Evidence",
                 footnote: viewModel.patternPrediction?.display.isBenchmark == true
-                    ? "Quantitative model inputs · ranking not applicable on benchmark"
-                    : "Quantitative model outputs · next 5 sessions"
+                    ? "Quantitative model inputs · relative strength not applicable on benchmark"
+                    : "Market-relative model evidence · next 5 sessions"
             ) {
                 if let prediction = viewModel.patternPrediction {
                     PatternTrendForecastCard(forecast: prediction.display)
@@ -41,19 +41,19 @@ struct SymbolPatternPredictionContent: View {
 
             if viewModel.patternIntelligence?.chartIntelligence?.hasAnalystSummary == true {
                 AppScreenSection(
-                    title: "Chart intelligence",
+                    title: "Price Structure Evidence",
                     footnote: viewModel.patternIntelligence?.display.isBenchmark == true
                         ? "Qualitative 5-day read from structure and patterns"
-                        : "What to expect — see Trend analysis for model scores"
+                        : "Chart structure and pattern evidence"
                 ) {
                     if let intelligence = viewModel.patternIntelligence {
                         PatternIntelligenceCard(intelligence: intelligence.display)
                     }
                 }
             } else if viewModel.patternIntelligence != nil {
-                AppScreenSection(title: "Chart intelligence") {
+                AppScreenSection(title: "Price Structure Evidence") {
                     AppEmptyMessage(
-                        message: "Analyst summary is not available for this symbol.",
+                        message: "Chart structure summary is not available for this symbol.",
                         systemImage: "sparkles"
                     )
                 }

@@ -93,10 +93,15 @@ private struct PatternTrendMetricsCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Model outputs")
+            Text("Relative strength model")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(AppColors.secondaryLabel)
                 .textCase(.uppercase)
+
+            Text("This measures market-relative strength, not whether the stock must go up.")
+                .font(.caption)
+                .foregroundStyle(AppColors.tertiaryLabel)
+                .fixedSize(horizontal: false, vertical: true)
 
             LazyVGrid(
                 columns: [
@@ -116,7 +121,7 @@ private struct PatternTrendMetricsCard: View {
                     value: formattedPercent(forecast.upProb)
                 )
                 PatternTrendMetaChip(
-                    title: "Predicted class",
+                    title: "Relative strength class",
                     value: forecast.predictedClassLabel
                 )
                 PatternTrendMetaChip(
@@ -283,7 +288,7 @@ private struct PatternTrendIndicatorsCard: View {
         } else {
             VStack(alignment: .leading, spacing: 12) {
                 AppScreenSectionLabel(
-                    title: isBenchmark ? "Trend & regime" : "Relative strength & trend"
+                    title: isBenchmark ? "Trend & regime" : "Relative strength evidence"
                 )
 
                 LazyVGrid(
@@ -356,8 +361,8 @@ private struct PatternTrendFootnote: View {
 
             Text(
                 forecast.isBenchmark
-                    ? "Not investment advice. Quantitative regime inputs only — Model C ranking does not apply to the benchmark."
-                    : "Not investment advice. Quantitative model outputs only — see Chart Intelligence for the qualitative read."
+                    ? "Not investment advice. Quantitative regime inputs only — relative-strength ranking does not apply to the benchmark."
+                    : "Not investment advice. Market-relative model evidence only — see Price Structure Evidence for the chart read."
             )
             .font(.caption)
             .foregroundStyle(AppColors.tertiaryLabel)

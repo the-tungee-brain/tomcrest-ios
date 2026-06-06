@@ -13,6 +13,7 @@ struct SymbolResearchView: View {
     @State private var strategyRecommendations: StrategyRecommendations?
     @State private var profileSymbols: [String] = []
     @State private var didApplyInitialDestination = false
+    @State private var selectedPrimaryTab: ResearchPrimaryTab
 
     let symbolItem: TickerSymbolItem
     var onOpenHub: (SymbolResearchDestination) -> Void
@@ -34,6 +35,9 @@ struct SymbolResearchView: View {
         _overviewVM = State(initialValue: SymbolOverviewViewModel(symbol: symbolItem.symbol, auth: auth))
         _depthVM = State(initialValue: SymbolDepthViewModel(symbol: symbolItem.symbol, auth: auth))
         _positionVM = State(initialValue: SymbolPositionViewModel(symbol: symbolItem.symbol, auth: auth))
+        _selectedPrimaryTab = State(
+            initialValue: ResearchPrimaryTab.resolve(tab: initialTab, more: initialMoreDestination)
+        )
         self.initialTab = initialTab
         self.initialMoreDestination = initialMoreDestination
         self.initialWheelBacktestQuery = initialWheelBacktestQuery
@@ -67,6 +71,10 @@ struct SymbolResearchView: View {
         ResearchTab.tabs(for: assetType)
     }
 
+    private var primaryTabs: [ResearchPrimaryTab] {
+        ResearchPrimaryTab.visibleTabs
+    }
+
     private var assetType: String? {
         overviewVM.bundle?.assetType ?? symbolItem.assetType
     }
@@ -78,7 +86,7 @@ struct SymbolResearchView: View {
     }
 
     var body: some View {
-        AppScrollScreen(topPadding: 16, refresh: { await overviewVM.reload() }) {
+        AppScrollScreen(topPadding: 16, refresh: { await refreshSelectedPrimaryTab() }) {
             VStack(alignment: .leading, spacing: Layout.sectionSpacing) {
                 if primaryStrategy != nil {
                     StrategySymbolPlaybookStrip(
@@ -100,17 +108,13 @@ struct SymbolResearchView: View {
                     )
                 }
 
-                SymbolOverviewTab(
-                    viewModel: overviewVM,
-                    positionViewModel: positionVM,
-                    bundle: overviewVM.bundle,
-                    availableTabs: availableTabs,
-                    assetType: assetType,
-                    symbolItem: symbolItem,
-                    onOpenHub: onOpenHub
-                ) { prompt in
-                    assistant.openSymbol(overviewVM.symbol, prompt: prompt, sendImmediately: true)
-                }
+                ResearchTabBar(
+                    tabs: primaryTabs,
+                    selection: $selectedPrimaryTab,
+                    assetType: assetType
+                )
+
+                selectedTabContent
             }
         }
         .appDetailNavigation()
@@ -132,8 +136,8 @@ struct SymbolResearchView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 4) {
                     WatchlistToggleButton(symbol: overviewVM.symbol, companyName: companyName)
-                    AppToolbarRefreshButton(isRefreshing: overviewVM.isLoading) {
-                        Task { await overviewVM.reload() }
+                    AppToolbarRefreshButton(isRefreshing: isRefreshing) {
+                        Task { await refreshSelectedPrimaryTab() }
                     }
                 }
             }
@@ -143,6 +147,9 @@ struct SymbolResearchView: View {
                 depthVM.wheelBacktestQuery = query
             }
             await overviewVM.loadIfNeeded()
+        }
+        .task(id: selectedPrimaryTab) {
+            await loadSelectedPrimaryTab()
         }
         .task(id: overviewVM.snapshot?.symbol ?? overviewVM.bundle?.symbol) {
             guard overviewVM.snapshot != nil || overviewVM.bundle != nil else { return }
@@ -165,6 +172,133 @@ struct SymbolResearchView: View {
         }
     }
 
+    @ViewBuilder
+    private var selectedTabContent: some View {
+        switch selectedPrimaryTab {
+        case .overview:
+            overviewContent
+        case .analysis:
+            SymbolAnalysisHubTab(
+                overviewVM: overviewVM,
+                depthVM: depthVM,
+                bundle: overviewVM.bundle
+            )
+        case .events:
+            SymbolNewsTab(viewModel: depthVM)
+        case .positions:
+            SymbolPositionTab(viewModel: positionVM, showsOptionsPrompt: false) { prompt in
+                handlePositionPrompt(prompt)
+            }
+        case .options:
+            SymbolOptionsTab(
+                viewModel: depthVM,
+                symbolPositions: positionVM.positions,
+                assignmentRiskSummary: OptionsRiskHelpers.filterAssignmentRisk(
+                    positionVM.assignmentRiskSummary,
+                    symbol: overviewVM.symbol
+                )
+            ) { prompt in
+                assistant.openSymbol(overviewVM.symbol, prompt: prompt, sendImmediately: true)
+            }
+        case .more:
+            ResearchMoreLinks(
+                assetType: assetType,
+                availableTabs: availableTabs,
+                onOpenHub: onOpenHub
+            )
+        }
+    }
+
+    private var overviewContent: some View {
+        SymbolOverviewTab(
+            viewModel: overviewVM,
+            positionViewModel: positionVM,
+            bundle: overviewVM.bundle,
+            availableTabs: availableTabs,
+            assetType: assetType,
+            symbolItem: symbolItem,
+            showsExploreLinks: false,
+            onOpenHub: onOpenHub
+        ) { prompt in
+            assistant.openSymbol(overviewVM.symbol, prompt: prompt, sendImmediately: true)
+        }
+    }
+
+    private var isRefreshing: Bool {
+        switch selectedPrimaryTab {
+        case .overview:
+            return overviewVM.isLoading
+        case .analysis:
+            return depthVM.loadingTab == .analysis
+        case .events:
+            return depthVM.loadingTab == .news
+        case .positions:
+            return positionVM.isLoading
+                || positionVM.positionGuidanceLoading
+                || positionVM.recentOrdersLoading
+        case .options:
+            return depthVM.loadingTab == .more || positionVM.isLoading
+        case .more:
+            return false
+        }
+    }
+
+    private func loadSelectedPrimaryTab() async {
+        switch selectedPrimaryTab {
+        case .overview:
+            await overviewVM.loadIfNeeded()
+        case .analysis:
+            async let overview: Void = overviewVM.loadIfNeeded()
+            async let depth: Void = depthVM.loadIfNeeded(.analysis)
+            _ = await (overview, depth)
+        case .events:
+            await depthVM.loadIfNeeded(.news)
+        case .positions:
+            async let position: Void = positionVM.loadIfNeeded()
+            async let guidance: Void = positionVM.loadPositionGuidanceIfNeeded()
+            _ = await (position, guidance)
+        case .options:
+            async let position: Void = positionVM.loadIfNeeded()
+            async let depth: Void = depthVM.loadIfNeeded(.more, more: .portfolio)
+            _ = await (position, depth)
+            await depthVM.prefetchOptionsIntelligenceIfNeeded(
+                hasOptionPositions: positionVM.hasOptionPositions
+            )
+        case .more:
+            break
+        }
+    }
+
+    private func refreshSelectedPrimaryTab() async {
+        switch selectedPrimaryTab {
+        case .overview:
+            await overviewVM.reload()
+        case .analysis:
+            await overviewVM.reload()
+            await depthVM.reload(.analysis)
+        case .events:
+            await depthVM.reload(.news)
+        case .positions:
+            async let position: Void = positionVM.loadIfNeeded(force: true)
+            async let guidance: Void = positionVM.loadPositionGuidanceIfNeeded(force: true)
+            _ = await (position, guidance)
+        case .options:
+            async let position: Void = positionVM.loadIfNeeded(force: true)
+            async let depth: Void = depthVM.reload(.more, more: .portfolio)
+            _ = await (position, depth)
+        case .more:
+            break
+        }
+    }
+
+    private func handlePositionPrompt(_ prompt: String) {
+        if prompt == "__open_portfolio_options__" {
+            selectedPrimaryTab = .options
+        } else {
+            assistant.openSymbol(overviewVM.symbol, prompt: prompt, sendImmediately: true)
+        }
+    }
+
     private var researchAssistantPresented: Binding<Bool> {
         Binding(
             get: { assistant.isSymbolPresented(overviewVM.symbol) },
@@ -175,12 +309,28 @@ struct SymbolResearchView: View {
     private func applyInitialDestinationIfNeeded() {
         guard !didApplyInitialDestination else { return }
         didApplyInitialDestination = true
+        selectedPrimaryTab = ResearchPrimaryTab.resolve(tab: initialTab, more: initialMoreDestination)
+
+        guard shouldPushInitialDestination else { return }
 
         if let destination = SymbolResearchDestination.from(
             tab: initialTab,
             more: initialMoreDestination
         ) {
             onOpenHub(destination)
+        }
+    }
+
+    private var shouldPushInitialDestination: Bool {
+        switch (initialTab, initialMoreDestination) {
+        case (.overview, _),
+             (.analysis, _),
+             (.news, _),
+             (.more, .portfolio),
+             (.more, .options):
+            return false
+        default:
+            return true
         }
     }
 

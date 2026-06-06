@@ -75,6 +75,19 @@ enum ResearchService {
         )
     }
 
+    static func fetchTradingBias(
+        symbol: String,
+        accessToken: String,
+        api: APIClient = .shared
+    ) async throws -> TradingBiasResponse {
+        try await api.get(
+            "/research/trading-bias",
+            query: ["symbol": symbol.uppercased()],
+            accessToken: accessToken,
+            keyDecoding: .camelCase
+        )
+    }
+
     static func fetchStockChart(
         symbol: String,
         accessToken: String,

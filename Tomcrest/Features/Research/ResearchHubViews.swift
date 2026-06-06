@@ -141,6 +141,123 @@ struct ResearchHubLinkRow: View {
     }
 }
 
+// MARK: - More tab links
+
+struct ResearchMoreLinks: View {
+    let assetType: String?
+    let availableTabs: [ResearchTab]
+    var onOpenHub: (SymbolResearchDestination) -> Void
+
+    private struct Row: Identifiable {
+        let id: SymbolResearchDestination
+        let destination: SymbolResearchDestination
+        let title: String
+        let subtitle: String
+        let systemImage: String
+    }
+
+    private var rows: [Row] {
+        let normalized = assetType?.uppercased() ?? "STOCK"
+        var destinations: [SymbolResearchDestination] = []
+
+        if normalized != "ETF",
+           normalized != "MUTUAL_FUND",
+           normalized != "INDEX" {
+            destinations.append(.business)
+        }
+        if availableTabs.contains(.metrics) { destinations.append(.metrics) }
+        if availableTabs.contains(.financials) { destinations.append(.financials) }
+
+        destinations.append(contentsOf: ResearchMoreDestination.destinations(
+            for: assetType,
+            includesOptions: false
+        ).compactMap { more in
+            switch more {
+            case .portfolio, .options:
+                nil
+            case .income:
+                .income
+            case .tools:
+                .tools
+            case .composition:
+                .composition
+            }
+        })
+
+        return destinations.map { destination in
+            Row(
+                id: destination,
+                destination: destination,
+                title: rowTitle(for: destination),
+                subtitle: rowSubtitle(for: destination),
+                systemImage: rowIcon(for: destination)
+            )
+        }
+    }
+
+    var body: some View {
+        AppScreenSection(title: "More research") {
+            if rows.isEmpty {
+                AppEmptyMessage(message: "No secondary research tools are available for this symbol.")
+            } else {
+                AppGroupedList {
+                    ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
+                        Button {
+                            onOpenHub(row.destination)
+                        } label: {
+                            ResearchHubLinkRow(
+                                title: row.title,
+                                subtitle: row.subtitle,
+                                systemImage: row.systemImage
+                            )
+                        }
+                        .buttonStyle(.plain)
+
+                        if index < rows.count - 1 {
+                            AppGroupedDivider()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func rowTitle(for destination: SymbolResearchDestination) -> String {
+        switch destination {
+        case .metrics:
+            return ResearchTab.metrics.metricsLabel(for: assetType)
+        default:
+            return destination.navigationTitle
+        }
+    }
+
+    private func rowSubtitle(for destination: SymbolResearchDestination) -> String {
+        switch destination {
+        case .business:
+            return "How they make money, risks, and competitive position"
+        case .metrics:
+            return "Valuation, growth, and analyst views"
+        case .financials:
+            return "Statements, ratios, and SEC filings"
+        case .income:
+            return ResearchMoreDestination.income.subtitle
+        case .tools:
+            return ResearchMoreDestination.tools.subtitle
+        case .composition:
+            return ResearchMoreDestination.composition.subtitle
+        default:
+            return destination.navigationTitle
+        }
+    }
+
+    private func rowIcon(for destination: SymbolResearchDestination) -> String {
+        if let more = destination.moreDestination {
+            return more.systemImage
+        }
+        return destination.researchTab.systemImage
+    }
+}
+
 // MARK: - Analysis hub
 
 struct SymbolAnalysisHubTab: View {
@@ -210,6 +327,16 @@ struct ResearchMoreDetailScreen: View {
                 symbol: symbol,
                 includesOptions: includesOptions,
                 onAssistantPrompt: onAssistantPrompt
+            )
+        case .options:
+            SymbolOptionsTab(
+                viewModel: depthVM,
+                symbolPositions: positionVM.positions,
+                assignmentRiskSummary: OptionsRiskHelpers.filterAssignmentRisk(
+                    positionVM.assignmentRiskSummary,
+                    symbol: symbol
+                ),
+                onAnalyze: onAssistantPrompt
             )
         case .income:
             SymbolIncomeHubTab(viewModel: depthVM)

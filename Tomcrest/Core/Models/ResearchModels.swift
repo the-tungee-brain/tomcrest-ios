@@ -104,6 +104,74 @@ struct ResearchEventsResponse: Codable {
     let events: [EventTimelineEntry]
 }
 
+enum TradingBiasLabel: String, Codable {
+    case bullish = "Bullish"
+    case neutral = "Neutral"
+    case bearish = "Bearish"
+}
+
+enum TradingBiasConfidence: String, Codable {
+    case high = "High"
+    case medium = "Medium"
+    case low = "Low"
+}
+
+enum TradingBiasAction: String, Codable {
+    case watch = "Watch"
+    case avoid = "Avoid"
+    case confirmBreakout = "Confirm breakout"
+    case pullbackSetup = "Pullback setup"
+    case riskOff = "Risk-off"
+}
+
+enum TradingBiasAlignmentState: String, Codable {
+    case aligned
+    case mixed
+    case against
+}
+
+enum TradingBiasVolumeAlignment: String, Codable {
+    case confirmed
+    case neutral
+    case warning
+}
+
+enum TradingBiasCatalystAlignment: String, Codable {
+    case positive
+    case neutral
+    case negative
+    case none
+}
+
+struct TradingBiasLevels: Codable {
+    let support: Double?
+    let resistance: Double?
+    let breakoutLevel: Double?
+    let stopInvalidLevel: Double?
+}
+
+struct TradingBiasAlignment: Codable {
+    let marketRegime: TradingBiasAlignmentState
+    let relativeStrength: TradingBiasAlignmentState
+    let patternTrend: TradingBiasAlignmentState
+    let volume: TradingBiasVolumeAlignment
+    let catalyst: TradingBiasCatalystAlignment
+}
+
+struct TradingBiasResponse: Codable {
+    let symbol: String
+    let bias: TradingBiasLabel
+    let confidence: TradingBiasConfidence
+    let horizon: String
+    let action: TradingBiasAction
+    let bullishFactors: [String]
+    let bearishFactors: [String]
+    let invalidation: String?
+    let levels: TradingBiasLevels
+    let alignment: TradingBiasAlignment
+    let dataGaps: [String]
+}
+
 struct StreetAnalysisResponse: Decodable {
     let streetAnalysis: StreetAnalysisSnapshot?
 }

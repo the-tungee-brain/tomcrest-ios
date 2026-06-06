@@ -10,8 +10,8 @@ struct TradeDecisionPanelView: View {
 
     var body: some View {
         AppScreenSection(
-            title: "Trade decision",
-            footnote: "Regime gate → score → bucket → verdict"
+            title: "Execution Readiness",
+            footnote: "Answers whether the setup is actionable now"
         ) {
             if isLoading, decision == nil {
                 ProgressView()
@@ -21,7 +21,7 @@ struct TradeDecisionPanelView: View {
             } else if let decision {
                 content(decision)
             } else {
-                AppEmptyMessage(message: "Trade decision is not available.")
+                AppEmptyMessage(message: "Execution readiness is not available.")
             }
         }
         .task(id: symbol) {
@@ -40,13 +40,13 @@ struct TradeDecisionPanelView: View {
                     valueColor: regimeColor(decision.regime.tradeEnvironment)
                 )
                 metricPill(
-                    title: "Trade quality",
+                    title: "Setup quality",
                     value: "\(decision.tradeQualityScore) / 100",
                     sub: nil,
                     valueColor: scoreColor(decision.tradeQualityScore)
                 )
                 metricPill(
-                    title: "Score bucket",
+                    title: "Execution gate",
                     value: bucketLabel(decision.scoreBucket),
                     sub: nil,
                     valueColor: bucketColor(decision.scoreBucket)
@@ -55,10 +55,10 @@ struct TradeDecisionPanelView: View {
 
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("FINAL VERDICT")
+                    Text("IS IT ACTIONABLE NOW?")
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(AppColors.tertiaryLabel)
-                    Text(verdictLabel(decision.verdict))
+                    Text(readinessLabel(decision.verdict))
                         .font(.headline.weight(.bold))
                         .foregroundStyle(verdictColor(decision.verdict))
                 }
@@ -166,11 +166,11 @@ struct TradeDecisionPanelView: View {
         }
     }
 
-    private func verdictLabel(_ verdict: TradeVerdict) -> String {
+    private func readinessLabel(_ verdict: TradeVerdict) -> String {
         switch verdict {
-        case .trade: "Trade"
-        case .watchlist: "Watchlist"
-        case .noTrade: "No trade"
+        case .trade: "Actionable"
+        case .watchlist: "Wait for setup"
+        case .noTrade: "Not actionable"
         }
     }
 
@@ -224,7 +224,7 @@ struct TradeDecisionPanelView: View {
 
     private func load() async {
         guard let accessToken, !accessToken.isEmpty else {
-            errorMessage = "Sign in to view trade decisions."
+            errorMessage = "Sign in to view execution readiness."
             return
         }
         isLoading = true

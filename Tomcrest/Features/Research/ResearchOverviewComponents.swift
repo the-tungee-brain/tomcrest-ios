@@ -84,7 +84,7 @@ struct ResearchEventsTeaserCard: View {
                 )
             } else {
                 AppGroupedList {
-                    ForEach(Array(events.prefix(3).enumerated()), id: \.element.id) { index, event in
+                    ForEach(Array(events.prefix(3).enumerated()), id: \.offset) { index, event in
                         eventRow(event)
 
                         if index < min(events.count, 3) - 1 {
@@ -140,6 +140,188 @@ struct ResearchEventsTeaserCard: View {
     }
 }
 
+// MARK: - Trading Bias
+
+struct TradingBiasCard: View {
+    let tradingBias: TradingBiasResponse
+
+    var body: some View {
+        AppScreenSection(
+            title: "Trading Bias",
+            footnote: "Short-term daily bias · \(tradingBias.horizon)"
+        ) {
+            VStack(alignment: .leading, spacing: 14) {
+                biasHeader
+                factorGrid
+                levelsGrid
+
+                if let invalidation = tradingBias.invalidation, !invalidation.isEmpty {
+                    Label(invalidation, systemImage: "shield.checkered")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.secondaryLabel)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                alignmentRow
+
+                if !tradingBias.dataGaps.isEmpty {
+                    AppInlineBanner(
+                        message: "Data gaps: \(tradingBias.dataGaps.joined(separator: "; "))",
+                        tone: .neutral
+                    )
+                }
+            }
+            .padding(16)
+            .background(biasColor.opacity(0.08))
+            .overlay {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(biasColor.opacity(0.24), lineWidth: 1)
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        }
+    }
+
+    private var biasHeader: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Short-term daily bias")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(AppColors.secondaryLabel)
+                .textCase(.uppercase)
+
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                Circle()
+                    .fill(biasColor)
+                    .frame(width: 10, height: 10)
+                Text(tradingBias.bias.rawValue)
+                    .font(.title2.weight(.bold))
+                    .foregroundStyle(biasColor)
+                Text("\(tradingBias.confidence.rawValue) confidence")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(AppColors.secondaryLabel)
+            }
+
+            Text("Educational signal based on daily price, market context, relative strength, volume, and levels.")
+                .font(AppTypography.caption)
+                .foregroundStyle(AppColors.secondaryLabel)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Text("Action: \(tradingBias.action.rawValue)")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(AppColors.label)
+        }
+    }
+
+    private var factorGrid: some View {
+        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+            factorPanel(
+                title: "Bullish evidence",
+                items: tradingBias.bullishFactors,
+                color: AppColors.success
+            )
+            factorPanel(
+                title: "Bearish evidence",
+                items: tradingBias.bearishFactors,
+                color: AppColors.danger
+            )
+        }
+    }
+
+    private var levelsGrid: some View {
+        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+            levelTile(title: "Support", value: tradingBias.levels.support)
+            levelTile(title: "Resistance", value: tradingBias.levels.resistance)
+            levelTile(title: "Breakout", value: tradingBias.levels.breakoutLevel)
+            levelTile(title: "Stop invalid", value: tradingBias.levels.stopInvalidLevel)
+        }
+    }
+
+    private var alignmentRow: some View {
+        FlowTagRow(items: [
+            "Market: \(tradingBias.alignment.marketRegime.rawValue)",
+            "Relative strength: \(tradingBias.alignment.relativeStrength.rawValue)",
+            "Structure: \(tradingBias.alignment.patternTrend.rawValue)",
+            "Volume: \(tradingBias.alignment.volume.rawValue)",
+            "Catalyst: \(tradingBias.alignment.catalyst.rawValue)",
+        ])
+    }
+
+    private var biasColor: Color {
+        switch tradingBias.bias {
+        case .bullish: AppColors.success
+        case .neutral: AppColors.label
+        case .bearish: AppColors.danger
+        }
+    }
+
+    private func factorPanel(title: String, items: [String], color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(AppColors.tertiaryLabel)
+                .textCase(.uppercase)
+
+            if items.isEmpty {
+                Text("No strong factors surfaced.")
+                    .font(.caption)
+                    .foregroundStyle(AppColors.secondaryLabel)
+            } else {
+                ForEach(items.prefix(3), id: \.self) { item in
+                    HStack(alignment: .top, spacing: 6) {
+                        Circle()
+                            .fill(color)
+                            .frame(width: 5, height: 5)
+                            .padding(.top, 6)
+                        Text(item)
+                            .font(.caption)
+                            .foregroundStyle(AppColors.label)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(10)
+        .background(AppColors.secondaryFill.opacity(0.45))
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+
+    private func levelTile(title: String, value: Double?) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title.uppercased())
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(AppColors.tertiaryLabel)
+            Text(value.map { CurrencyFormatter.usd($0) } ?? "—")
+                .font(AppTypography.monoSubheadlineSemibold)
+                .foregroundStyle(AppColors.label)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(10)
+        .background(AppColors.insetSurface)
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+}
+
+private struct FlowTagRow: View {
+    let items: [String]
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                ForEach(items, id: \.self) { item in
+                    Text(item)
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(AppColors.secondaryLabel)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 5)
+                        .background(AppColors.insetSurface)
+                        .clipShape(Capsule())
+                }
+            }
+            .padding(.vertical, 1)
+        }
+    }
+}
+
 // MARK: - Performance
 
 struct SymbolPerformanceCard: View {
@@ -158,7 +340,7 @@ struct SymbolPerformanceCard: View {
                 .foregroundStyle(AppColors.secondaryLabel)
                 .lineSpacing(2)
         }
-        // Plain metrics inside AppScreenSection("Performance") — no nested panel.
+        // Plain metrics inside AppScreenSection("Performance Evidence") — no nested panel.
     }
 }
 

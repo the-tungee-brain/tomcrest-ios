@@ -105,7 +105,7 @@ struct ChartIntelligenceChartScreen: View {
             }
         }
         .appPushedScreenCanvas()
-        .navigationTitle("Chart intelligence")
+        .navigationTitle("Price structure chart")
         .navigationBarTitleDisplayMode(.inline)
         .task {
             await loadChart()
@@ -696,4 +696,3 @@ private struct OverlayLegendItem: Identifiable {
     let color: Color
     var dashed: Bool = false
 }
-

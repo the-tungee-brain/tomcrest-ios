@@ -67,8 +67,8 @@ struct PatternPortfolioStrategy: Codable, Sendable {
 enum ModelBenchmark {
     static let symbols: Set<String> = ["SPY"]
     static let notice =
-        "This symbol is the Model C benchmark. Excess return vs SPY is always zero here, " +
-        "so ranking probabilities are undefined — use pattern, trend, and regime context only."
+        "This symbol is the relative-strength benchmark. Excess return vs SPY is always zero here, " +
+        "so relative-strength probabilities are undefined — use price structure, trend, and regime context only."
 
     static func isBenchmarkSymbol(_ symbol: String?) -> Bool {
         guard let symbol else { return false }
@@ -221,23 +221,23 @@ struct PatternTrendForecastDisplay: Sendable {
 
     var directionTitle: String {
         if labelScheme.isOutperformSpy {
-            return prediction == 1 ? "Outperform SPY" : "Underperform SPY"
+            return prediction == 1 ? "Likely stronger than SPY" : "Likely weaker than SPY"
         }
         if labelScheme.isBinary {
             return prediction == 1 ? "Up" : "Down"
         }
         switch prediction {
-        case 1: return "Bullish"
-        case -1: return "Bearish"
-        default: return "Neutral"
+        case 1: return "Upward setup"
+        case -1: return "Downward setup"
+        default: return "Range/flat setup"
         }
     }
 
     var directionSubtitle: String {
         if labelScheme.isOutperformSpy {
             return prediction == 1
-                ? "Model expects this name to beat SPY over the next 5 trading days."
-                : "Model expects this name to lag SPY over the next 5 trading days."
+                ? "Model expects this name to show stronger relative performance than SPY over the next 5 trading days."
+                : "Model expects this name to show weaker relative performance than SPY over the next 5 trading days."
         }
         if labelScheme.isBinary {
             return prediction == 1
@@ -280,7 +280,7 @@ struct PatternTrendForecastDisplay: Sendable {
 
     private var binaryClassLabels: (down: String, up: String) {
         if labelScheme.isOutperformSpy {
-            return ("Underperform SPY", "Outperform SPY")
+            return ("Likely weaker than SPY", "Likely stronger than SPY")
         }
         return ("Down", "Up")
     }
@@ -311,11 +311,11 @@ struct PatternTrendForecastDisplay: Sendable {
     }
 
     var upProbLabel: String {
-        labelScheme.isOutperformSpy ? "P(outperform SPY)" : "P(up)"
+        labelScheme.isOutperformSpy ? "P(stronger than SPY)" : "P(up)"
     }
 
     var upProbChipLabel: String {
-        labelScheme.isOutperformSpy ? "P vs SPY" : "P(up)"
+        labelScheme.isOutperformSpy ? "P(stronger than SPY)" : "P(up)"
     }
 
     var rankingBadgeLabel: String? {

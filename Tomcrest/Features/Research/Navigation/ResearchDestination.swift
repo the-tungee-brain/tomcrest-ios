@@ -71,6 +71,8 @@ enum SymbolResearchDestination: Hashable {
             return .financials
         case (.more, .portfolio):
             return .portfolio
+        case (.more, .options):
+            return nil
         case (.more, .income):
             return .income
         case (.more, .tools):
@@ -106,6 +108,7 @@ enum SymbolResearchDestination: Hashable {
             ).compactMap { more in
                 switch more {
                 case .portfolio: .portfolio
+                case .options: nil
                 case .income: .income
                 case .tools: .tools
                 case .composition: .composition

@@ -81,14 +81,17 @@ final class SymbolOverviewViewModel {
     private(set) var snapshot: ResearchSnapshot?
     private(set) var performance: PerformanceSnapshot?
     private(set) var events: [EventTimelineEntry] = []
+    private(set) var tradingBias: TradingBiasResponse?
     private(set) var isLoading = false
     private(set) var errorMessage: String?
     private(set) var snapshotLoading = false
     private(set) var performanceLoading = false
     private(set) var eventsLoading = false
+    private(set) var tradingBiasLoading = false
     private(set) var snapshotError: String?
     private(set) var performanceError: String?
     private(set) var eventsError: String?
+    private(set) var tradingBiasError: String?
 
     private(set) var stockChart: StockChartPayload?
     private(set) var preparedStockChart: IntradayChartTimeline.PreparedChart?
@@ -330,14 +333,17 @@ final class SymbolOverviewViewModel {
         snapshotLoading = true
         performanceLoading = true
         eventsLoading = true
+        tradingBiasLoading = true
         snapshotError = nil
         performanceError = nil
         eventsError = nil
+        tradingBiasError = nil
         defer { isLoading = false }
 
         async let snapshotResult = fetchSnapshotResult(accessToken: accessToken)
         async let performanceResult = fetchPerformanceResult(accessToken: accessToken)
         async let eventsResult = fetchEventsResult(accessToken: accessToken)
+        async let tradingBiasResult = fetchTradingBiasResult(accessToken: accessToken)
 
         switch await snapshotResult {
         case let .success(value):
@@ -369,8 +375,18 @@ final class SymbolOverviewViewModel {
         }
         eventsLoading = false
 
-        if snapshot == nil, performance == nil, events.isEmpty {
-            errorMessage = snapshotError ?? performanceError ?? eventsError
+        switch await tradingBiasResult {
+        case let .success(value):
+            tradingBias = value
+            tradingBiasError = nil
+        case let .failure(error):
+            tradingBias = nil
+            tradingBiasError = displayMessage(for: error)
+        }
+        tradingBiasLoading = false
+
+        if snapshot == nil, performance == nil, events.isEmpty, tradingBias == nil {
+            errorMessage = snapshotError ?? performanceError ?? eventsError ?? tradingBiasError
         }
         overviewLoaded = true
 
@@ -406,6 +422,19 @@ final class SymbolOverviewViewModel {
     private func fetchEventsResult(accessToken: String) async -> Result<ResearchEventsResponse, Error> {
         do {
             let value = try await ResearchService.fetchResearchEvents(
+                symbol: symbol,
+                accessToken: accessToken,
+                api: api
+            )
+            return .success(value)
+        } catch {
+            return .failure(error)
+        }
+    }
+
+    private func fetchTradingBiasResult(accessToken: String) async -> Result<TradingBiasResponse, Error> {
+        do {
+            let value = try await ResearchService.fetchTradingBias(
                 symbol: symbol,
                 accessToken: accessToken,
                 api: api

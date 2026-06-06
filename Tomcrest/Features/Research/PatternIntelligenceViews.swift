@@ -52,7 +52,7 @@ struct ChartAnalystSummaryPanel: View {
                 .foregroundStyle(AppColors.secondaryLabel)
                 .textCase(.uppercase)
 
-            Text(summary.outlook.headline)
+            Text("Chart structure: \(summary.outlook.headline)")
                 .font(.title2.weight(.semibold))
                 .foregroundStyle(isBenchmark ? AppColors.label : toneColor)
 
@@ -109,7 +109,7 @@ struct ChartAnalystSummaryPanel: View {
 
     private var whySection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Why this outlook")
+            Text("Why this chart read")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(AppColors.secondaryLabel)
                 .textCase(.uppercase)
@@ -135,7 +135,7 @@ struct ChartAnalystSummaryPanel: View {
 
     private var thesisSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Thesis")
+            Text("Structure thesis")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(AppColors.secondaryLabel)
                 .textCase(.uppercase)
@@ -161,9 +161,9 @@ struct ChartAnalystSummaryPanel: View {
     private func patternSubtitle(_ pattern: PrimaryCandlestickPattern) -> String {
         let direction: String
         switch pattern.direction.lowercased() {
-        case "bullish": direction = "Bullish"
-        case "bearish": direction = "Bearish"
-        default: direction = "Neutral"
+        case "bullish": direction = "Chart structure: Bullish"
+        case "bearish": direction = "Chart structure: Bearish"
+        default: direction = "Chart structure: Neutral"
         }
 
         let quality: String
