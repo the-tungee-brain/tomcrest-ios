@@ -9,36 +9,67 @@ struct SymbolOverviewTab: View {
     @Bindable var positionViewModel: SymbolPositionViewModel
     let bundle: ResearchOverviewBundle?
     let availableTabs: [ResearchTab]
+    let assetType: String?
     let symbolItem: TickerSymbolItem
     var onOpenHub: (SymbolResearchDestination) -> Void
     var onQuickAction: (String) -> Void = { _ in }
 
     var body: some View {
         Group {
-            if viewModel.isLoading, bundle == nil {
+            if viewModel.isLoading, !hasOverviewContent {
                 ResearchOverviewLoadingView()
-            } else if let error = viewModel.errorMessage, bundle == nil {
+            } else if let error = viewModel.errorMessage, !hasOverviewContent {
                 AppErrorState(message: error) {
                     Task { await viewModel.reload() }
                 }
-            } else if let bundle {
-                overviewSections(bundle)
+            } else {
+                overviewSections()
             }
         }
-        .task(id: bundle?.symbol) {
-            guard bundle != nil else { return }
+        .task(id: viewModel.symbol) {
             await positionViewModel.loadIfNeeded()
         }
     }
 
     private var isEtfLike: Bool {
-        let normalized = bundle?.assetType?.uppercased() ?? ""
+        let normalized = assetType?.uppercased() ?? ""
         return normalized == "ETF" || normalized == "MUTUAL_FUND" || normalized == "INDEX"
     }
 
+    private var snapshot: ResearchSnapshot? {
+        viewModel.snapshot ?? bundle?.snapshot
+    }
+
+    private var performance: PerformanceSnapshot? {
+        viewModel.performance ?? bundle?.performance
+    }
+
+    private var events: [EventTimelineEntry] {
+        if !viewModel.events.isEmpty { return viewModel.events }
+        return bundle?.intelligence.eventTimeline ?? []
+    }
+
+    private var hasOverviewContent: Bool {
+        snapshot != nil || performance != nil || !events.isEmpty || bundle != nil
+    }
+
     @ViewBuilder
-    private func overviewSections(_ bundle: ResearchOverviewBundle) -> some View {
-        SymbolQuoteHeroCard(bundle: bundle)
+    private func overviewSections() -> some View {
+        if let snapshot {
+            SymbolQuoteHeroCard(snapshot: snapshot, assetType: assetType)
+        } else if viewModel.snapshotLoading {
+            AppScreenSection(title: "Snapshot") {
+                ProgressView()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        } else {
+            AppScreenSection(title: "Snapshot") {
+                AppInlineBanner(
+                    message: viewModel.snapshotError ?? "Snapshot is not available.",
+                    tone: .error
+                )
+            }
+        }
 
         if !isEtfLike {
             TradeDecisionPanelView(
@@ -61,15 +92,38 @@ struct SymbolOverviewTab: View {
             }
         }
 
-        ResearchStockChartSection(symbol: bundle.symbol, viewModel: viewModel)
+        ResearchStockChartSection(symbol: viewModel.symbol, viewModel: viewModel)
 
         AppScreenSection(title: "Performance") {
-            SymbolPerformanceCard(performance: bundle.performance)
+            if let performance {
+                SymbolPerformanceCard(performance: performance)
+            } else if viewModel.performanceLoading {
+                ProgressView()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                AppInlineBanner(
+                    message: viewModel.performanceError ?? "Performance is not available.",
+                    tone: .neutral
+                )
+            }
+        }
+
+        if viewModel.eventsLoading, events.isEmpty {
+            AppScreenSection(title: "Recent events") {
+                ProgressView()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        } else if let error = viewModel.eventsError, events.isEmpty {
+            AppScreenSection(title: "Recent events") {
+                AppInlineBanner(message: error, tone: .neutral)
+            }
+        } else {
+            ResearchEventsTeaserCard(events: events)
         }
 
         ResearchExploreLinks(
             symbolItem: symbolItem,
-            assetType: bundle.assetType,
+            assetType: assetType,
             availableTabs: availableTabs,
             hasPosition: positionViewModel.hasPosition,
             onOpenHub: onOpenHub

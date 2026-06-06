@@ -218,7 +218,7 @@ struct ResearchMoreDetailScreen: View {
                 exploreSection: $backtestExploreSection,
                 viewModel: depthVM,
                 primaryStrategy: primaryStrategy,
-                marketSharePrice: overviewVM.bundle?.snapshot.price
+                marketSharePrice: overviewVM.snapshot?.price ?? overviewVM.bundle?.snapshot.price
             )
         case .composition:
             SymbolCompositionTab(viewModel: depthVM)
@@ -307,6 +307,10 @@ struct SymbolResearchHubView: View {
         )
     }
 
+    private var assetType: String? {
+        overviewVM.bundle?.assetType ?? symbolItem.assetType
+    }
+
     var body: some View {
         AppScrollScreen(refresh: { await refreshHub() }) {
             hubContent
@@ -348,7 +352,7 @@ struct SymbolResearchHubView: View {
             SymbolBusinessHubTab(depthVM: depthVM)
         case .metrics:
             SymbolMetricsHubTab(
-                assetType: overviewVM.bundle?.assetType,
+                assetType: assetType,
                 depthVM: depthVM
             )
         case .news:

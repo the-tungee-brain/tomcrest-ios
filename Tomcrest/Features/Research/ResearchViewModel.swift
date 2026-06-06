@@ -78,8 +78,17 @@ final class SymbolOverviewViewModel {
     let symbol: String
 
     private(set) var bundle: ResearchOverviewBundle?
+    private(set) var snapshot: ResearchSnapshot?
+    private(set) var performance: PerformanceSnapshot?
+    private(set) var events: [EventTimelineEntry] = []
     private(set) var isLoading = false
     private(set) var errorMessage: String?
+    private(set) var snapshotLoading = false
+    private(set) var performanceLoading = false
+    private(set) var eventsLoading = false
+    private(set) var snapshotError: String?
+    private(set) var performanceError: String?
+    private(set) var eventsError: String?
 
     private(set) var stockChart: StockChartPayload?
     private(set) var preparedStockChart: IntradayChartTimeline.PreparedChart?
@@ -97,6 +106,7 @@ final class SymbolOverviewViewModel {
 
     private var chatSessionId: String?
     private var chatHistoryHydrated = false
+    private var overviewLoaded = false
     @ObservationIgnored private var chatStreamThrottler: ChatStreamThrottler
 
     private let auth: AuthSession
@@ -304,7 +314,8 @@ final class SymbolOverviewViewModel {
     }
 
     func loadIfNeeded() async {
-        guard bundle == nil, !isLoading else { return }
+        guard !overviewLoaded else { return }
+        guard !isLoading else { return }
         await reload()
     }
 
@@ -316,19 +327,97 @@ final class SymbolOverviewViewModel {
 
         isLoading = true
         errorMessage = nil
+        snapshotLoading = true
+        performanceLoading = true
+        eventsLoading = true
+        snapshotError = nil
+        performanceError = nil
+        eventsError = nil
         defer { isLoading = false }
 
+        async let snapshotResult = fetchSnapshotResult(accessToken: accessToken)
+        async let performanceResult = fetchPerformanceResult(accessToken: accessToken)
+        async let eventsResult = fetchEventsResult(accessToken: accessToken)
+
+        switch await snapshotResult {
+        case let .success(value):
+            snapshot = value
+            snapshotError = nil
+        case let .failure(error):
+            snapshot = nil
+            snapshotError = displayMessage(for: error)
+        }
+        snapshotLoading = false
+
+        switch await performanceResult {
+        case let .success(value):
+            performance = value
+            performanceError = nil
+        case let .failure(error):
+            performance = nil
+            performanceError = displayMessage(for: error)
+        }
+        performanceLoading = false
+
+        switch await eventsResult {
+        case let .success(value):
+            events = value.events
+            eventsError = nil
+        case let .failure(error):
+            events = []
+            eventsError = displayMessage(for: error)
+        }
+        eventsLoading = false
+
+        if snapshot == nil, performance == nil, events.isEmpty {
+            errorMessage = snapshotError ?? performanceError ?? eventsError
+        }
+        overviewLoaded = true
+
+        Task { await hydrateChatHistoryIfNeeded() }
+    }
+
+    private func fetchSnapshotResult(accessToken: String) async -> Result<ResearchSnapshot, Error> {
         do {
-            bundle = try await ResearchService.fetchOverviewBundle(
+            let value = try await ResearchService.fetchSnapshot(
                 symbol: symbol,
                 accessToken: accessToken,
                 api: api
             )
-            Task { await hydrateChatHistoryIfNeeded() }
+            return .success(value)
         } catch {
-            bundle = nil
-            errorMessage = (error as? APIError)?.errorDescription ?? error.localizedDescription
+            return .failure(error)
         }
+    }
+
+    private func fetchPerformanceResult(accessToken: String) async -> Result<PerformanceSnapshot, Error> {
+        do {
+            let value = try await ResearchService.fetchPerformance(
+                symbol: symbol,
+                accessToken: accessToken,
+                api: api
+            )
+            return .success(value)
+        } catch {
+            return .failure(error)
+        }
+    }
+
+    private func fetchEventsResult(accessToken: String) async -> Result<ResearchEventsResponse, Error> {
+        do {
+            let value = try await ResearchService.fetchResearchEvents(
+                symbol: symbol,
+                accessToken: accessToken,
+                api: api
+            )
+            return .success(value)
+        } catch {
+            return .failure(error)
+        }
+    }
+
+    private func displayMessage(for error: Error) -> String {
+        (error as? APIError)?.errorDescription ?? error.localizedDescription
     }
 
     func loadStockChartIfNeeded() async {

@@ -64,11 +64,16 @@ struct SymbolResearchView: View {
     }
 
     private var availableTabs: [ResearchTab] {
-        ResearchTab.tabs(for: overviewVM.bundle?.assetType)
+        ResearchTab.tabs(for: assetType)
+    }
+
+    private var assetType: String? {
+        overviewVM.bundle?.assetType ?? symbolItem.assetType
     }
 
     private var companyName: String? {
-        guard let name = overviewVM.bundle?.snapshot.name, !name.isEmpty else { return nil }
+        guard let name = (overviewVM.snapshot ?? overviewVM.bundle?.snapshot)?.name,
+              !name.isEmpty else { return nil }
         return name
     }
 
@@ -100,6 +105,7 @@ struct SymbolResearchView: View {
                     positionViewModel: positionVM,
                     bundle: overviewVM.bundle,
                     availableTabs: availableTabs,
+                    assetType: assetType,
                     symbolItem: symbolItem,
                     onOpenHub: onOpenHub
                 ) { prompt in
@@ -138,8 +144,8 @@ struct SymbolResearchView: View {
             }
             await overviewVM.loadIfNeeded()
         }
-        .task(id: overviewVM.bundle?.symbol) {
-            guard overviewVM.bundle != nil else { return }
+        .task(id: overviewVM.snapshot?.symbol ?? overviewVM.bundle?.symbol) {
+            guard overviewVM.snapshot != nil || overviewVM.bundle != nil else { return }
             await loadStrategyContext()
         }
         .onAppear {

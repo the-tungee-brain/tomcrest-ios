@@ -3,13 +3,22 @@ import SwiftUI
 // MARK: - Hero quote
 
 struct SymbolQuoteHeroCard: View {
-    let bundle: ResearchOverviewBundle
+    let snapshot: ResearchSnapshot
+    let assetType: String?
+
+    init(snapshot: ResearchSnapshot, assetType: String?) {
+        self.snapshot = snapshot
+        self.assetType = assetType
+    }
+
+    init(bundle: ResearchOverviewBundle) {
+        self.snapshot = bundle.snapshot
+        self.assetType = bundle.assetType
+    }
 
     var body: some View {
-        let snapshot = bundle.snapshot
-
         VStack(alignment: .leading, spacing: 16) {
-            Text(metadataLine(snapshot: snapshot, assetType: bundle.assetType))
+            Text(metadataLine(snapshot: snapshot, assetType: assetType))
                 .font(AppTypography.bodySecondary)
                 .foregroundStyle(AppColors.secondaryLabel)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -58,6 +67,76 @@ struct SymbolQuoteHeroCard: View {
         if value > 0 { return AppColors.success }
         if value < 0 { return AppColors.error }
         return AppColors.secondaryLabel
+    }
+}
+
+// MARK: - Events
+
+struct ResearchEventsTeaserCard: View {
+    let events: [EventTimelineEntry]
+
+    var body: some View {
+        AppScreenSection(title: "Recent events") {
+            if events.isEmpty {
+                AppEmptyMessage(
+                    message: "No recent SEC or earnings events found.",
+                    systemImage: "calendar"
+                )
+            } else {
+                AppGroupedList {
+                    ForEach(Array(events.prefix(3).enumerated()), id: \.element.id) { index, event in
+                        eventRow(event)
+
+                        if index < min(events.count, 3) - 1 {
+                            AppGroupedDivider()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func eventRow(_ event: EventTimelineEntry) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(eventKindLabel(event.kind))
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(AppColors.accentHighlight)
+                Text(DateFormatters.abbreviatedDay(from: event.date))
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.tertiaryLabel)
+                Spacer(minLength: 8)
+            }
+
+            Text(event.title)
+                .font(AppTypography.cardTitle)
+                .foregroundStyle(AppColors.label)
+                .fixedSize(horizontal: false, vertical: true)
+
+            if let detail = event.detail, !detail.isEmpty {
+                Text(detail)
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.secondaryLabel)
+                    .lineLimit(2)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func eventKindLabel(_ kind: ResearchEventKind) -> String {
+        switch kind {
+        case .trade: "Trade"
+        case .filing: "Filing"
+        case .earnings: "Earnings"
+        case .news: "News"
+        case .pressRelease: "Press release"
+        case .macro: "Macro"
+        case .price: "Price"
+        case .dividend: "Dividend"
+        case .unknown: "Event"
+        }
     }
 }
 

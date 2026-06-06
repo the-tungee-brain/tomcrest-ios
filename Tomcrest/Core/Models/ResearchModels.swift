@@ -42,8 +42,10 @@ struct PerformanceSnapshot: Codable {
 struct SymbolIntelligence: Codable {
     let symbol: String
     let signals: [IntelligenceSignal]
+    let eventTimeline: [EventTimelineEntry]?
     let patternForecast: PatternTrendForecast?
     let patternIntelligence: PatternIntelligenceResponse?
+    let dataGaps: [String]?
     let partial: Bool?
 }
 
@@ -69,6 +71,41 @@ struct AISummary: Codable {
     let keyRisks: [String]
     let whatToWatch: [String]
     let valuationContext: String
+}
+
+enum ResearchEventKind: String, Codable {
+    case trade
+    case filing
+    case earnings
+    case news
+    case pressRelease = "press_release"
+    case macro
+    case price
+    case dividend
+    case unknown
+
+    init(from decoder: Decoder) throws {
+        let raw = try decoder.singleValueContainer().decode(String.self)
+        self = Self(rawValue: raw) ?? .unknown
+    }
+}
+
+struct EventTimelineEntry: Codable, Identifiable {
+    var id: String { "\(date)-\(kind.rawValue)-\(title)" }
+    let date: String
+    let kind: ResearchEventKind
+    let title: String
+    let detail: String?
+    let url: String?
+}
+
+struct ResearchEventsResponse: Codable {
+    let symbol: String
+    let events: [EventTimelineEntry]
+}
+
+struct StreetAnalysisResponse: Decodable {
+    let streetAnalysis: StreetAnalysisSnapshot?
 }
 
 enum AssetTypeLabel {

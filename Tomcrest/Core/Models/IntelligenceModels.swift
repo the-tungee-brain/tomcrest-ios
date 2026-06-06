@@ -1,5 +1,32 @@
 import Foundation
 
+struct PeerMetric: Decodable, Identifiable {
+    var id: String { symbol }
+    let symbol: String
+    let name: String?
+    let oneYearReturn: String?
+    let peTrailing: String?
+}
+
+struct PeerComparison: Decodable {
+    let targetSymbol: String?
+    let targetOneYearReturn: String?
+    let targetPeTrailing: String?
+    let peers: [PeerMetric]?
+    let summary: String?
+}
+
+struct CachedResearchSnippet: Decodable {
+    let generatedAt: String?
+    let sentiment: String?
+    let short: String?
+    let investmentThesis: String?
+    let keyStrengths: [String]?
+    let keyRisks: [String]?
+    let whatToWatch: [String]?
+    let valuationContext: String?
+}
+
 struct OptionsStrikeCandidate: Decodable, Identifiable {
     var id: String { "\(side)-\(strike)-\(expiration)" }
     let side: String
@@ -68,13 +95,18 @@ struct OptionRollSuggestion: Decodable, Identifiable {
 struct SymbolIntelligenceDetail: Decodable {
     let symbol: String
     let signals: [IntelligenceSignal]
+    let peerComparison: PeerComparison?
+    let eventTimeline: [EventTimelineEntry]?
     let optionsScorecard: OptionsScorecard?
     let optionChainPreview: OptionChainPreview?
     let rollSuggestions: [OptionRollSuggestion]?
+    let cachedResearch: CachedResearchSnippet?
     let patternForecast: PatternTrendForecast?
     let patternIntelligence: PatternIntelligenceResponse?
+    let dataGaps: [String]?
     let partial: Bool?
     let reauthRequired: Bool?
+    let authorizationUrl: String?
 }
 
 enum SymbolOptionsHelpers {

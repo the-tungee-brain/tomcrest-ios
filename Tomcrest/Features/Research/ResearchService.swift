@@ -36,6 +36,45 @@ enum ResearchService {
         )
     }
 
+    static func fetchSnapshot(
+        symbol: String,
+        accessToken: String,
+        api: APIClient = .shared
+    ) async throws -> ResearchSnapshot {
+        try await api.get(
+            "/research/snapshot",
+            query: ["symbol": symbol.uppercased()],
+            accessToken: accessToken,
+            keyDecoding: .camelCase
+        )
+    }
+
+    static func fetchPerformance(
+        symbol: String,
+        accessToken: String,
+        api: APIClient = .shared
+    ) async throws -> PerformanceSnapshot {
+        try await api.get(
+            "/research/performance",
+            query: ["symbol": symbol.uppercased()],
+            accessToken: accessToken,
+            keyDecoding: .camelCase
+        )
+    }
+
+    static func fetchResearchEvents(
+        symbol: String,
+        accessToken: String,
+        api: APIClient = .shared
+    ) async throws -> ResearchEventsResponse {
+        try await api.get(
+            "/research/events",
+            query: ["symbol": symbol.uppercased()],
+            accessToken: accessToken,
+            keyDecoding: .camelCase
+        )
+    }
+
     static func fetchStockChart(
         symbol: String,
         accessToken: String,
@@ -155,7 +194,7 @@ enum ResearchService {
         reportDate: String,
         accessToken: String,
         includeAnalysis: Bool = false,
-        includeTranscript: Bool = true,
+        includeTranscript: Bool = false,
         api: APIClient = .shared
     ) async throws -> EarningsDetailResponse {
         try await api.get(
@@ -257,6 +296,19 @@ enum ResearchService {
                 "include_ai_overview": includeAiOverview ? "true" : "false",
                 "include_street_analysis": includeStreetAnalysis ? "true" : "false",
             ],
+            accessToken: accessToken,
+            keyDecoding: .camelCase
+        )
+    }
+
+    static func fetchStreetAnalysis(
+        symbol: String,
+        accessToken: String,
+        api: APIClient = .shared
+    ) async throws -> StreetAnalysisResponse {
+        try await api.get(
+            "/research/street-analysis",
+            query: ["symbol": symbol.uppercased()],
             accessToken: accessToken,
             keyDecoding: .camelCase
         )
